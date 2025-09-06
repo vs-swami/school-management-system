@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "student_documents",
+  "info": {
+    "singularName": "student-document",
+    "pluralName": "student-documents",
+    "displayName": "Student Document"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "doc_type": {
+      "type": "string",
+      "required": true
+    },
+    "file_url": {
+      "type": "string",
+      "required": true
+    },
+    "mime_type": {
+      "type": "string"
+    },
+    "file_hash": {
+      "type": "string"
+    },
+    "ocr_json": {
+      "type": "json"
+    },
+    "verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "uploaded_by": {
+      "type": "string"
+    },
+    "uploaded_at": {
+      "type": "datetime"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student",
+      "inversedBy": "documents"
+    }
+  }
+}

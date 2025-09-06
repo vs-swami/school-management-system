@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guardians",
+  "info": {
+    "singularName": "guardian",
+    "pluralName": "guardians",
+    "displayName": "Guardian"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student",
+      "inversedBy": "guardians"
+    },
+    "full_name": {
+      "type": "string",
+      "required": true
+    },
+    "relation": {
+      "type": "enumeration",
+      "enum": ["father", "mother", "guardian"],
+      "required": true
+    },
+    "source": {
+      "type": "string",
+      "default": "system"
+    },
+    "primary_contact": {
+      "type": "boolean",
+      "default": false
+    },
+    "occupation": {
+      "type": "string"
+    },
+    "mobile": {
+      "type": "string",
+      "required": true
+    },
+    "alt_mobile": {
+      "type": "string"
+    },
+    "whatsapp_number": {
+      "type": "string"
+    }
+  }
+}

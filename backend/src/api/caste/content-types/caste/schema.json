@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "castes",
+  "info": {
+    "singularName": "caste",
+    "pluralName": "castes",
+    "displayName": "Caste"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "students": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student.student",
+      "mappedBy": "caste"
+    }
+  }
+}

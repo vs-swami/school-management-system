@@ -1,0 +1,87 @@
+import React, { useEffect, useState } from 'react';
+import { useStudentStore } from '../../../application/stores/useStudentStore';
+import { StudentTable } from '../../components/students/StudentTable';
+import { StudentFilters } from '../../components/students/StudentFilters';
+import { StudentModal } from '../../components/students/StudentModal';
+import { Button } from '../../components/common/Button';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { ErrorAlert } from '../../components/common/ErrorAlert';
+
+export const StudentList = () => {
+  const {
+    students,
+    loading,
+    error,
+    filters,
+    fetchStudents,
+    searchStudents,
+    setFilters
+  } = useStudentStore();
+
+  const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchStudents(filters);
+  }, [fetchStudents, filters]);
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.length > 2) {
+      searchStudents(query);
+    } else if (query.length === 0) {
+      fetchStudents(filters);
+    }
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+  };
+
+  const handleAddStudent = () => {
+    setShowModal(true);
+  };
+
+  if (loading && students.length === 0) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Student Management
+        </h1>
+        <Button onClick={handleAddStudent} variant="primary">
+          Add New Student
+        </Button>
+      </div>
+
+      {/* Error Display */}
+      {error && <ErrorAlert message={error} />}
+
+      {/* Filters */}
+      <StudentFilters
+        onSearch={handleSearch}
+        onFilterChange={handleFilterChange}
+        searchQuery={searchQuery}
+      />
+
+      {/* Student Table */}
+      <StudentTable 
+        students={students} 
+        loading={loading}
+      />
+
+      {/* Add Student Modal */}
+      {showModal && (
+        <StudentModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          mode="create"
+        />
+      )}
+    </div>
+  );
+};

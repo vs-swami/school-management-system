@@ -1,0 +1,92 @@
+{
+  "kind": "collectionType",
+  "collectionName": "students",
+  "info": {
+    "singularName": "student",
+    "pluralName": "students",
+    "displayName": "Student"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "gr_full_name": {
+      "type": "string",
+      "required": true
+    },
+    "aadhaar_full_name": {
+      "type": "string"
+    },
+    "legal_name_source": {
+      "type": "enumeration",
+      "enum": ["gr", "aadhaar", "manual"],
+      "default": "gr"
+    },
+    "first_name": {
+      "type": "string",
+      "required": true
+    },
+    "middle_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string",
+      "required": true
+    },
+    "gender": {
+      "type": "enumeration",
+      "enum": ["male", "female", "other"],
+      "required": true
+    },
+    "dob": {
+      "type": "date",
+      "required": true
+    },
+    "aadhaar_no": {
+      "type": "string",
+      "private": true
+    },
+    "ssa_uid": {
+      "type": "string"
+    },
+    "apaar_id": {
+      "type": "string"
+    },
+    "place": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::place.place",
+      "inversedBy": "students"
+    },
+    "caste": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::caste.caste",
+      "inversedBy": "students"
+    },
+    "house": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::house.house",
+      "inversedBy": "students"
+    },
+    "guardians": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::guardian.guardian",
+      "mappedBy": "student"
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "student"
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student-document.student-document",
+      "mappedBy": "student"
+    }
+  }
+}

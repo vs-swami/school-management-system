@@ -1,0 +1,134 @@
+import { StudentRepository } from '../../data/repositories/StudentRepository';
+import { ValidationStrategy } from '../strategies/ValidationStrategy';
+//import { AuditService } from './AuditService';
+
+export class StudentService {
+  constructor() {
+    this.validationStrategy = new ValidationStrategy();
+    //this.auditService = new AuditService();
+  }
+
+  async getAllStudents(filters = {}) {
+    try {
+      const students = await StudentRepository.findAll(filters);
+      return {
+        success: true,
+        data: students,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async getStudentById(id) {
+    try {
+      const student = await StudentRepository.findById(id);
+      return {
+        success: true,
+        data: student,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async createStudent(studentData) {
+    try {
+      // Validate data
+      const validation = this.validationStrategy.validateStudent(studentData);
+      if (!validation.isValid) {
+        console.log('Validation errors:', validation)
+        return {
+          success: false,
+          error: 'Validation failed',
+          details: validation.errors,
+          
+        };
+      }
+      console.log('Creating student with data:', studentData);  
+      const student = await StudentRepository.create(studentData);
+      
+      // Audit log
+      //await this.auditService.log('STUDENT_CREATED', {
+      //  studentId: student.id,
+      //  studentName: student.gr_full_name,
+      //});
+
+      return {
+        success: true,
+        data: student,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async updateStudent(id, studentData) {
+    try {
+      const validation = this.validationStrategy.validateStudent(studentData);
+      if (!validation.isValid) {
+        return {
+          success: false,
+          error: 'Validation failed',
+          details: validation.errors,
+        };
+      }
+
+      const student = await StudentRepository.update(id, studentData);
+      
+      //await this.auditService.log('STUDENT_UPDATED', {
+      //  studentId: id,
+      //  studentName: student.gr_full_name,
+      //});
+
+      return {
+        success: true,
+        data: student,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async searchStudents(query) {
+    try {
+      const students = await StudentRepository.search(query);
+      return {
+        success: true,
+        data: students,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  async getStatistics() {
+    try {
+      const stats = await StudentRepository.getStatistics();
+      return {
+        success: true,
+        data: stats,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+}

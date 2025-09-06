@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "academic_years",
+  "info": {
+    "singularName": "academic-year",
+    "pluralName": "academic-years",
+    "displayName": "Academic Year"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "starts_on": {
+      "type": "date",
+      "required": true
+    },
+    "ends_on": {
+      "type": "date",
+      "required": true
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": false
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "academic_year"
+    }
+  }
+}

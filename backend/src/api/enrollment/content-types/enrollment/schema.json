@@ -1,0 +1,95 @@
+{
+  "kind": "collectionType",
+  "collectionName": "enrollments",
+  "info": {
+    "singularName": "enrollment",
+    "pluralName": "enrollments",
+    "displayName": "Enrollment"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student",
+      "inversedBy": "enrollments",
+      "required": true
+    },
+    "academic_year": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::academic-year.academic-year",
+      "inversedBy": "enrollments",
+      "required": true
+    },
+    "class_standard": {
+      "type": "integer",
+      "min": 1,
+      "max": 12,
+      "required": true
+    },
+    "division": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::division.division",
+      "inversedBy": "enrollments"
+    },
+    "section": {
+      "type": "string"
+    },
+    "gr_no": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "date_enrolled": {
+      "type": "date",
+      "required": true
+    },
+    "lc_received": {
+      "type": "boolean",
+      "default": false
+    },
+    "date_of_admission": {
+      "type": "date",
+      "required": true
+    },
+    "doa_backdated": {
+      "type": "boolean",
+      "default": false
+    },
+    "mode": {
+      "type": "enumeration",
+      "enum": ["online", "offline"],
+      "default": "offline"
+    },
+    "school_form_no": {
+      "type": "string"
+    },
+    "hostel_form_no": {
+      "type": "string"
+    },
+    "ssa_registered": {
+      "type": "boolean",
+      "default": false
+    },
+    "admission_type": {
+      "type": "enumeration",
+      "enum": ["new", "transfer", "readmission"],
+      "required": true
+    },
+    "previous_school_name": {
+      "type": "string"
+    },
+    "previous_class": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "transferred", "graduated", "dropped"],
+      "default": "active"
+    }
+  }
+}

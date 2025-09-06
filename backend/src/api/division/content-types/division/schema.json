@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "divisions",
+  "info": {
+    "singularName": "division",
+    "pluralName": "divisions",
+    "displayName": "Division"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "division"
+    }
+  }
+}

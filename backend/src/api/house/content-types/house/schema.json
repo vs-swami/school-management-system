@@ -1,0 +1,24 @@
+{
+  "kind": "collectionType",
+  "collectionName": "houses",
+  "info": {
+    "singularName": "house",
+    "pluralName": "houses",
+    "displayName": "House"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "students": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student.student",
+      "mappedBy": "house"
+    }
+  }
+}

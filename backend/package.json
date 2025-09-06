@@ -1,0 +1,27 @@
+{
+  "name": "school-management-backend",
+  "version": "1.0.0",
+  "description": "School Management System Backend",
+  "scripts": {
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "build": "strapi build",
+    "strapi": "strapi"
+  },
+  "dependencies": {
+    "@strapi/plugin-i18n": "^4.15.5",
+    "@strapi/plugin-users-permissions": "^4.15.5",
+    "@strapi/strapi": "^4.15.5",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.2.0",
+    "jsonwebtoken": "^9.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^5.3.4",
+    "styled-components": "^5.3.11"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=6.0.0"
+  }
+}
