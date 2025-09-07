@@ -30,15 +30,6 @@
       "max": 12,
       "required": true
     },
-    "division": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::division.division",
-      "inversedBy": "enrollments"
-    },
-    "section": {
-      "type": "string"
-    },
     "gr_no": {
       "type": "string",
       "unique": true,
@@ -48,44 +39,17 @@
       "type": "date",
       "required": true
     },
+    "administration": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::enrollment-administration.enrollment-administration",
+      "mappedBy": "enrollment"
+    },
     "lc_received": {
       "type": "boolean",
       "default": false
     },
-    "date_of_admission": {
-      "type": "date",
-      "required": true
-    },
-    "doa_backdated": {
-      "type": "boolean",
-      "default": false
-    },
-    "mode": {
-      "type": "enumeration",
-      "enum": ["online", "offline"],
-      "default": "offline"
-    },
-    "school_form_no": {
-      "type": "string"
-    },
-    "hostel_form_no": {
-      "type": "string"
-    },
-    "ssa_registered": {
-      "type": "boolean",
-      "default": false
-    },
-    "admission_type": {
-      "type": "enumeration",
-      "enum": ["new", "transfer", "readmission"],
-      "required": true
-    },
-    "previous_school_name": {
-      "type": "string"
-    },
-    "previous_class": {
-      "type": "integer"
-    },
+
     "status": {
       "type": "enumeration",
       "enum": ["Enquiry", "Waiting", "Enrolled", "Dropped"],

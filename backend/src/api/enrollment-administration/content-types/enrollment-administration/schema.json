@@ -1,0 +1,39 @@
+{
+  "kind": "collectionType",
+  "collectionName": "enrollment_administrations",
+  "info": {
+    "singularName": "enrollment-administration",
+    "pluralName": "enrollment-administrations",
+    "displayName": "Enrollment Administration"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "enrollment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::enrollment.enrollment",
+      "inversedBy": "administration"
+    },
+    "division": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::division.division"
+    },
+    "date_of_admission": {
+      "type": "date",
+      "required": true
+    },
+    "mode": {
+      "type": "enumeration",
+      "enum": ["online", "offline"],
+      "default": "offline"
+    },
+    "admission_type": {
+      "type": "enumeration",
+      "enum": ["new", "transfer", "readmission"],
+      "required": true
+    }
+  }
+}

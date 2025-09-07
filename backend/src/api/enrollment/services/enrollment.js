@@ -7,7 +7,11 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
       populate: {
         student: true,
         academic_year: true,
-        division: true
+        administration: {
+          populate: {
+            division: true
+          }
+        }
       }
     });
   },
@@ -37,7 +41,7 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
   },
 
   async enrollStudent(data) {
-    const { student_id, academic_year_id, ...enrollmentData } = data;
+    const { student_id, academic_year_id, division, date_of_admission, mode, admission_type, ...enrollmentData } = data;
     
     // Check if student is already enrolled
     const existingEnrollment = await strapi.entityService.findMany('api::enrollment.enrollment', {
@@ -61,7 +65,18 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
         student: student_id,
         academic_year: academic_year_id,
         gr_no: grNo,
-        date_enrolled: new Date().toISOString().split('T')[0]
+        date_enrolled: new Date().toISOString().split('T')[0],
+      }
+    });
+
+    // Create enrollment administration entry
+    await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
+      data: {
+        enrollment: enrollment.id,
+        division: division,
+        date_of_admission: date_of_admission,
+        mode: mode,
+        admission_type: admission_type,
       }
     });
 
@@ -69,7 +84,11 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
       populate: {
         student: true,
         academic_year: true,
-        division: true
+        administration: {
+          populate: {
+            division: true
+          }
+        }
       }
     });
   },

@@ -468,6 +468,50 @@ export interface ApiDivisionDivision extends Schema.CollectionType {
   };
 }
 
+export interface ApiEnrollmentAdministrationEnrollmentAdministration
+  extends Schema.CollectionType {
+  collectionName: 'enrollment_administrations';
+  info: {
+    displayName: 'Enrollment Administration';
+    pluralName: 'enrollment-administrations';
+    singularName: 'enrollment-administration';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    admission_type: Attribute.Enumeration<['new', 'transfer', 'readmission']> &
+      Attribute.Required;
+    createdAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::enrollment-administration.enrollment-administration',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    date_of_admission: Attribute.Date & Attribute.Required;
+    division: Attribute.Relation<
+      'api::enrollment-administration.enrollment-administration',
+      'manyToOne',
+      'api::division.division'
+    >;
+    enrollment: Attribute.Relation<
+      'api::enrollment-administration.enrollment-administration',
+      'oneToOne',
+      'api::enrollment.enrollment'
+    >;
+    mode: Attribute.Enumeration<['online', 'offline']> &
+      Attribute.DefaultTo<'offline'>;
+    updatedAt: Attribute.DateTime;
+    updatedBy: Attribute.Relation<
+      'api::enrollment-administration.enrollment-administration',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiEnrollmentEnrollment extends Schema.CollectionType {
   collectionName: 'enrollments';
   info: {
@@ -485,8 +529,11 @@ export interface ApiEnrollmentEnrollment extends Schema.CollectionType {
       'api::academic-year.academic-year'
     > &
       Attribute.Required;
-    admission_type: Attribute.Enumeration<['new', 'transfer', 'readmission']> &
-      Attribute.Required;
+    administration: Attribute.Relation<
+      'api::enrollment.enrollment',
+      'oneToOne',
+      'api::enrollment-administration.enrollment-administration'
+    >;
     class_standard: Attribute.Integer &
       Attribute.Required &
       Attribute.SetMinMax<
@@ -504,23 +551,8 @@ export interface ApiEnrollmentEnrollment extends Schema.CollectionType {
     > &
       Attribute.Private;
     date_enrolled: Attribute.Date & Attribute.Required;
-    date_of_admission: Attribute.Date & Attribute.Required;
-    division: Attribute.Relation<
-      'api::enrollment.enrollment',
-      'manyToOne',
-      'api::division.division'
-    >;
-    doa_backdated: Attribute.Boolean & Attribute.DefaultTo<false>;
     gr_no: Attribute.String & Attribute.Required & Attribute.Unique;
-    hostel_form_no: Attribute.String;
     lc_received: Attribute.Boolean & Attribute.DefaultTo<false>;
-    mode: Attribute.Enumeration<['online', 'offline']> &
-      Attribute.DefaultTo<'offline'>;
-    previous_class: Attribute.Integer;
-    previous_school_name: Attribute.String;
-    school_form_no: Attribute.String;
-    section: Attribute.String;
-    ssa_registered: Attribute.Boolean & Attribute.DefaultTo<false>;
     status: Attribute.Enumeration<
       ['Enquiry', 'Waiting', 'Enrolled', 'Dropped']
     > &
@@ -1222,6 +1254,7 @@ declare module '@strapi/types' {
       'api::academic-year.academic-year': ApiAcademicYearAcademicYear;
       'api::caste.caste': ApiCasteCaste;
       'api::division.division': ApiDivisionDivision;
+      'api::enrollment-administration.enrollment-administration': ApiEnrollmentAdministrationEnrollmentAdministration;
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::house.house': ApiHouseHouse;

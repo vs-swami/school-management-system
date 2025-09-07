@@ -38,6 +38,7 @@ export const EnrollmentList = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GR No.</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Division</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -48,6 +49,7 @@ export const EnrollmentList = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{enrollment.student?.first_name} {enrollment.student?.last_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enrollment.gr_no}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enrollment.class_standard}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enrollment.administration?.division?.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enrollment.status}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {enrollment.status === 'Enquiry' && (

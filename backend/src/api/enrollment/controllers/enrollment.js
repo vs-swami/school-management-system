@@ -6,6 +6,11 @@ module.exports = {
           student: true,
           academic_year: true,
           division: true,
+          administration: {
+            populate: {
+              division: true,
+            },
+          },
         },
       });
       ctx.body = enrollments;

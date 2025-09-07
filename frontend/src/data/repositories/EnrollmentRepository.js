@@ -41,7 +41,7 @@ const transformEnrollmentResponse = (enrollmentData) => {
 
 export const EnrollmentRepository = {
   getAllEnrollments: async () => {
-    const response = await apiClient.get('/enrollments', { params: { populate: '*', } });
+    const response = await apiClient.get('/enrollments', { params: { populate: '*,administration.division' } });
     return transformEnrollmentResponse(response.data);
   },
 
@@ -51,17 +51,31 @@ export const EnrollmentRepository = {
   },
 
   getEnrollmentById: async (id) => {
-    const response = await apiClient.get(`/enrollments/${id}`, { params: { populate: '*', } });
+    const response = await apiClient.get(`/enrollments/${id}`, { params: { populate: '*,administration.division' } });
     return transformEnrollmentResponse(response.data);
   },
 
   createEnrollment: async (data) => {
-    const response = await apiClient.post('/enrollments', { data });
+    const { division, date_of_admission, mode, admission_type, ...enrollmentData } = data;
+    const response = await apiClient.post('/enrollments', {
+      data: enrollmentData,
+      administration: {
+        division,
+        date_of_admission,
+        mode,
+        admission_type,
+      },
+    });
     return transformEnrollmentResponse(response.data);
   },
 
   deleteEnrollment: async (id) => {
     const response = await apiClient.delete(`/enrollments/${id}`);
     return response.data; // Deletion usually doesn't require transformation
+  },
+
+  updateEnrollmentAdministration: async (enrollmentId, administrationData) => {
+    const response = await apiClient.put(`/enrollment-administrations/${enrollmentId}`, { data: administrationData });
+    return transformEnrollmentResponse(response.data);
   },
 };

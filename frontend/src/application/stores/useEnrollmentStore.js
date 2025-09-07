@@ -22,12 +22,29 @@ export const useEnrollmentStore = create((set) => ({
       const response = await EnrollmentRepository.updateEnrollment(id, { status });
       set((state) => ({
         enrollments: state.enrollments.map((enrollment) =>
-          enrollment.id === id ? { ...enrollment, status: response.status } : enrollment
+          enrollment.id === id ? { ...enrollment, status: response.status, administration: response.administration } : enrollment
         ),
         loading: false,
       }));
     } catch (error) {
       set({ error: error, loading: false });
+    }
+  },
+
+  updateEnrollmentAdministration: async (enrollmentId, administrationData) => {
+    set({ loading: true, error: null });
+    try {
+      const response = await EnrollmentRepository.updateEnrollmentAdministration(enrollmentId, administrationData);
+      set((state) => ({
+        enrollments: state.enrollments.map((enrollment) =>
+          enrollment.id === enrollmentId ? { ...enrollment, administration: response } : enrollment
+        ),
+        loading: false,
+      }));
+      return response;
+    } catch (error) {
+      set({ error: error, loading: false });
+      throw error;
     }
   },
 }));
