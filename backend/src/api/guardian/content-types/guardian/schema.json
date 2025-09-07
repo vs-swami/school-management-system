@@ -45,6 +45,12 @@
     },
     "whatsapp_number": {
       "type": "string"
+    },
+    "documents": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student-document.student-document",
+      "mappedBy": "guardian"
     }
   }
 }

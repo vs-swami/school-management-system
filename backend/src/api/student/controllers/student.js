@@ -33,13 +33,20 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
   },
 
   async create(ctx) {
-    console.log('Creating student with data:', ctx.request.body);
     const { data } = ctx.request.body;
-    
+    const { files } = ctx.request;
+    console.log('Controller Create - Full ctx.request:', ctx.request);
+    console.log('Controller Create - Raw ctx.request.body:', ctx.request.body);
+    console.log('Controller Create - Raw ctx.request.files:', ctx.request.files);
+    console.log('Controller Create - Parsed Data:', data);
+    console.log('Controller Create - Files:', files);
+
     try {
-      const student = await strapi.service('api::student.student').createWithGuardians(data);
+      const student = await strapi.service('api::student.student').createStudentWithRelations(JSON.parse(data), files);
       
       // Log activity
+      // TODO: Re-implement audit logging once the audit-log service is available
+      /*
       await strapi.service('api::audit-log.audit-log').create({
         data: {
           action: 'CREATE_STUDENT',
@@ -49,6 +56,7 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
           details: `Created student: ${student.gr_full_name}`
         }
       });
+      */
       
       return this.transformResponse(student);
     } catch (error) {
@@ -59,15 +67,22 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
   async update(ctx) {
     const { id } = ctx.params;
     const { data } = ctx.request.body;
-    
+    const { files } = ctx.request;
+    console.log('Controller Update - Full ctx.request:', ctx.request);
+    console.log('Controller Update - Raw ctx.request.body:', ctx.request.body);
+    console.log('Controller Update - Raw ctx.request.files:', ctx.request.files);
+
+    console.log('Controller Update - Parsed Data:', data);
+    console.log('Controller Update - Files:', files);
+
     try {
       const oldStudent = await strapi.service('api::student.student').findOneWithRelations(id);
       
-      const updatedStudent = await strapi.entityService.update('api::student.student', id, {
-        data
-      });
+      const updatedStudent = await strapi.service('api::student.student').updateWithGuardians(id, JSON.parse(data), files);
       
       // Log activity
+      // TODO: Re-implement audit logging once the audit-log service is available
+      /*
       await strapi.service('api::audit-log.audit-log').create({
         data: {
           action: 'UPDATE_STUDENT',
@@ -81,10 +96,12 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
           }
         }
       });
+      */
       
       return this.transformResponse(updatedStudent);
     } catch (error) {
-      return ctx.badRequest('Error updating student', { error: error.message });
+      console.error('Student Controller - Update: Error during update', error); // Log the full error object
+      return ctx.badRequest('Error updating student', { error: error.message, details: error.details });
     }
   },
 

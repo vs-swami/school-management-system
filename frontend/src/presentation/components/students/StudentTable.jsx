@@ -8,12 +8,26 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
 
   // Sort students
   const sortedStudents = [...students].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
+    let aValue, bValue;
     
-    if (typeof aValue === 'string') {
-      aValue = aValue.toLowerCase();
-      bValue = bValue.toLowerCase();
+    if (sortField === 'name') {
+      aValue = a.gr_full_name ? a.gr_full_name.toLowerCase() : '';
+      bValue = b.gr_full_name ? b.gr_full_name.toLowerCase() : '';
+    } else if (sortField === 'studentId') {
+      aValue = a.ssa_uid || a.apaar_id || '';
+      bValue = b.ssa_uid || b.apaar_id || '';
+    } else if (sortField === 'grade') {
+      aValue = a.enrollments?.[0]?.division?.grade || '';
+      bValue = b.enrollments?.[0]?.division?.grade || '';
+    } else if (sortField === 'enrollmentDate') {
+      aValue = a.enrollments?.[0]?.academic_year?.start_date || a.createdAt || '';
+      bValue = b.enrollments?.[0]?.academic_year?.start_date || b.createdAt || '';
+    } else if (typeof a[sortField] === 'string') {
+      aValue = a[sortField].toLowerCase();
+      bValue = b[sortField].toLowerCase();
+    } else {
+        aValue = a[sortField];
+        bValue = b[sortField];
     }
     
     if (sortDirection === 'asc') {
@@ -168,7 +182,7 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 onClick={() => handleSort('name')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Student</span>
+                  <span>Name</span>
                   <SortIcon field="name" />
                 </div>
               </th>
@@ -177,7 +191,7 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 onClick={() => handleSort('studentId')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Student ID</span>
+                  <span>Student ID (SSA/APAAR)</span>
                   <SortIcon field="studentId" />
                 </div>
               </th>
@@ -194,19 +208,19 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 Section
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Contact
+                Guardian Contact
               </th>
               <th 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('enrollmentDate')}
               >
                 <div className="flex items-center space-x-1">
-                  <span>Enrollment</span>
+                  <span>Enrollment Date</span>
                   <SortIcon field="enrollmentDate" />
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Gender
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -229,42 +243,44 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                     <div className="flex-shrink-0 h-10 w-10">
                       <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="text-sm font-medium text-blue-800">
-                          {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
+                          {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
                         </span>
                       </div>
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {student.name || `${student.firstName || ''} ${student.lastName || ''}`.trim()}
+                        {student.gr_full_name}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {student.email || 'No email'}
+                        {student.dob ? `DoB: ${formatDate(student.dob)}` : ''}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {student.studentId || 'N/A'}
+                  {student.ssa_uid || student.apaar_id || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                    {student.grade || 'N/A'}
+                    {student.enrollments?.[0]?.division?.grade || 'N/A'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {student.section || 'N/A'}
+                  {student.enrollments?.[0]?.division?.name || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div>
-                    <div>{student.phone || 'No phone'}</div>
-                    <div className="text-xs">{student.emergencyContact || 'No emergency contact'}</div>
+                    {student.guardians?.[0]?.mobile || 'N/A'}
+                    {student.guardians?.[0]?.full_name && (
+                      <div className="text-xs">({student.guardians[0].full_name})</div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(student.enrollmentDate || student.createdAt)}
+                  {formatDate(student.enrollments?.[0]?.academic_year?.start_date || student.createdAt)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(student.status)}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {student.gender ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1) : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex space-x-2">

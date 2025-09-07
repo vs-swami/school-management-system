@@ -35,11 +35,15 @@ module.exports = {
       ]);
 
       // Recent activities (last 10)
+      // TODO: Re-implement audit logging once the audit-log content type is available
+      const recentActivities = []; // Temporarily empty array to prevent errors
+      /*
       const recentActivities = await strapi.entityService.findMany('api::audit-log.audit-log', {
         sort: { createdAt: 'desc' },
         limit: 10,
         populate: { user: true }
       });
+      */
 
       return {
         metrics: {
@@ -58,7 +62,7 @@ module.exports = {
           details: activity.details,
           user: activity.user?.username || 'System',
           createdAt: activity.createdAt
-        }))
+        })) // Use the empty array or actual data if re-enabled
       };
     } catch (error) {
       return ctx.badRequest('Error fetching dashboard metrics', { error: error.message });

@@ -15,11 +15,14 @@ export const StudentList = () => {
     filters,
     fetchStudents,
     searchStudents,
-    setFilters
+    setFilters,
+    updateStudent,
+    deleteStudent
   } = useStudentStore();
 
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingStudent, setEditingStudent] = useState(null);
 
   useEffect(() => {
     fetchStudents(filters);
@@ -39,7 +42,25 @@ export const StudentList = () => {
   };
 
   const handleAddStudent = () => {
+    setEditingStudent(null);
     setShowModal(true);
+  };
+
+  const handleEditStudent = (student) => {
+    setEditingStudent(student);
+    setShowModal(true);
+  };
+
+  const handleDeleteStudent = async (student) => {
+    if (window.confirm(`Are you sure you want to delete ${student.gr_full_name}?`)) {
+      const result = await deleteStudent(student.id);
+      if (result.success) {
+        fetchStudents(filters); // Refresh list after deletion
+      } else {
+        console.error('Error deleting student:', result.error);
+        // Potentially show an error message to the user
+      }
+    }
   };
 
   if (loading && students.length === 0) {
@@ -72,14 +93,18 @@ export const StudentList = () => {
       <StudentTable 
         students={students} 
         loading={loading}
+        onEdit={handleEditStudent}
+        onDelete={handleDeleteStudent}
+        onView={(student) => console.log('View student:', student.id)} // Placeholder for view action
       />
 
-      {/* Add Student Modal */}
+      {/* Add/Edit Student Modal */}
       {showModal && (
         <StudentModal
           isOpen={showModal}
           onClose={() => setShowModal(false)}
-          mode="create"
+          mode={editingStudent ? "edit" : "create"}
+          initialData={editingStudent}
         />
       )}
     </div>

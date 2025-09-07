@@ -10,19 +10,16 @@
     "draftAndPublish": false
   },
   "attributes": {
-    "doc_type": {
-      "type": "string",
+    "file": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images", "files"]
+    },
+    "document_type": {
+      "type": "enumeration",
+      "enum": ["student_photo", "guardian_photo", "birth_certificate", "aadhaar_card", "other"],
       "required": true
-    },
-    "file_url": {
-      "type": "string",
-      "required": true
-    },
-    "mime_type": {
-      "type": "string"
-    },
-    "file_hash": {
-      "type": "string"
     },
     "ocr_json": {
       "type": "json"
@@ -41,6 +38,12 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::student.student",
+      "inversedBy": "documents"
+    },
+    "guardian": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::guardian.guardian",
       "inversedBy": "documents"
     }
   }

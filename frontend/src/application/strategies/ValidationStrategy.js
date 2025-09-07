@@ -78,6 +78,7 @@ export class ValidationStrategy {
    * Validate required fields are present and not empty
    */
   validateRequiredFields(data, errors) {
+    console.log('Validating required fields:', data);
     this.requiredFields.forEach(field => {
       const value = field.includes('.') ? this.getNestedValue(data, field) : data[field];
       if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {

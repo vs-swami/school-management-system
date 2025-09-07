@@ -522,9 +522,10 @@ export interface ApiEnrollmentEnrollment extends Schema.CollectionType {
     section: Attribute.String;
     ssa_registered: Attribute.Boolean & Attribute.DefaultTo<false>;
     status: Attribute.Enumeration<
-      ['active', 'transferred', 'graduated', 'dropped']
+      ['Enquiry', 'Waiting', 'Enrolled', 'Dropped']
     > &
-      Attribute.DefaultTo<'active'>;
+      Attribute.Required &
+      Attribute.DefaultTo<'Enquiry'>;
     student: Attribute.Relation<
       'api::enrollment.enrollment',
       'manyToOne',
@@ -560,6 +561,11 @@ export interface ApiGuardianGuardian extends Schema.CollectionType {
       'admin::user'
     > &
       Attribute.Private;
+    documents: Attribute.Relation<
+      'api::guardian.guardian',
+      'oneToMany',
+      'api::student-document.student-document'
+    >;
     full_name: Attribute.String & Attribute.Required;
     mobile: Attribute.String & Attribute.Required;
     occupation: Attribute.String;
@@ -671,10 +677,22 @@ export interface ApiStudentDocumentStudentDocument
       'admin::user'
     > &
       Attribute.Private;
-    doc_type: Attribute.String & Attribute.Required;
-    file_hash: Attribute.String;
-    file_url: Attribute.String & Attribute.Required;
-    mime_type: Attribute.String;
+    document_type: Attribute.Enumeration<
+      [
+        'student_photo',
+        'guardian_photo',
+        'birth_certificate',
+        'aadhaar_card',
+        'other'
+      ]
+    > &
+      Attribute.Required;
+    file: Attribute.Media<'images' | 'files'> & Attribute.Required;
+    guardian: Attribute.Relation<
+      'api::student-document.student-document',
+      'manyToOne',
+      'api::guardian.guardian'
+    >;
     ocr_json: Attribute.JSON;
     student: Attribute.Relation<
       'api::student-document.student-document',

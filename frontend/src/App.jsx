@@ -6,6 +6,7 @@ import { MainLayout } from './presentation/layouts/MainLayout';
 import { Dashboard } from './presentation/pages/dashboard/Dashboard';
 import { StudentList } from './presentation/pages/students/StudentList';
 import { EnrollmentList } from './presentation/pages/enrollment/EnrollmentList';
+import { EnrollmentAdminPage } from './presentation/pages/enrollment/EnrollmentAdminPage';
 import { Login } from './presentation/pages/auth/Login';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 import  useAuthStore  from './application/stores/useAuthStore';
@@ -45,6 +46,7 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/students" element={<StudentList />} />
                       <Route path="/enrollments" element={<EnrollmentList />} />
+                      <Route path="/enrollments/:id/admin" element={<EnrollmentAdminPage />} />
                     </Routes>
                   </MainLayout>
                 </ProtectedRoute>

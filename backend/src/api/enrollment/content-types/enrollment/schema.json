@@ -88,8 +88,9 @@
     },
     "status": {
       "type": "enumeration",
-      "enum": ["active", "transferred", "graduated", "dropped"],
-      "default": "active"
+      "enum": ["Enquiry", "Waiting", "Enrolled", "Dropped"],
+      "default": "Enquiry",
+      "required": true
     }
   }
 }

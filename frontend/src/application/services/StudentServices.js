@@ -38,21 +38,20 @@ export class StudentService {
     }
   }
 
-  async createStudent(studentData) {
+  async createStudent(data, files) {
     try {
-      // Validate data
-      const validation = this.validationStrategy.validateStudent(studentData);
+      // Validate data (only the plain data, not files)
+      const validation = this.validationStrategy.validateStudent(data);
       if (!validation.isValid) {
-        console.log('Validation errors:', validation)
+        console.log('Validation errors:', validation);
         return {
           success: false,
           error: 'Validation failed',
           details: validation.errors,
-          
         };
       }
-      console.log('Creating student with data:', studentData);  
-      const student = await StudentRepository.create(studentData);
+      console.log('Creating student with data:', data);  
+      const student = await StudentRepository.create(data, files);
       
       // Audit log
       //await this.auditService.log('STUDENT_CREATED', {
@@ -72,10 +71,11 @@ export class StudentService {
     }
   }
 
-  async updateStudent(id, studentData) {
+  async updateStudent(id, data, files) { // Changed from studentData to data, added files
     try {
-      const validation = this.validationStrategy.validateStudent(studentData);
+      const validation = this.validationStrategy.validateStudent(data); // Validate data only
       if (!validation.isValid) {
+        console.log('Validation errors:', validation);
         return {
           success: false,
           error: 'Validation failed',
@@ -83,7 +83,7 @@ export class StudentService {
         };
       }
 
-      const student = await StudentRepository.update(id, studentData);
+      const student = await StudentRepository.update(id, data, files); // Pass data and files
       
       //await this.auditService.log('STUDENT_UPDATED', {
       //  studentId: id,
