@@ -33,6 +33,13 @@ This project consists of a Strapi backend and a React frontend for a school mana
     ```
     Strapi will usually open in your browser at `http://localhost:1337/admin`.
 
+4.  **Seed Initial Data (Optional but Recommended):**
+    To populate your database with initial academic years, divisions, and houses:
+    ```bash
+    npm run seed
+    ```
+    Run this command in the `backend` directory. Ensure your Strapi server is *stopped* before running the seed script, and restart it with `npm run develop` afterwards.
+
 5.  **Initial Admin User Setup:**
     If this is your first time running Strapi, it will prompt you to create an administrator account in the browser. Complete this setup.
 

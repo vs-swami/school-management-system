@@ -6,7 +6,8 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "build": "strapi build",
-    "strapi": "strapi"
+    "strapi": "strapi",
+    "seed": "node seed.js"
   },
   "dependencies": {
     "@strapi/plugin-i18n": "^4.15.5",

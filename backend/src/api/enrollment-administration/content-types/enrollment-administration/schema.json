@@ -34,6 +34,18 @@
       "type": "enumeration",
       "enum": ["new", "transfer", "readmission"],
       "required": true
+    },
+    "transport_details": {
+      "type": "text",
+      "private": false
+    },
+    "hostel_details": {
+      "type": "text",
+      "private": false
+    },
+    "fees_details": {
+      "type": "text",
+      "private": false
     }
   }
 }

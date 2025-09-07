@@ -500,8 +500,11 @@ export interface ApiEnrollmentAdministrationEnrollmentAdministration
       'oneToOne',
       'api::enrollment.enrollment'
     >;
+    fees_details: Attribute.Text;
+    hostel_details: Attribute.Text;
     mode: Attribute.Enumeration<['online', 'offline']> &
       Attribute.DefaultTo<'offline'>;
+    transport_details: Attribute.Text;
     updatedAt: Attribute.DateTime;
     updatedBy: Attribute.Relation<
       'api::enrollment-administration.enrollment-administration',

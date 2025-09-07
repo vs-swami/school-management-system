@@ -87,7 +87,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       console.log('Student Service - createStudentWithRelations: Processing Enrollments', JSON.stringify(enrollments, null, 2));
       for (const enrollmentData of enrollments) {
         try {
-          const { division, date_of_admission, mode, admission_type, gr_no: initialGrNo, ...baseEnrollmentData } = enrollmentData;
+          const { gr_no: initialGrNo, academic_year, ...baseEnrollmentData } = enrollmentData;
 
           const academicYear = await strapi.entityService.findOne('api::academic-year.academic-year', parseInt(academic_year));
           if (!academicYear) {
@@ -104,15 +104,6 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
             }
           });
 
-          await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
-            data: {
-              enrollment: createdEnrollment.id,
-              division: division,
-              date_of_admission: date_of_admission,
-              mode: mode,
-              admission_type: admission_type,
-            }
-          });
 
           console.log('Student Service - createStudentWithRelations: Successfully created enrollment', JSON.stringify(enrollmentData, null, 2));
         } catch (error) {
@@ -212,7 +203,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     if (enrollments && enrollments.length > 0) {
       for (const enrollmentData of enrollments) {
         try {
-          const { division, date_of_admission, mode, admission_type, ...baseEnrollmentData } = enrollmentData;
+          const { gr_no: initialGrNo, academic_year, ...baseEnrollmentData } = enrollmentData;
 
           if (enrollmentData.id) {
             // Update existing enrollment
@@ -221,47 +212,30 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
               data: { ...baseEnrollmentData, student: studentId } // Ensure student relation is maintained
             });
 
-            // Update or create enrollment administration entry
-            const existingAdmin = await strapi.entityService.findMany('api::enrollment-administration.enrollment-administration', {
-              filters: { enrollment: updatedEnrollment.id }
-            });
 
-            if (existingAdmin.length > 0) {
-              await strapi.entityService.update('api::enrollment-administration.enrollment-administration', existingAdmin[0].id, {
-                data: {
-                  division: division,
-                  date_of_admission: date_of_admission,
-                  mode: mode,
-                  admission_type: admission_type,
-                }
-              });
-            } else {
-              await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
-                data: {
-                  enrollment: updatedEnrollment.id,
-                  division: division,
-                  date_of_admission: date_of_admission,
-                  mode: mode,
-                  admission_type: admission_type,
-                }
-              });
-            }
 
           } else {
             // Create new enrollment
             console.log('Student Service - updateWithGuardians: Creating new enrollment with Data:', JSON.stringify(enrollmentData, null, 2));
+
+            const academicYear = await strapi.entityService.findOne('api::academic-year.academic-year', parseInt(academic_year));
+            if (!academicYear) {
+              throw new Error(`Academic year with ID ${academic_year} not found.`);
+            }
+            const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(baseEnrollmentData.class_standard, academicYear.id);
+
             const createdEnrollment = await strapi.entityService.create('api::enrollment.enrollment', {
-              data: { ...baseEnrollmentData, student: studentId }
+              data: { ...baseEnrollmentData, student: studentId, gr_no: grNo, academic_year: academicYear.id }
             });
 
             // Create new enrollment administration entry
             await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
               data: {
                 enrollment: createdEnrollment.id,
-                division: division,
-                date_of_admission: date_of_admission,
-                mode: mode,
-                admission_type: admission_type,
+                division: null,
+                date_of_admission: null,
+                mode: 'offline',
+                admission_type: null,
               }
             });
           }

@@ -27,8 +27,6 @@ const formatInitialData = (initialData, mode) => {
         class_standard: '',
         gr_no: '',
         date_enrolled: '',
-        date_of_admission: '',
-        admission_type: '',
       }],
       student_photo: null,
       guardian_photo: null,
@@ -108,7 +106,6 @@ const formatInitialData = (initialData, mode) => {
       ...enrollmentData,
       class_standard: parseInt(enrollmentData.class_standard, 10) || '',
       date_enrolled: enrollmentData.date_enrolled ? new Date(enrollmentData.date_enrolled).toISOString().split('T')[0] : '',
-      date_of_admission: enrollmentData.date_of_admission ? new Date(enrollmentData.date_of_admission).toISOString().split('T')[0] : '',
     }];
   } else {
     // No enrollment data, use empty enrollment
@@ -117,8 +114,6 @@ const formatInitialData = (initialData, mode) => {
       class_standard: '',
       gr_no: '',
       date_enrolled: '',
-      date_of_admission: '',
-      admission_type: '',
     }];
   }
 
@@ -142,7 +137,12 @@ const formatSubmissionData = (formData, mode, initialData) => {
   // The backend's service functions (createStudentWithRelations, updateWithGuardians)
   // are responsible for handling creation vs. update based on the presence of an 'id' within each item.
   submissionData.guardians = formData.guardians;
-  submissionData.enrollments = formData.enrollments;
+  submissionData.enrollments = formData.enrollments.map(enrollment => ({
+    academic_year: enrollment.academic_year,
+    class_standard: enrollment.class_standard,
+    gr_no: enrollment.gr_no,
+    date_enrolled: enrollment.date_enrolled,
+  }));
 
   return submissionData;
 };
@@ -409,31 +409,6 @@ export const StudentModal = ({ isOpen, onClose, mode = 'create', initialData = n
                   <label className="block text-sm font-medium text-gray-700 mb-1">Date Enrolled *</label>
                   <input type="date" {...register('enrollments.0.date_enrolled', { required: 'Date enrolled is required' })} className="input" />
                   {errors.enrollments?.[0]?.date_enrolled && (<p className="mt-1 text-sm text-red-600">{errors.enrollments[0].date_enrolled.message}</p>)}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Date of Admission *</label>
-                  <input type="date" {...register('enrollments.0.date_of_admission', { required: 'Date of admission is required' })} className="input" />
-                  {errors.enrollments?.[0]?.date_of_admission && (<p className="mt-1 text-sm text-red-600">{errors.enrollments[0].date_of_admission.message}</p>)}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Admission Type *</label>
-                  <select {...register('enrollments.0.admission_type', { required: 'Admission type is required' })} className="input">
-                    <option value="">Select Admission Type</option>
-                    <option value="new">New</option>
-                    <option value="transfer">Transfer</option>
-                    <option value="readmission">Readmission</option>
-                  </select>
-                  {errors.enrollments?.[0]?.admission_type && (<p className="mt-1 text-sm text-red-600">{errors.enrollments[0].admission_type.message}</p>)}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Division</label>
-                  <select {...register('enrollments.0.division')} className="input">
-                    <option value="">Select Division</option>
-                    {divisions.map(division => (
-                      <option key={division.id} value={division.id}>{division.name}</option>
-                    ))}
-                  </select>
-                  {errors.enrollments?.[0]?.division && (<p className="mt-1 text-sm text-red-600">{errors.enrollments[0].division.message}</p>)}
                 </div>
               </div>
             </div>
