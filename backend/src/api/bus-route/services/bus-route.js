@@ -96,5 +96,23 @@ module.exports = createCoreService('api::bus-route.bus-route', ({ strapi }) => (
 
   deg2rad(deg) {
     return deg * (Math.PI/180);
+  },
+
+  async findByStop(stopId) {
+    try {
+      const routes = await strapi.entityService.findMany('api::bus-route.bus-route', {
+        filters: {
+          bus_stops: { id: stopId }
+        },
+        populate: {
+          bus: true,
+          bus_stops: true
+        }
+      });
+
+      return routes;
+    } catch (error) {
+      throw new Error(`Error finding routes by stop: ${error.message}`);
+    }
   }
 }));

@@ -4,11 +4,9 @@
 const { createCoreService } = require('@strapi/strapi').factories;
 
 module.exports = createCoreService('api::bus-stop.bus-stop', ({ strapi }) => ({
-  
-  // Get stops with route information
-  async getStopsWithRoutes() {
+  async getStopsWithRoutes(busStopId) {
     try {
-      const stops = await strapi.entityService.findMany('api::bus-stop.bus-stop', {
+      const entry = await strapi.entityService.findOne('api::bus-stop.bus-stop', busStopId, {
         filters: { is_active: true },
         populate: {
           bus_routes: {
@@ -18,14 +16,9 @@ module.exports = createCoreService('api::bus-stop.bus-stop', ({ strapi }) => ({
           }
         }
       });
-
-      return stops.map(stop => ({
-        ...stop,
-        route_count: stop.bus_routes.length,
-        buses: stop.bus_routes.map(route => route.bus)
-      }));
+      return entry;
     } catch (error) {
-      throw new Error(`Error getting stops with routes: ${error.message}`);
+      throw new Error(`Error getting stop with routes: ${error.message}`);        
     }
   },
 

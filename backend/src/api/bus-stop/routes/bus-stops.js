@@ -10,6 +10,11 @@ module.exports = {
     },
     {
       method: 'GET',
+      path: '/bus-stops/with-routes/:id',
+      handler: 'bus-stop.findStopsWithRoutes',
+    },
+    {
+      method: 'GET',
       path: '/bus-stops/:id',
       handler: 'bus-stop.findOne',
     },

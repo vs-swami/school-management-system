@@ -33,7 +33,11 @@ export class BusStopRepository {
     try {
       const populateParams = {
         populate: {
-          bus_routes: true,
+          bus_routes: {
+            populate: {
+              bus: true
+            }
+          },
           pickup_allocations: true,
           drop_allocations: true,
         }
@@ -46,6 +50,22 @@ export class BusStopRepository {
       return transformBusStopResponse(response.data.data);
     } catch (error) {
       console.error('BusStopRepository Error in findAll:', error);
+      throw error;
+    }
+  }
+
+  static async getStopsWithRoutes(busStopId) {
+    try {
+      const populateParams = {
+        populate: {
+          bus_routes: true,
+        },
+      };
+      const response = await apiClient.get(`/bus-stops/with-routes/${busStopId}`, { params: populateParams });
+      console.log('BusStopRepository getStopsWithRoutes response:', response);
+      return transformBusStopResponse(response.data);
+    } catch (error) {
+      console.error('BusStopRepository Error in getStopsWithRoutes:', error);
       throw error;
     }
   }

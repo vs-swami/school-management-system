@@ -73,16 +73,7 @@ module.exports = createCoreController('api::bus-route.bus-route', ({ strapi }) =
     const { stopId } = ctx.params;
     
     try {
-      const routes = await strapi.entityService.findMany('api::bus-route.bus-route', {
-        filters: {
-          bus_stops: { id: stopId }
-        },
-        populate: {
-          bus: true,
-          bus_stops: true
-        }
-      });
-
+      const routes = await strapi.service('api::bus-route.bus-route').findByStop(stopId);
       return routes;
     } catch (error) {
       console.error('Error finding routes by stop:', error);
