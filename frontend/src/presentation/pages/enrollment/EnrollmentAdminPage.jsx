@@ -86,11 +86,11 @@ export const EnrollmentAdminPage = () => {
   if (!enrollment) return <div className="text-center py-4">Enrollment not found.</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-6 sm:p-10 font-sans antialiased text-gray-800 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 p-4 sm:p-6 md:p-8 lg:p-10 font-sans antialiased text-gray-800 animate-fade-in">
       <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
-        <div className="p-8 sm:p-10 border-b border-gray-200">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-blue-800 mb-2 text-center leading-tight">Enrollment Administration</h1>
-          <p className="text-center text-gray-600 text-lg">Manage administrative details for {enrollment.student?.first_name} {enrollment.student?.last_name}</p>
+        <div className="p-6 sm:p-8 border-b border-gray-200">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-blue-800 mb-2 text-center leading-tight">Enrollment Administration</h1>
+          <p className="text-center text-gray-600 text-base md:text-lg">Manage administrative details for {enrollment.student?.first_name} {enrollment.student?.last_name}</p>
         </div>
 
         <div className="p-8 sm:p-10">
@@ -99,7 +99,7 @@ export const EnrollmentAdminPage = () => {
             <h2 className="text-2xl font-bold text-blue-700 mb-5 flex items-center">
               Enrollment Information
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-4 gap-x-8 text-gray-700">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-4 gap-x-8 text-gray-700">
               <div>
                 <p className="text-sm font-medium text-gray-500">GR No:</p>
                 <p className="text-lg font-semibold">{enrollment.gr_no}</p>
@@ -110,7 +110,7 @@ export const EnrollmentAdminPage = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Status:</p>
-                <p className="text-lg font-semibold capitalize">{enrollment.status}</p>
+                <p className="text-lg font-semibold capitalize">{enrollment.enrollment_status}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-500">Date Enrolled:</p>
@@ -129,12 +129,12 @@ export const EnrollmentAdminPage = () => {
             ))}
           </div>
 
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Step {currentAdminStep + 1} of 4</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-8 text-center">Step {currentAdminStep + 1} of 4</h2>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             {currentAdminStep === 0 && (
-              <div className="card p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Calendar className="w-7 h-7 mr-3 text-blue-500" /> Admission Information</h3>
+              <div className="card p-6 sm:p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
+                <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Calendar className="w-6 h-6 mr-3 text-blue-500" /> Admission Information</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="division" className="block text-sm font-medium text-gray-700 mb-2">Division</label>
@@ -143,7 +143,7 @@ export const EnrollmentAdminPage = () => {
                       name="division"
                       value={adminData.division}
                       onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                     >
                       <option value="">Select Division</option>
                       {divisions.map((div) => (
@@ -161,7 +161,7 @@ export const EnrollmentAdminPage = () => {
                       name="date_of_admission"
                       value={adminData.date_of_admission}
                       onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                     />
                   </div>
                   <div>
@@ -171,7 +171,7 @@ export const EnrollmentAdminPage = () => {
                       name="mode"
                       value={adminData.mode}
                       onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                     >
                       <option value="">Select Mode</option>
                       <option value="online">Online</option>
@@ -185,7 +185,7 @@ export const EnrollmentAdminPage = () => {
                       name="admission_type"
                       value={adminData.admission_type}
                       onChange={handleChange}
-                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                      className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                     >
                       <option value="">Select Admission Type</option>
                       <option value="new">New</option>
@@ -198,8 +198,8 @@ export const EnrollmentAdminPage = () => {
             )}
 
             {currentAdminStep === 1 && (
-              <div className="card p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Truck className="w-7 h-7 mr-3 text-green-600" /> Transport Details</h3>
+              <div className="card p-6 sm:p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
+                <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Truck className="w-6 h-6 mr-3 text-green-600" /> Transport Details</h3>
                 <div>
                   <label htmlFor="transport_details" className="block text-sm font-medium text-gray-700 mb-2">Transport Details</label>
                   <textarea
@@ -208,15 +208,15 @@ export const EnrollmentAdminPage = () => {
                     value={adminData.transport_details}
                     onChange={handleChange}
                     rows="6"
-                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                   ></textarea>
                 </div>
               </div>
             )}
 
             {currentAdminStep === 2 && (
-              <div className="card p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Home className="w-7 h-7 mr-3 text-purple-600" /> Hostel Details</h3>
+              <div className="card p-6 sm:p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
+                <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6 flex items-center"><Home className="w-6 h-6 mr-3 text-purple-600" /> Hostel Details</h3>
                 <div>
                   <label htmlFor="hostel_details" className="block text-sm font-medium text-gray-700 mb-2">Hostel Details</label>
                   <textarea
@@ -225,15 +225,15 @@ export const EnrollmentAdminPage = () => {
                     value={adminData.hostel_details}
                     onChange={handleChange}
                     rows="6"
-                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                   ></textarea>
                 </div>
               </div>
             )}
 
             {currentAdminStep === 3 && (
-              <div className="card p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
-                <h3 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center"><DollarSign className="w-7 h-7 mr-3 text-yellow-600" /> Fees Details</h3>
+              <div className="card p-6 sm:p-8 bg-white rounded-2xl shadow-lg border border-gray-200 animate-fade-in">
+                <h3 className="text-xl md:text-2xl font-semibold text-gray-800 mb-6 flex items-center"><DollarSign className="w-6 h-6 mr-3 text-yellow-600" /> Fees Details</h3>
                 <div>
                   <label htmlFor="fees_details" className="block text-sm font-medium text-gray-700 mb-2">Fees Details</label>
                   <textarea
@@ -242,7 +242,7 @@ export const EnrollmentAdminPage = () => {
                     value={adminData.fees_details}
                     onChange={handleChange}
                     rows="6"
-                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 bg-gray-50 text-gray-700 focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
+                    className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-2 sm:p-3 bg-gray-50 text-gray-700 text-sm sm:text-base focus:ring-blue-500 focus:border-blue-500 transition duration-200 ease-in-out"
                   ></textarea>
                 </div>
               </div>
@@ -253,16 +253,16 @@ export const EnrollmentAdminPage = () => {
                 <button
                   type="button"
                   onClick={() => setCurrentAdminStep(prev => prev - 1)}
-                  className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition duration-300 ease-in-out shadow-sm"
+                  className="flex items-center px-4 py-2 sm:px-6 sm:py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition duration-300 ease-in-out shadow-sm text-sm sm:text-base"
                 >
-                  <ArrowLeft className="w-5 h-5 mr-2" /> Previous
+                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Previous
                 </button>
               )}
               <button
                 type="submit"
-                className="flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md"
+                className="flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md text-sm sm:text-base"
               >
-                {currentAdminStep < 3 ? (<>Next <ArrowRight className="w-5 h-5 ml-2" /></>) : 'Save Administration Details'}
+                {currentAdminStep < 3 ? (<>Next <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" /></>) : 'Save Administration Details'}
               </button>
             </div>
           </form>

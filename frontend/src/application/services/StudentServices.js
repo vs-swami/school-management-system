@@ -1,10 +1,13 @@
 import { StudentRepository } from '../../data/repositories/StudentRepository';
 import { ValidationStrategy } from '../strategies/ValidationStrategy';
+import { StudentDocumentRepository } from '../../data/repositories/StudentDocumentRepository'; // Import the new repository
+import { EnrollmentService } from './EnrollmentService'; // NEW: Import EnrollmentService
 //import { AuditService } from './AuditService';
 
 export class StudentService {
   constructor() {
     this.validationStrategy = new ValidationStrategy();
+    this.enrollmentService = new EnrollmentService(); // NEW: Initialize EnrollmentService
     //this.auditService = new AuditService();
   }
 
@@ -38,7 +41,7 @@ export class StudentService {
     }
   }
 
-  async createStudent(data, files) {
+  async createStudent(data) { // Removed files parameter
     try {
       // Validate data (only the plain data, not files)
       const validation = this.validationStrategy.validateStudent(data);
@@ -51,7 +54,7 @@ export class StudentService {
         };
       }
       console.log('Creating student with data:', data);  
-      const student = await StudentRepository.create(data, files);
+      const student = await StudentRepository.create(data); // Removed files parameter
       
       // Audit log
       //await this.auditService.log('STUDENT_CREATED', {
@@ -71,7 +74,7 @@ export class StudentService {
     }
   }
 
-  async updateStudent(id, data, files) { // Changed from studentData to data, added files
+  async updateStudent(id, data) { // Removed files parameter
     try {
       const validation = this.validationStrategy.validateStudent(data); // Validate data only
       if (!validation.isValid) {
@@ -83,7 +86,7 @@ export class StudentService {
         };
       }
 
-      const student = await StudentRepository.update(id, data, files); // Pass data and files
+      const student = await StudentRepository.update(id, data); // Removed files parameter
       
       //await this.auditService.log('STUDENT_UPDATED', {
       //  studentId: id,
@@ -99,6 +102,62 @@ export class StudentService {
         success: false,
         error: error.message,
       };
+    }
+  }
+
+  async rejectStudent(studentId, enrollmentData) { // Modified to accept studentId and enrollmentData
+    try {
+      if (!enrollmentData || !enrollmentData.id) {
+        throw new Error('Enrollment data or ID is missing for rejection.');
+      }
+
+      const enrollmentId = enrollmentData.id;
+      const enrollment_status = enrollmentData.enrollment_status; // Assuming enrollment_status is 'Rejected'
+
+      // Call the new EnrollmentService method
+      const result = await this.enrollmentService.updateEnrollmentStatus(enrollmentId, enrollment_status);
+
+      if (result.success) {
+        // Optionally, refetch student to update local state if needed elsewhere
+        // await this.getStudentById(studentId);
+        return { success: true, data: result.data };
+      } else {
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Error in StudentService rejecting student:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+
+  async uploadStudentDocument(studentId, documentType, file, description = null) {
+    try {
+      const document = await StudentDocumentRepository.create(studentId, documentType, file, description);
+      return { success: true, data: document };
+    } catch (error) {
+      console.error('Error uploading student document:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async updateStudentDocument(documentId, studentId, documentType, file, description = null) {
+    try {
+      const document = await StudentDocumentRepository.update(documentId, studentId, documentType, file, description);
+      return { success: true, data: document };
+    } catch (error) {
+      console.error('Error updating student document:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  async deleteStudentDocument(documentId) {
+    try {
+      const result = await StudentDocumentRepository.delete(documentId);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error('Error deleting student document:', error);
+      return { success: false, error: error.message };
     }
   }
 

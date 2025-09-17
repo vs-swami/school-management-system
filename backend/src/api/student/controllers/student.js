@@ -42,8 +42,20 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
     console.log('Controller Create - Files:', files);
 
     try {
-      const student = await strapi.service('api::student.student').createStudentWithRelations(JSON.parse(data), files);
+      const student = await strapi.service('api::student.student').createStudent(data);
       
+      // Log the student object before transformation
+      console.log('Controller Create - Student object before transformResponse:', JSON.stringify(student, null, 2));
+
+      let transformedResponse;
+      try {
+        transformedResponse = this.transformResponse(student);
+        console.log('Controller Create - Transformed response:', JSON.stringify(transformedResponse, null, 2));
+      } catch (transformError) {
+        console.error('Controller Create - Error during transformResponse:', transformError);
+        return ctx.badRequest('Error transforming response', { error: transformError.message, details: transformError });
+      }
+
       // Log activity
       // TODO: Re-implement audit logging once the audit-log service is available
       /*
@@ -58,7 +70,7 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
       });
       */
       
-      return this.transformResponse(student);
+      return transformedResponse;
     } catch (error) {
       return ctx.badRequest('Error creating student', { error: error.message });
     }
@@ -78,7 +90,7 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
     try {
       const oldStudent = await strapi.service('api::student.student').findOneWithRelations(id);
       
-      const updatedStudent = await strapi.service('api::student.student').updateWithGuardians(id, JSON.parse(data), files);
+      const updatedStudent = await strapi.service('api::student.student').updateStudent(id, data);
       
       // Log activity
       // TODO: Re-implement audit logging once the audit-log service is available
@@ -112,5 +124,73 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
     } catch (error) {
       return ctx.badRequest('Error fetching statistics', { error: error.message });
     }
-  }
+  },
+
+  async uploadDocument(ctx) {
+    const { data } = ctx.request.body;
+    const { files } = ctx.request;
+    
+    console.log('Controller uploadDocument - Raw ctx.request.body:', ctx.request.body);
+    console.log('Controller uploadDocument - Raw ctx.request.files:', ctx.request.files);
+    console.log('Controller uploadDocument - Parsed Data:', data);
+    console.log('Controller uploadDocument - Files:', files);
+
+    try {
+      let parsedData;
+      try {
+        parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+      } catch (parseError) {
+        return ctx.badRequest('Invalid JSON in data field', { error: parseError.message });
+      }
+
+      // Handle file upload first if files exist
+      let fileId = null;
+      if (files && Object.keys(files).length > 0) {
+        const fileToUpload = files.files || files.file || Object.values(files)[0];
+        
+        if (fileToUpload) {
+          const uploadedFiles = await strapi.plugins.upload.services.upload.upload({
+            data: {},
+            files: fileToUpload,
+          });
+          
+          if (uploadedFiles && uploadedFiles.length > 0) {
+            fileId = uploadedFiles[0].id;
+          }
+        }
+      }
+
+      // Create student document with file ID
+      const documentData = {
+        ...parsedData,
+        ...(fileId && { file: fileId }),
+      };
+
+      const studentDocument = await strapi.service('api::student.student').createStudentDocument(documentData);
+      
+      return this.transformResponse(studentDocument);
+    } catch (error) {
+      console.error('Student Controller - uploadDocument: Error', error);
+      return ctx.badRequest('Error uploading document', { error: error.message });
+    }
+  },
+
+  // NEW: Proxy controller to handle exam results creation/update for a specific student
+  async proxyCreateOrUpdateExamResults(ctx) {
+    console.log('proxyCreateOrUpdateExamResults controller hit!'); // DEBUG
+    const { studentId } = ctx.params;
+    const { examResults } = ctx.request.body;
+
+    if (!studentId || !examResults || !Array.isArray(examResults)) {
+      return ctx.badRequest('Student ID and an array of exam results are required.');
+    }
+
+    try {
+      const results = await strapi.service('api::exam-result.exam-result').createOrUpdateBulk(studentId, examResults);
+      return ctx.send({ success: true, data: results });
+    } catch (error) {
+      strapi.log.error(`Error in proxyCreateOrUpdateExamResults: ${error.message}`);
+      return ctx.internalServerError('An error occurred during bulk exam results update.', { error: error.message });
+    }
+  },
 }));

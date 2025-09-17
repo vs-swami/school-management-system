@@ -11,6 +11,7 @@ import { Login } from './presentation/pages/auth/Login';
 import { ProtectedRoute } from './presentation/components/auth/ProtectedRoute';
 import  useAuthStore  from './application/stores/useAuthStore';
 import './styles/globals.css';
+import { StudentPage } from './presentation/pages/students/StudentPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,8 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/students" element={<StudentList />} />
+                      <Route path="/students/new" element={<StudentPage mode="create" />} />
+                      <Route path="/students/edit/:id" element={<StudentPage mode="edit" />} />
                       <Route path="/enrollments" element={<EnrollmentList />} />
                       <Route path="/enrollments/:id/admin" element={<EnrollmentAdminPage />} />
                     </Routes>

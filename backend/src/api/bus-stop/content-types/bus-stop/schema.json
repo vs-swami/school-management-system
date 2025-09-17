@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "bus_stops",
+  "info": {
+    "singularName": "bus-stop",
+    "pluralName": "bus-stops",
+    "displayName": "Bus Stop"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "stop_name": {
+      "type": "string",
+      "required": true
+    },
+    "location": {
+      "type": "string",
+      "required": true
+    },
+    "address": {
+      "type": "text"
+    },
+    "coordinates": {
+      "type": "json",
+      "description": "GPS coordinates {lat: number, lng: number}"
+    },
+    "landmark": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "bus_routes": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::bus-route.bus-route",
+      "mappedBy": "bus_stops"
+    },
+    "pickup_allocations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::seat-allocation.seat-allocation",
+      "mappedBy": "pickup_stop"
+    },
+    "drop_allocations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::seat-allocation.seat-allocation",
+      "mappedBy": "drop_stop"
+    }
+  }
+}

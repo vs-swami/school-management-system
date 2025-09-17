@@ -98,15 +98,15 @@ export const QuickActions = () => {
   };
 
   return (
-    <div className="card p-6">
+    <div className="card p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Quick Actions</h3>
-        <button className="text-sm text-primary-600 hover:text-primary-700">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Quick Actions</h3>
+        <button className="text-sm sm:text-base text-primary-600 hover:text-primary-700">
           Customize
         </button>
       </div>
       
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-4">
         {actions.map((action) => (
           <button
             key={action.id}
@@ -124,7 +124,7 @@ export const QuickActions = () => {
                 <p className="text-sm font-medium mb-1">
                   {action.title}
                 </p>
-                <p className="text-xs opacity-75">
+                <p className="text-xs sm:text-sm opacity-75">
                   {action.description}
                 </p>
               </div>
@@ -136,7 +136,7 @@ export const QuickActions = () => {
       {/* View All Actions Button */}
       <div className="mt-4 pt-4 border-t border-gray-200">
         <button 
-          className="w-full text-center text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="w-full text-center text-sm sm:text-base text-gray-600 hover:text-gray-900 transition-colors py-2"
           onClick={() => console.log('View all actions clicked')}
         >
           View All Actions

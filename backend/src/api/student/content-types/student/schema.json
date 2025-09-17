@@ -19,7 +19,11 @@
     },
     "legal_name_source": {
       "type": "enumeration",
-      "enum": ["gr", "aadhaar", "manual"],
+      "enum": [
+        "gr",
+        "aadhaar",
+        "manual"
+      ],
       "default": "gr"
     },
     "first_name": {
@@ -35,7 +39,11 @@
     },
     "gender": {
       "type": "enumeration",
-      "enum": ["male", "female", "other"],
+      "enum": [
+        "male",
+        "female",
+        "other"
+      ],
       "required": true
     },
     "dob": {
@@ -78,7 +86,7 @@
     },
     "enrollments": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "oneToOne",
       "target": "api::enrollment.enrollment",
       "mappedBy": "student"
     },
@@ -86,6 +94,12 @@
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::student-document.student-document",
+      "mappedBy": "student"
+    },
+    "exam_results": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::exam-result.exam-result",
       "mappedBy": "student"
     }
   }

@@ -2,16 +2,14 @@ module.exports = {
   async findEnrollments(ctx) {
     try {
       const enrollments = await strapi.entityService.findMany('api::enrollment.enrollment', {
-        populate: {
-          student: true,
-          academic_year: true,
-          division: true,
-          administration: {
-            populate: {
-              division: true,
-            },
-          },
-        },
+        populate: [
+          'student',
+          'academic_year',
+          'division',
+          'administration.division',
+          'class',
+          'admission_type',
+        ],
       });
       ctx.body = enrollments;
     } catch (err) {
@@ -22,26 +20,27 @@ module.exports = {
 
   async updateStatus(ctx) {
     const { id } = ctx.params;
-    const { status } = ctx.request.body;
+    // Ensure you fetch the full enrollment object to bypass validation if necessary
+    const { enrollment_status } = ctx.request.body;
 
-    if (!status) {
-      return ctx.badRequest('Status is required');
+    if (!enrollment_status) {
+      return ctx.badRequest('Enrollment status is required.');
     }
 
-    const validStatuses = ['Enquiry', 'Waiting', 'Enrolled', 'Dropped'];
-    if (!validStatuses.includes(status)) {
-      return ctx.badRequest('Invalid status provided');
+    const validStatuses = ['Enquiry', 'Waiting', 'Enrolled', 'Rejected', 'Processing']; // Include 'Processing'
+    if (!validStatuses.includes(enrollment_status)) {
+      return ctx.badRequest('Invalid enrollment status provided.');
     }
 
     try {
       const updatedEnrollment = await strapi.entityService.update(
         'api::enrollment.enrollment',
         id,
-        { data: { status } }
+        { data: { enrollment_status } }
       );
-      return { data: updatedEnrollment };
-    } catch (err) {
-      ctx.body = err;
+      return this.transformResponse(updatedEnrollment);
+    } catch (error) {
+      strapi.log.error(`Error updating enrollment status: ${error.message}`);
       ctx.status = 500;
     }
   },

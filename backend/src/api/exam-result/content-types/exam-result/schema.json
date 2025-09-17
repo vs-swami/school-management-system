@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "exam_results",
+  "info": {
+    "singularName": "exam-result",
+    "pluralName": "exam-results",
+    "displayName": "Exam Result",
+    "description": "Stores individual exam results for students"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student",
+      "inversedBy": "exam_results"
+    },
+    "exam_type": {
+      "type": "string",
+      "required": true
+    },
+    "subject": {
+      "type": "string",
+      "required": true
+    },
+    "marks_obtained": {
+      "type": "integer",
+      "required": true
+    },
+    "total_marks": {
+      "type": "integer",
+      "required": true
+    },
+    "grade": {
+      "type": "string"
+    },
+    "pass_fail": {
+      "type": "boolean"
+    },
+    "academic_year": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::academic-year.academic-year"
+    },
+    "class": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::class.class"
+    }
+  }
+}

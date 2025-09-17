@@ -27,13 +27,11 @@
     },
     "mode": {
       "type": "enumeration",
-      "enum": ["online", "offline"],
+      "enum": [
+        "online",
+        "offline"
+      ],
       "default": "offline"
-    },
-    "admission_type": {
-      "type": "enumeration",
-      "enum": ["new", "transfer", "readmission"],
-      "required": true
     },
     "transport_details": {
       "type": "text",
@@ -46,6 +44,12 @@
     "fees_details": {
       "type": "text",
       "private": false
+    },
+    "seat_allocations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::seat-allocation.seat-allocation",
+      "mappedBy": "enrollment_administration"
     }
   }
 }

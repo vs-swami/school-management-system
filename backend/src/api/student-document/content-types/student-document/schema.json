@@ -34,6 +34,9 @@
     "uploaded_at": {
       "type": "datetime"
     },
+    "description": {
+      "type": "string"
+    },
     "student": {
       "type": "relation",
       "relation": "manyToOne",

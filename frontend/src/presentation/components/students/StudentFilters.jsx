@@ -10,7 +10,7 @@ export const StudentFilters = ({
   const [localFilters, setLocalFilters] = useState({
     grade: filters.grade || '',
     section: filters.section || '',
-    status: filters.status || '',
+    enrollment_status: filters.enrollment_status || '',
     academicYear: filters.academicYear || '',
     dateRange: filters.dateRange || '',
     ...filters
@@ -46,13 +46,14 @@ export const StudentFilters = ({
     { value: 'D', label: 'Section D' }
   ];
 
-  // Status options
-  const statusOptions = [
+  // Enrollment Status options
+  const enrollmentStatusOptions = [
     { value: '', label: 'All Status' },
-    { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'suspended', label: 'Suspended' }
+    { value: 'Enquiry', label: 'Enquiry' },
+    { value: 'Waiting', label: 'Waiting' },
+    { value: 'Enrolled', label: 'Enrolled' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'Processing', label: 'Processing' },
   ];
 
   // Date range options
@@ -75,7 +76,7 @@ export const StudentFilters = ({
     const resetFilters = {
       grade: '',
       section: '',
-      status: '',
+      enrollment_status: '',
       academicYear: '',
       dateRange: ''
     };
@@ -187,24 +188,39 @@ export const StudentFilters = ({
               </select>
             </div>
 
-            {/* Status Filter */}
+            {/* Enrollment Status Filter */}
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label htmlFor="enrollment_status" className="block text-sm font-medium text-gray-700 mb-1">Enrollment Status</label>
               <select
-                id="status"
-                value={localFilters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+                id="enrollment_status"
+                value={localFilters.enrollment_status}
+                onChange={(e) => handleFilterChange('enrollment_status', e.target.value)}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
-                {statusOptions.map(option => (
+                {enrollmentStatusOptions.map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
             </div>
+
+            {/* Academic Year Filter (Assuming you have this data) */}
+            {/* <div>
+              <label htmlFor="academicYear" className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+              <select
+                id="academicYear"
+                value={localFilters.academicYear}
+                onChange={(e) => handleFilterChange('academicYear', e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                {academicYearOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div> */}
 
             {/* Date Range Filter */}
             <div>
@@ -289,8 +305,8 @@ export const StudentFilters = ({
                   return `Grade: ${gradeOptions.find(opt => opt.value === value)?.label || value}`;
                 case 'section':
                   return `Section: ${sectionOptions.find(opt => opt.value === value)?.label || value}`;
-                case 'status':
-                  return `Status: ${statusOptions.find(opt => opt.value === value)?.label || value}`;
+                case 'enrollment_status':
+                  return `Status: ${enrollmentStatusOptions.find(opt => opt.value === value)?.label || value}`;
                 case 'dateRange':
                   return `Date: ${dateRangeOptions.find(opt => opt.value === value)?.label || value}`;
                 default:

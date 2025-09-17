@@ -1,0 +1,46 @@
+{
+  "kind": "collectionType",
+  "collectionName": "buses",
+  "info": {
+    "singularName": "bus",
+    "pluralName": "buses",
+    "displayName": "Bus"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "bus_number": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "license_plate": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "driver_name": {
+      "type": "string",
+      "required": true
+    },
+    "total_seats": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "max": 100
+    },
+    "bus_routes": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::bus-route.bus-route",
+      "mappedBy": "bus"
+    },
+    "seat_allocations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::seat-allocation.seat-allocation",
+      "mappedBy": "bus"
+    }
+  }
+}

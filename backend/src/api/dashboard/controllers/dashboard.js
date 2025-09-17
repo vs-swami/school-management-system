@@ -4,7 +4,7 @@ module.exports = {
   async getMetrics(ctx) {
     try {
       // Get current academic year
-      const currentYear = await strapi.entityService.findMany('api::academic-year.academic-year', {
+      const currentYear = await strapi.documents('api::academic-year.academic-year').findMany({
         filters: { is_current: true },
         limit: 1
       });
@@ -23,11 +23,11 @@ module.exports = {
         studentStats,
         enrollmentStats
       ] = await Promise.all([
-        strapi.entityService.count('api::student.student'),
-        strapi.entityService.count('api::enrollment.enrollment', {
+        strapi.documents('api::student.student').count(),
+        strapi.documents('api::enrollment.enrollment').count({
           filters: { academic_year: yearId }
         }),
-        strapi.entityService.count('api::student-document.student-document', {
+        strapi.documents('api::student-document.student-document').count({
           filters: { verified: false }
         }),
         strapi.service('api::student.student').getStatistics(),

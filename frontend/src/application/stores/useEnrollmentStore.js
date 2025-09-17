@@ -16,18 +16,20 @@ export const useEnrollmentStore = create((set) => ({
     }
   },
 
-  updateEnrollmentStatus: async (id, status) => {
+  updateEnrollmentStatus: async (id, enrollment_status) => {
     set({ loading: true, error: null });
     try {
-      const response = await EnrollmentRepository.updateEnrollment(id, { status });
+      const response = await EnrollmentRepository.updateEnrollment(id, { enrollment_status });
       set((state) => ({
         enrollments: state.enrollments.map((enrollment) =>
-          enrollment.id === id ? { ...enrollment, status: response.status, administration: response.administration } : enrollment
+          enrollment.id === id ? { ...enrollment, enrollment_status: response.enrollment_status, administration: response.administration } : enrollment
         ),
         loading: false,
       }));
+      return { success: true, data: response };
     } catch (error) {
-      set({ error: error, loading: false });
+      set({ loading: false, error: error.message });
+      return { success: false, error: error.message };
     }
   },
 

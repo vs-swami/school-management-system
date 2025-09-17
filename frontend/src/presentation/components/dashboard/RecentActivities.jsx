@@ -72,10 +72,10 @@ export const RecentActivities = ({ activities = [] }) => {
   };
 
   return (
-    <div className="card p-6">
+    <div className="card p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Recent Activities</h3>
-        <button className="text-sm text-primary-600 hover:text-primary-700">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Recent Activities</h3>
+        <button className="text-sm sm:text-base text-primary-600 hover:text-primary-700">
           View All
         </button>
       </div>

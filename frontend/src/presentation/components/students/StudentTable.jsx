@@ -71,19 +71,19 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (enrollment_status) => {
     const statusClasses = {
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      suspended: 'bg-red-100 text-red-800'
+      Enquiry: 'bg-blue-100 text-blue-800',
+      Waiting: 'bg-yellow-100 text-yellow-800',
+      Enrolled: 'bg-green-100 text-green-800',
+      Rejected: 'bg-red-100 text-red-800',
+      Processing: 'bg-purple-100 text-purple-800',
+      default: 'bg-gray-100 text-gray-800',
     };
-
-    const className = statusClasses[status] || statusClasses.active;
-
+    const className = statusClasses[enrollment_status] || statusClasses.default;
     return (
-      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${className}`}>
-        {status?.charAt(0).toUpperCase() + status?.slice(1) || 'Active'}
+      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${className}`}>
+        {enrollment_status?.charAt(0).toUpperCase() + enrollment_status?.slice(1) || 'N/A'}
       </span>
     );
   };

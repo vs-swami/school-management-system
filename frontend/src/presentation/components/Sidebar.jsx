@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, BookOpen, FileText } from 'lucide-react';
+import { Home, Users, BookOpen, FileText, X } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -9,12 +9,22 @@ const navigation = [
   { name: 'Reports', href: '/reports', icon: FileText },
 ];
 
-export const Sidebar = () => {
+export const Sidebar = ({ toggleSidebar }) => {
   const location = useLocation();
 
   return (
-    <aside className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen">
-      <nav className="p-4">
+    <aside className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen flex flex-col">
+      <div className="p-4 flex justify-between items-center md:hidden">
+        <h2 className="text-lg font-semibold text-gray-900">Menu</h2>
+        <button
+          className="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
+          aria-label="Close sidebar"
+          onClick={toggleSidebar}
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+      <nav className="p-4 flex-1">
         <ul className="space-y-2">
           {navigation.map((item) => {
             const Icon = item.icon;

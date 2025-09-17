@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useStudentStore } from '../../../application/stores/useStudentStore';
+import useStudentStore from '../../../application/stores/useStudentStore';
 import { StudentTable } from '../../components/students/StudentTable';
 import { StudentFilters } from '../../components/students/StudentFilters';
-import { StudentModal } from '../../components/students/StudentModal';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorAlert } from '../../components/common/ErrorAlert';
+import { useNavigate } from 'react-router-dom';
 
 export const StudentList = () => {
   const {
@@ -20,9 +20,8 @@ export const StudentList = () => {
     deleteStudent
   } = useStudentStore();
 
-  const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editingStudent, setEditingStudent] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStudents(filters);
@@ -42,13 +41,12 @@ export const StudentList = () => {
   };
 
   const handleAddStudent = () => {
-    setEditingStudent(null);
-    setShowModal(true);
+    navigate('/students/new');
   };
 
   const handleEditStudent = (student) => {
-    setEditingStudent(student);
-    setShowModal(true);
+    console.log('Editing student:', student);
+    navigate(`/students/edit/${student.id}`);
   };
 
   const handleDeleteStudent = async (student) => {
@@ -68,10 +66,10 @@ export const StudentList = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           Student Management
         </h1>
         <Button onClick={handleAddStudent} variant="primary">
@@ -97,16 +95,6 @@ export const StudentList = () => {
         onDelete={handleDeleteStudent}
         onView={(student) => console.log('View student:', student.id)} // Placeholder for view action
       />
-
-      {/* Add/Edit Student Modal */}
-      {showModal && (
-        <StudentModal
-          isOpen={showModal}
-          onClose={() => setShowModal(false)}
-          mode={editingStudent ? "edit" : "create"}
-          initialData={editingStudent}
-        />
-      )}
     </div>
   );
 };

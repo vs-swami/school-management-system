@@ -4,7 +4,8 @@
   "info": {
     "singularName": "enrollment",
     "pluralName": "enrollments",
-    "displayName": "Enrollment"
+    "displayName": "Enrollment",
+    "description": ""
   },
   "options": {
     "draftAndPublish": false
@@ -12,7 +13,7 @@
   "attributes": {
     "student": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "oneToOne",
       "target": "api::student.student",
       "inversedBy": "enrollments",
       "required": true
@@ -24,10 +25,11 @@
       "inversedBy": "enrollments",
       "required": true
     },
-    "class_standard": {
-      "type": "integer",
-      "min": 1,
-      "max": 12,
+    "class": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::class.class",
+      "inversedBy": "enrollments",
       "required": true
     },
     "gr_no": {
@@ -49,11 +51,26 @@
       "type": "boolean",
       "default": false
     },
-
-    "status": {
+    "enrollment_status": {
       "type": "enumeration",
-      "enum": ["Enquiry", "Waiting", "Enrolled", "Dropped"],
+      "enum": [
+        "Enquiry",
+        "Waiting",
+        "Enrolled",
+        "Rejected",
+        "Processing"
+      ],
       "default": "Enquiry",
+      "required": true
+    },
+    "admission_type": {
+      "type": "enumeration",
+      "enum": [
+        "Transport",
+        "Hostel",
+        "Self",
+        "Tuition Only"
+      ],
       "required": true
     }
   }

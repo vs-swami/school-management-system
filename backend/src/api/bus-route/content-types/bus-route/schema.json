@@ -1,0 +1,61 @@
+{
+  "kind": "collectionType",
+  "collectionName": "bus_routes",
+  "info": {
+    "singularName": "bus-route",
+    "pluralName": "bus-routes",
+    "displayName": "Bus Route"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "route_name": {
+      "type": "string",
+      "required": true
+    },
+    "route_code": {
+      "type": "string",
+      "unique": true
+    },
+    "bus": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus.bus",
+      "inversedBy": "bus_routes"
+    },
+    "bus_stops": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::bus-stop.bus-stop",
+      "inversedBy": "bus_routes"
+    },
+    "stop_order": {
+      "type": "json",
+      "description": "Array of stop IDs in order: [1, 3, 5, 2]"
+    },
+    "departure_time": {
+      "type": "time",
+      "required": true
+    },
+    "arrival_time": {
+      "type": "time"
+    },
+    "route_type": {
+      "type": "enumeration",
+      "enum": ["morning", "evening", "both"],
+      "default": "both"
+    },
+    "total_distance": {
+      "type": "decimal"
+    },
+    "estimated_duration": {
+      "type": "integer",
+      "description": "Duration in minutes"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

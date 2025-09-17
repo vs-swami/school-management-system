@@ -43,6 +43,18 @@ async function seed() {
       }
     }
 
+    // 4. Seed Classes
+    const classesData = require('./src/seed/classes');
+    for (const classData of classesData) {
+      const existingClass = await app.db.query('api::class.class').findOne({ where: { classname: classData.classname } });
+      if (!existingClass) {
+        await app.entityService.create('api::class.class', { data: classData });
+        console.log(`Class ${classData.classname} created.`);
+      } else {
+        console.log(`Class ${classData.classname} already exists.`);
+      }
+    }
+
     console.log('Seeding process completed!');
   } catch (error) {
     console.error('Error during seeding process:', error);

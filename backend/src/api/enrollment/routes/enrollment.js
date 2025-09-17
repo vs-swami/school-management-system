@@ -11,7 +11,7 @@ module.exports = {
     },
     {
       method: 'PUT',
-      path: '/enrollments/:id/status',
+      path: '/enrollments/:id/enrollment_status',
       handler: 'enrollment.updateStatus',
       config: {
         policies: [],

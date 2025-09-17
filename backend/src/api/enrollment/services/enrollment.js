@@ -4,15 +4,13 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
   async findWithStudent(params = {}) {
     return await strapi.entityService.findMany('api::enrollment.enrollment', {
       ...params,
-      populate: {
-        student: true,
-        academic_year: true,
-        administration: {
-          populate: {
-            division: true
-          }
-        }
-      }
+      populate: [
+        'student',
+        'academic_year',
+        'administration.division',
+        'class',
+        'admission_type',
+      ],
     });
   },
 
@@ -27,7 +25,7 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
         academic_year: academicYearId
       },
       sort: { gr_no: 'desc' },
-      pagination: { limit: 1 }
+      limit: 1 // Changed from pagination: { limit: 1 } to limit: 1 for entityService
     });
 
     let sequence = 1;
@@ -66,6 +64,7 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
         academic_year: academic_year_id,
         gr_no: grNo,
         date_enrolled: new Date().toISOString().split('T')[0],
+        admission_type: admission_type,
       }
     });
 
@@ -76,20 +75,18 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
         division: division,
         date_of_admission: date_of_admission,
         mode: mode,
-        admission_type: admission_type,
+        // admission_type: admission_type, // Removed
       }
     });
 
     return await strapi.entityService.findOne('api::enrollment.enrollment', enrollment.id, {
-      populate: {
-        student: true,
-        academic_year: true,
-        administration: {
-          populate: {
-            division: true
-          }
-        }
-      }
+      populate: [
+        'student',
+        'academic_year',
+        'administration.division',
+        'class',
+        'admission_type',
+      ],
     });
   },
 

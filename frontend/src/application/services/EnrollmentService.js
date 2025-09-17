@@ -1,23 +1,13 @@
-import { EnrollmentRepository } from '../../data/repositories/EnrollmentRepository';
+import { apiClient } from '../../data/api/config';
 
-export const EnrollmentService = {
-  getEnrollments: async () => {
+export class EnrollmentService {
+  async updateEnrollmentStatus(enrollmentId, enrollment_status) {
     try {
-      const response = await EnrollmentRepository.getAllEnrollments();
-      return response.data;
+      const response = await EnrollmentRepository.updateEnrollment(enrollmentId, { enrollment_status });
+      return { success: true, data: response };
     } catch (error) {
-      console.error('Error fetching enrollments:', error);
-      throw error;
+      console.error(`Error updating enrollment status for ID ${enrollmentId}:`, error.response?.data || error.message);
+      return { success: false, error: error.message };
     }
-  },
-
-  updateEnrollmentStatus: async (id, status) => {
-    try {
-      const response = await EnrollmentRepository.updateEnrollment(id, { status });
-      return response.data;
-    } catch (error) {
-      console.error('Error updating enrollment status:', error);
-      throw error;
-    }
-  },
-};
+  }
+}

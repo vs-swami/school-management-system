@@ -5,343 +5,312 @@ const { createCoreService } = require('@strapi/strapi').factories;
 module.exports = createCoreService('api::student.student', ({ strapi }) => ({
   // Repository Pattern Implementation
   async findWithRelations(params = {}) {
-    const { filters, ...otherParams } = params;
+    const { filters, populate, ...otherParams } = params;
+    
+    // DEFAULT populate configuration - this is the key fix!
+    const defaultPopulate = [
+      'place',
+      'caste', 
+      'house',
+      'guardians',
+      'enrollments.academic_year',
+      'enrollments.class',
+      'enrollments.administration.division',
+      'documents.file',
+      'exam_results',
+    ];
+    
+    // Use provided populate or fall back to default
+    let finalPopulate;
+    
+    if (populate) {
+      // Convert comma-separated populate string to an array for entityService
+      finalPopulate = typeof populate === 'string' ? populate.split(',') : populate;
+      // Merge with default populate to ensure essential relations are always included
+      finalPopulate = Array.from(new Set([...defaultPopulate, ...finalPopulate]));
+    } else {
+      // Use default populate when none provided
+      finalPopulate = defaultPopulate;
+    }
+    
+    console.log('Student Service - findWithRelations: Using populate:', finalPopulate);
     
     return await strapi.entityService.findMany('api::student.student', {
       ...otherParams,
       filters,
-      populate: {
-        place: true,
-        caste: true,
-        house: true,
-        guardians: true,
-        enrollments: {
-          populate: {
-            academic_year: true,
-            administration: {
-              populate: {
-                division: true
-              }
-            }
-          }
-        }
-      }
+      populate: finalPopulate,
     });
   },
 
-  async findOneWithRelations(id) {
-    return await strapi.entityService.findOne('api::student.student', id, {
-      populate: {
-        place: true,
-        caste: true,
-        house: true,
-        guardians: true,
-        enrollments: {
-          populate: {
-            academic_year: true,
-            administration: {
-              populate: {
-                division: true
-              }
-            }
-          }
-        },
-        documents: true
-      }
+  async findOneWithRelations(id, populate = []) {
+    // Dynamically build populate to ensure exam_results is always included if requested,
+    // or use a comprehensive default if no populate is provided.
+    const defaultOnePopulate = [
+      'place',
+      'caste',
+      'house',
+      'guardians',
+      'enrollments.academic_year',
+      'enrollments.class',
+      'enrollments.administration.division',
+      'documents.file',
+      'exam_results', // Ensure exam_results is always populated
+    ];
+
+    let finalPopulateOne = Array.isArray(populate) && populate.length > 0 
+      ? Array.from(new Set([...defaultOnePopulate, ...populate])) 
+      : defaultOnePopulate;
+    
+    // If populate is a string (e.g., '*'), use it directly or merge thoughtfully.
+    // For simplicity, if '*' is passed, we'll just use that.
+    if (typeof populate === 'string' && populate === '*') {
+      finalPopulateOne = '*';
+    } else if (typeof populate === 'string') {
+        // If a string like 'exam_results' is passed, merge it
+        finalPopulateOne = Array.from(new Set([...defaultOnePopulate, ...populate.split(',')]));
+    }
+
+    const student = await strapi.entityService.findOne('api::student.student', id, {
+      populate: finalPopulateOne,
+    });
+    console.log('Student Service Debug: findOneWithRelations result:', JSON.stringify(student, null, 2));
+    return student;
+  },
+
+  // Alternative approach - you can also modify findWithRelations to handle '*' populate
+  async findWithRelationsAlternative(params = {}) {
+    const { filters, populate, ...otherParams } = params;
+    
+    // Handle different populate scenarios
+    let finalPopulate;
+    
+    if (populate === '*') {
+      // Use '*' for all fields
+      finalPopulate = '*';
+    } else if (populate) {
+      // Convert comma-separated populate string to an array
+      finalPopulate = typeof populate === 'string' ? populate.split(',') : populate;
+    } else {
+      // Default to all relations when no populate specified
+      finalPopulate = '*';
+    }
+    
+    return await strapi.entityService.findMany('api::student.student', {
+      ...otherParams,
+      filters,
+      populate: finalPopulate,
     });
   },
 
-  async createStudentWithRelations(data, files) { // Added files argument
+  // Rest of your methods remain the same...
+  async createStudent(data) {
     console.log('Student Service - createStudentWithRelations: Received Data (after JSON.parse)', JSON.stringify(data, null, 2));
-    const { guardians, enrollments, ...studentData } = data;
+    const studentData = { ...data }; // Copy all data initially
+
+    // Remove relations from studentData before creating the student
+    const guardiansData = studentData.guardians ? [...studentData.guardians] : [];
+    delete studentData.guardians;
+
+    const enrollmentsData = studentData.enrollments ? [...studentData.enrollments] : [];
+    delete studentData.enrollments;
+
     console.log('Creating student with data:', studentData);
-    // Create student first
+    
+    // 1. Create student first
     const student = await strapi.entityService.create('api::student.student', {
-      data: studentData
+      data: studentData,
     });
+    console.log('Student Service - createStudentWithRelations: Successfully created student', JSON.stringify(student, null, 2));
+
+    let createdEnrollment = null;
+    // 2. Create enrollments, linking to the newly created student
+    if (enrollmentsData.length > 0) {
+      const enrollmentInput = enrollmentsData[0]; // Assuming one enrollment per student
+      console.log('Student Service - createStudentWithRelations: Processing Enrollment Input', JSON.stringify(enrollmentInput, null, 2));
+      try {
+        const academicYearId = parseInt(enrollmentInput.academic_year);
+        const classId = parseInt(enrollmentInput.class);
+
+        const academicYear = await strapi.entityService.findOne('api::academic-year.academic-year', academicYearId);
+        if (!academicYear) {
+          throw new Error(`Academic year with ID ${academicYearId} not found.`);
+        }
+
+        const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(enrollmentInput.class_standard, academicYearId);
+
+        createdEnrollment = await strapi.entityService.create('api::enrollment.enrollment', {
+          data: {
+            ...enrollmentInput,
+            student: student.id, // Link to the newly created student
+            academic_year: academicYearId,
+            class: classId,
+            gr_no: grNo,
+            date_enrolled: new Date(enrollmentInput.date_enrolled).toISOString().split('T')[0],
+          }
+        });
+        console.log('Student Service - createStudentWithRelations: Successfully created enrollment', JSON.stringify(createdEnrollment, null, 2));
+      } catch (error) {
+        console.error('Student Service - createStudentWithRelations: Error creating enrollment', JSON.stringify(enrollmentInput, null, 2), error.message);
+        throw error;
+      }
+    }
+
+    // 3. Update student to link enrollment (if created)
+    if (createdEnrollment) {
+      await strapi.entityService.update('api::student.student', student.id, {
+        data: {
+          enrollments: createdEnrollment.id,
+        },
+      });
+      console.log('Student Service - createStudentWithRelations: Successfully linked enrollment to student');
+    }
 
     // Create guardians
-    if (guardians && guardians.length > 0) {
-      for (const guardianData of guardians) {
-        // Need to capture the created guardian's ID for linking its photo
+    if (guardiansData.length > 0) {
+      for (const guardianData of guardiansData) {
         const createdGuardian = await strapi.entityService.create('api::guardian.guardian', {
           data: {
             ...guardianData,
             student: student.id
           }
         });
-        // If a guardian photo exists, upload it and link it
-        if (files && files.guardian_photo) { // Changed condition
-          await this.handleFileUpload({
-            files: files.guardian_photo,
-            documentType: 'guardian_photo',
-            studentId: student.id,
-            guardianId: createdGuardian.id,
-          });
-        }
-      }
-    }
-
-    // Create enrollments
-    if (enrollments && enrollments.length > 0) {
-      console.log('Student Service - createStudentWithRelations: Processing Enrollments', JSON.stringify(enrollments, null, 2));
-      for (const enrollmentData of enrollments) {
-        try {
-          const { gr_no: initialGrNo, academic_year, ...baseEnrollmentData } = enrollmentData;
-
-          const academicYear = await strapi.entityService.findOne('api::academic-year.academic-year', parseInt(academic_year));
-          if (!academicYear) {
-            throw new Error(`Academic year with ID ${academic_year} not found.`);
-          }
-          const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(baseEnrollmentData.class_standard, academicYear.id);
-
-          const createdEnrollment = await strapi.entityService.create('api::enrollment.enrollment', {
-            data: {
-              ...baseEnrollmentData,
-              student: student.id,
-              gr_no: grNo,
-              academic_year: academicYear.id,
-            }
-          });
-
-
-          console.log('Student Service - createStudentWithRelations: Successfully created enrollment', JSON.stringify(enrollmentData, null, 2));
-        } catch (error) {
-          console.error('Student Service - createStudentWithRelations: Error creating enrollment', JSON.stringify(enrollmentData, null, 2), error.message);
-          throw error; // Re-throw to propagate the error
-        }
+        
       }
     }
 
     // Handle student photo upload if it exists
-    if (files && files.student_photo) { // Changed condition
-      try {
-        await this.handleFileUpload({
-          files: files.student_photo,
-          documentType: 'student_photo',
-          studentId: student.id,
-        });
-      } catch (error) {
-        console.error('Student Service - createStudentWithRelations: Error uploading student photo', error.message);
-        throw error;
-      }
-    }
+    
 
     return await this.findOneWithRelations(student.id);
   },
 
-  async updateWithGuardians(studentId, data, files) { // Added files argument
-    const { guardians, enrollments, ...studentData } = data; // Also extract enrollments
+  async updateStudent(studentId, data) {
+    // Separate student data from guardian data
+    const studentData = { ...data
+    };
+    const guardiansData = studentData.guardians ? [...studentData.guardians] : [];
+    delete studentData.guardians;
 
-    console.log('Student Service - updateWithGuardians: Student ID', studentId);
-    console.log('Student Service - updateWithGuardians: Student Data (after guardian extraction)', JSON.stringify(studentData, null, 2));
-    console.log('Student Service - updateWithGuardians: Guardian Data', JSON.stringify(guardians, null, 2));
-    console.log('Student Service - updateWithGuardians: Enrollment Data', JSON.stringify(enrollments, null, 2));
-    console.log('Student Service - updateWithGuardians: Files', files);
-    
-    // Update student
+    const enrollmentsData = studentData.enrollments ? [...studentData.enrollments] : [];
+    delete studentData.enrollments;
+
+    // 1. Update student
     const updatedStudent = await strapi.entityService.update('api::student.student', studentId, {
       data: studentData,
-      populate: {
-        guardians: true, // Populate guardians to get existing ones
-        enrollments: true, // Populate enrollments for updates
-        documents: true, // Populate documents to check for existing photos
-      }
     });
 
-    // Handle guardian updates
-    if (guardians && guardians.length > 0) {
-      for (const guardianData of guardians) {
-        try {
-          if (guardianData.id) {
-            // Update existing guardian
-            console.log('Student Service - updateWithGuardians: Updating guardian with ID', guardianData.id, 'Data:', JSON.stringify(guardianData, null, 2));
-            const currentGuardian = await strapi.entityService.findOne('api::guardian.guardian', guardianData.id, {
-              populate: { documents: true } // Populate documents to check for existing photo
-            });
-            await strapi.entityService.update('api::guardian.guardian', guardianData.id, {
-              data: guardianData
-            });
-
-            // Handle guardian photo update
-            if (files && files.guardian_photo) { // Changed condition
-              await this.handleFileUpload({
-                files: files.guardian_photo,
-                documentType: 'guardian_photo',
-                studentId: studentId,
-                guardianId: guardianData.id,
-                existingDocuments: currentGuardian.documents,
-              });
-            }
-          } else {
-            // Create new guardian and link to student
-            console.log('Student Service - updateWithGuardians: Creating new guardian with Data:', JSON.stringify(guardianData, null, 2));
-            const createdGuardian = await strapi.entityService.create('api::guardian.guardian', {
-              data: {
-                ...guardianData,
-                student: studentId
-              }
-            });
-            // If a guardian photo exists, upload it and link it
-            if (files && files.guardian_photo) { // Changed condition
-              await this.handleFileUpload({
-                files: files.guardian_photo,
-                documentType: 'guardian_photo',
-                studentId: studentId,
-                guardianId: createdGuardian.id,
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Student Service - updateWithGuardians: Error processing guardian', guardianData.id || 'new', error.message);
-          throw error; // Re-throw to propagate the error
-        }
-      }
-    }
-
-    // Handle enrollment updates (similar to guardians, but enrollments can be added/updated/deleted)
-    if (enrollments && enrollments.length > 0) {
-      for (const enrollmentData of enrollments) {
-        try {
-          const { gr_no: initialGrNo, academic_year, ...baseEnrollmentData } = enrollmentData;
-
-          if (enrollmentData.id) {
-            // Update existing enrollment
-            console.log('Student Service - updateWithGuardians: Updating enrollment with ID', enrollmentData.id, 'Data:', JSON.stringify(enrollmentData, null, 2));
-            const updatedEnrollment = await strapi.entityService.update('api::enrollment.enrollment', enrollmentData.id, {
-              data: { ...baseEnrollmentData, student: studentId } // Ensure student relation is maintained
-            });
-
-
-
-          } else {
-            // Create new enrollment
-            console.log('Student Service - updateWithGuardians: Creating new enrollment with Data:', JSON.stringify(enrollmentData, null, 2));
-
-            const academicYear = await strapi.entityService.findOne('api::academic-year.academic-year', parseInt(academic_year));
-            if (!academicYear) {
-              throw new Error(`Academic year with ID ${academic_year} not found.`);
-            }
-            const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(baseEnrollmentData.class_standard, academicYear.id);
-
-            const createdEnrollment = await strapi.entityService.create('api::enrollment.enrollment', {
-              data: { ...baseEnrollmentData, student: studentId, gr_no: grNo, academic_year: academicYear.id }
-            });
-
-            // Create new enrollment administration entry
-            await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
-              data: {
-                enrollment: createdEnrollment.id,
-                division: null,
-                date_of_admission: null,
-                mode: 'offline',
-                admission_type: null,
-              }
-            });
-          }
-        } catch (error) {
-          console.error('Student Service - updateWithGuardians: Error processing enrollment', enrollmentData.id || 'new', error.message);
-          throw error;
-        }
-      }
-    }
-
-    // Handle student photo upload/update
-    if (files && files.student_photo) { // Changed condition
-      try {
-        await this.handleFileUpload({
-          files: files.student_photo,
-          documentType: 'student_photo',
-          studentId: studentId,
-          existingDocuments: updatedStudent.documents,
+    // 2. Update or create guardians
+    for (const guardianData of guardiansData) {
+      if (guardianData.id) {
+        // Update existing guardian
+        await strapi.entityService.update('api::guardian.guardian', guardianData.id, {
+          data: {
+            ...guardianData,
+            student: studentId
+          },
         });
+      } else {
+        // Create new guardian
+        await strapi.entityService.create('api::guardian.guardian', {
+          data: {
+            ...guardianData,
+            student: studentId
+          },
+        });
+      }
+    }
+
+    // 3. Update or create enrollments
+    if (enrollmentsData.length > 0) {
+      const enrollmentInput = enrollmentsData[0]; // Assuming one enrollment per student
+      try {
+        const academicYearId = parseInt(enrollmentInput.academic_year);
+        const classId = parseInt(enrollmentInput.class);
+
+        // Check if enrollment exists for this student (assuming one active enrollment for simplicity)
+        const existingEnrollments = await strapi.entityService.findMany('api::enrollment.enrollment', {
+          filters: { student: studentId },
+        });
+
+        if (existingEnrollments.length > 0) {
+          // Update existing enrollment
+          await strapi.entityService.update('api::enrollment.enrollment', existingEnrollments[0].id, {
+            data: {
+              ...enrollmentInput,
+              student: studentId, // Link to the student
+              academic_year: academicYearId,
+              class: classId,
+              date_enrolled: new Date(enrollmentInput.date_enrolled).toISOString().split('T')[0],
+            }
+          });
+          console.log('Student Service - updateWithGuardians: Successfully updated enrollment');
+        } else {
+          // Create new enrollment (should not happen in typical update flow if always one enrollment)
+          const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(enrollmentInput.class_standard, academicYearId);
+          await strapi.entityService.create('api::enrollment.enrollment', {
+            data: {
+              ...enrollmentInput,
+              student: studentId, // Link to the student
+              academic_year: academicYearId,
+              class: classId,
+              gr_no: grNo,
+              date_enrolled: new Date(enrollmentInput.date_enrolled).toISOString().split('T')[0],
+            }
+          });
+          console.log('Student Service - updateWithGuardians: Successfully created new enrollment during update');
+        }
       } catch (error) {
-        console.error('Student Service - updateWithGuardians: Error uploading student photo', error.message);
+        console.error('Student Service - updateWithGuardians: Error processing enrollment', error.message);
         throw error;
       }
     }
 
+    // Handle student photo upload if it exists during update
+    
+
     return await this.findOneWithRelations(studentId);
   },
 
-  // Helper function to handle file uploads and document creation/update
-  async handleFileUpload({ files, documentType, studentId, guardianId = null, existingDocuments = [] }) {
-    console.log('handleFileUpload: Received files for upload:', files);
-    let uploadedFile;
+  async createStudentDocument(data) {
+    console.log('Creating student-document with data:', data);
     try {
-      uploadedFile = await strapi.plugins.upload.services.upload.upload({
-        data: {}, // Additional data if needed
-        files: files,
+      const entry = await strapi.entityService.create('api::student-document.student-document', {
+        data,
       });
-      console.log('handleFileUpload: Result from Strapi upload service:', uploadedFile);
-    } catch (uploadError) {
-      console.error('handleFileUpload: Error during Strapi file upload:', uploadError.message, uploadError);
-      throw new Error(`File upload failed for ${documentType}: ${uploadError.message}`);
+      console.log('Student-document created:', entry);
+      return entry;
+    } catch (error) {
+      console.error('Error creating student-document:', error);
+      throw error;
     }
+  },
 
-    if (uploadedFile && uploadedFile.length > 0) {
-      const fileId = uploadedFile[0].id;
-
-      // Check if an existing document of this type exists for the student/guardian
-      const existingDoc = existingDocuments.find(doc => 
-        doc.document_type === documentType && 
-        doc.student?.id === studentId && 
-        (guardianId ? doc.guardian?.id === guardianId : !doc.guardian)
-      );
-
-      try {
-      if (existingDoc) {
-        // Update existing document entry with new file
-        console.log('handleFileUpload: Updating existing student-document entry', existingDoc.id, 'with file ID:', fileId);
-        await strapi.entityService.update('api::student-document.student-document', existingDoc.id, {
-          data: {
-            file: fileId,
-          }
-        });
-        // Optionally, delete the old file from Strapi uploads if no longer referenced
-        // await strapi.plugins.upload.services.upload.remove(existingDoc.file.id);
-      } else {
-        // Create new document entry
-        const newDocumentData = {
-          document_type: documentType,
-          file: fileId,
-          student: studentId,
-          ...(guardianId && { guardian: guardianId }),
-        };
-        console.log('handleFileUpload: Creating new student-document entry with data:', newDocumentData);
-        await strapi.entityService.create('api::student-document.student-document', {
-          data: newDocumentData
-        });
-      }
-      } catch (documentError) {
-        console.error('handleFileUpload: Error creating/updating student-document entry:', documentError.message, documentError);
-        // Optionally, delete the uploaded file from Strapi media library if document creation failed
-        // await strapi.plugins.upload.services.upload.remove(fileId);
-        throw new Error(`Student document entry failed for ${documentType}: ${documentError.message}`);
-      }
+  async deleteStudentDocument(documentId) {
+    console.log('Deleting student-document with ID:', documentId);
+    try {
+      const deletedEntry = await strapi.entityService.delete('api::student-document.student-document', documentId);
+      console.log('Student-document deleted:', deletedEntry);
+      return deletedEntry;
+    } catch (error) {
+      console.error('Error deleting student-document:', error);
+      throw error;
     }
   },
 
   async getStatistics() {
-    const totalStudents = await strapi.entityService.count('api::student.student');
-    
-    const genderStats = await strapi.db.connection.raw(`
-      SELECT gender, COUNT(*) as count 
-      FROM students 
-      GROUP BY gender
-    `);
+    // Example: Count total students
+    const studentCount = await strapi.entityService.count('api::student.student');
 
-    const houseStats = await strapi.db.connection.raw(`
-      SELECT h.name, COUNT(s.id) as count
-      FROM houses h
-      LEFT JOIN students s ON h.id = s.house
-      GROUP BY h.id, h.name
-    `);
+    // Example: Count enrollments by academic year
+    const enrollmentsByAcademicYear = await strapi.db.query('api::enrollment.enrollment').findMany({
+      select: ['academic_year'],
+      groupBy: ['academic_year'],
+      // _count: { id: true },
+    });
 
     return {
-      total: totalStudents,
-      byGender: genderStats.rows || [],
-      byHouse: houseStats.rows || []
+      studentCount,
+      enrollmentsByAcademicYear,
     };
-  }
+  },
 }));

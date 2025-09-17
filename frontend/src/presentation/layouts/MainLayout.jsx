@@ -1,6 +1,7 @@
 import React from 'react';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
+import { Layout } from '../components/Layout'; // Import the new Layout component
 import useAuthStore from '../../application/stores/useAuthStore';
 
 export const MainLayout = ({ children }) => {
@@ -11,14 +12,8 @@ export const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-      </div>
-    </div>
+    <Layout>
+      {children}
+    </Layout>
   );
 };

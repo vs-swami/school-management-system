@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "seat_allocations",
+  "info": {
+    "singularName": "seat-allocation",
+    "pluralName": "seat-allocations",
+    "displayName": "Seat Allocation"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "bus": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus.bus",
+      "inversedBy": "seat_allocations"
+    },
+    "enrollment_administration": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::enrollment-administration.enrollment-administration",
+      "inversedBy": "seat_allocations"
+    },
+    "seat_number": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "pickup_stop": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus-stop.bus-stop",
+      "inversedBy": "pickup_allocations"
+    },
+    "drop_stop": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus-stop.bus-stop",
+      "inversedBy": "drop_allocations"
+    },
+    "allocation_date": {
+      "type": "date",
+      "required": true
+    },
+    "valid_from": {
+      "type": "date",
+      "required": true
+    },
+    "valid_until": {
+      "type": "date"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "allocation_type": {
+      "type": "enumeration",
+      "enum": ["regular", "temporary", "emergency"],
+      "default": "regular"
+    },
+    "monthly_fee": {
+      "type": "decimal"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "classes",
+  "info": {
+    "singularName": "class",
+    "pluralName": "classes",
+    "displayName": "Class"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "classname": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "class_fee_yearly": {
+      "type": "decimal",
+      "required": true
+    },
+    "class_fee_term1": {
+      "type": "decimal",
+      "required": true
+    },
+    "class_fee_term2": {
+      "type": "decimal",
+      "required": true
+    },
+    "enrollments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::enrollment.enrollment",
+      "mappedBy": "class"
+    },
+    "class_thresholds": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::class-threshold.class-threshold",
+      "mappedBy": "class"
+    }
+  }
+}

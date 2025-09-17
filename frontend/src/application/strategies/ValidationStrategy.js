@@ -24,6 +24,12 @@ export class ValidationStrategy {
       'last_name',
       'dob',
       'guardians',
+      // Enrollment fields
+      'enrollments.0.academic_year',
+      'enrollments.0.class',
+      'enrollments.0.gr_no',
+      'enrollments.0.date_enrolled',
+      'enrollments.0.admission_type',
       // 'grade',
       // 'student_id',
       // 'emergency_contact_name',

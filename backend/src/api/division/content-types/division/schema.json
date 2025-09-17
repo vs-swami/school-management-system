@@ -19,6 +19,12 @@
       "relation": "oneToMany",
       "target": "api::enrollment.enrollment",
       "mappedBy": "division"
+    },
+    "class_thresholds": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::class-threshold.class-threshold",
+      "mappedBy": "division"
     }
   }
 }

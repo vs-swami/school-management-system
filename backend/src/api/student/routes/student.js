@@ -1,49 +1,26 @@
-module.exports = {
+const { createCoreRouter } = require('@strapi/strapi').factories;
+
+module.exports = createCoreRouter('api::student.student', {
+  prefix: '',
+  only: ['find', 'findOne', 'create', 'update', 'delete'], // Include all default CRUD operations
+  except: [],
+  config: {
+    find: { policies: [] },
+    findOne: { policies: [] },
+    create: { policies: [] },
+    update: { policies: [] },
+    delete: { policies: [] },
+  },
   routes: [
+    // Custom route for uploading documents (if it's not handled by default Strapi file upload)
     {
       method: 'POST',
-      path: '/students',
-      handler: 'student.create',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'GET',
-      path: '/students',
-      handler: 'student.find',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'GET',
-      path: '/students/:id',
-      handler: 'student.findOne',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'PUT',
-      path: '/students/:id',
-      handler: 'student.update',
-      config: {
-        policies: [],
-        middlewares: [],
-      },
-    },
-    {
-      method: 'DELETE',
-      path: '/students/:id',
-      handler: 'student.delete',
+      path: '/students/documents',
+      handler: 'student.uploadDocument',
       config: {
         policies: [],
         middlewares: [],
       },
     },
   ],
-};
+});
