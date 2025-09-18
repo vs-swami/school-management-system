@@ -59,6 +59,58 @@ module.exports = createCoreController('api::bus-stop.bus-stop', ({ strapi }) => 
       }
     };
     return await super.findOne(ctx);
+  },
+
+  // Find stops by Location id (for cascading dropdown)
+  async findByLocation(ctx) {
+    const { locationId } = ctx.params;
+    try {
+      const stops = await strapi.entityService.findMany('api::bus-stop.bus-stop', {
+        filters: {
+          is_active: true,
+          location: { id: locationId }
+        },
+        fields: ['id', 'stop_name'],
+        populate: {
+          location: { fields: ['id', 'name'] }
+        },
+        sort: { stop_name: 'asc' }
+      });
+      return stops;
+    } catch (error) {
+      console.error('Error finding stops by location:', error);
+      return ctx.internalServerError('Error finding stops by location');
+    }
+  },
+
+  // Get all stops grouped by Location
+  async groupedByLocation(ctx) {
+    try {
+      const stops = await strapi.entityService.findMany('api::bus-stop.bus-stop', {
+        filters: { is_active: true },
+        fields: ['id', 'stop_name'],
+        populate: { location: { fields: ['id', 'name'] } },
+        sort: [{ 'location.name': 'asc' }, { stop_name: 'asc' }]
+      });
+
+      const groupsMap = new Map();
+      for (const stop of stops) {
+        const loc = stop.location;
+        const key = loc ? String(loc.id) : 'null';
+        if (!groupsMap.has(key)) {
+          groupsMap.set(key, {
+            location: loc ? { id: loc.id, name: loc.name } : null,
+            stops: []
+          });
+        }
+        groupsMap.get(key).stops.push({ id: stop.id, stop_name: stop.stop_name });
+      }
+
+      return Array.from(groupsMap.values());
+    } catch (error) {
+      console.error('Error grouping stops by location:', error);
+      return ctx.internalServerError('Error grouping stops by location');
+    }
   }
 
 }));

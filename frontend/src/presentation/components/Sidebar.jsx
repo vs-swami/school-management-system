@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, BookOpen, FileText, X } from 'lucide-react';
+import { Home, Users, BookOpen, FileText, X, DollarSign } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Students', href: '/students', icon: Users },
   { name: 'Enrollments', href: '/enrollments', icon: BookOpen },
+  { name: 'Fee Management', href: '/fees', icon: DollarSign },
   { name: 'Reports', href: '/reports', icon: FileText },
 ];
 

@@ -19,8 +19,7 @@ module.exports = createCoreController('api::bus.bus', ({ strapi }) => ({
       seat_allocations: {
         populate: {
           student: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         }
       }
     };
@@ -38,8 +37,7 @@ module.exports = createCoreController('api::bus.bus', ({ strapi }) => ({
       seat_allocations: {
         populate: {
           student: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         }
       }
     };

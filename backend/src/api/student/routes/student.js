@@ -5,11 +5,26 @@ module.exports = createCoreRouter('api::student.student', {
   only: ['find', 'findOne', 'create', 'update', 'delete'], // Include all default CRUD operations
   except: [],
   config: {
-    find: { policies: [] },
-    findOne: { policies: [] },
-    create: { policies: [] },
-    update: { policies: [] },
-    delete: { policies: [] },
+    find: {
+      policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
+      middlewares: [],
+    },
+    findOne: {
+      policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
+      middlewares: [],
+    },
+    create: {
+      policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
+      middlewares: [],
+    },
+    update: {
+      policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
+      middlewares: [],
+    },
+    delete: {
+      policies: [], // Temporarily disabled: ['global::is-admin', 'global::rate-limit'],
+      middlewares: [],
+    },
   },
   routes: [
     // Custom route for uploading documents (if it's not handled by default Strapi file upload)
@@ -18,7 +33,7 @@ module.exports = createCoreRouter('api::student.student', {
       path: '/students/documents',
       handler: 'student.uploadDocument',
       config: {
-        policies: [],
+        policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
         middlewares: [],
       },
     },

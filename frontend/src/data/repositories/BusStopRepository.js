@@ -23,7 +23,6 @@ const transformBusStopResponse = (busStopData) => {
 
   transformed.bus_routes = normalizeRelation(transformed.bus_routes);
   transformed.pickup_allocations = normalizeRelation(transformed.pickup_allocations);
-  transformed.drop_allocations = normalizeRelation(transformed.drop_allocations);
 
   return transformed;
 };
@@ -39,7 +38,7 @@ export class BusStopRepository {
             }
           },
           pickup_allocations: true,
-          drop_allocations: true,
+          location: { fields: ['id', 'name'] },
         }
       };
 
@@ -76,7 +75,7 @@ export class BusStopRepository {
         populate: {
           bus_routes: true,
           pickup_allocations: true,
-          drop_allocations: true,
+          location: { fields: ['id', 'name'] },
         }
       };
 
@@ -114,6 +113,35 @@ export class BusStopRepository {
       return response.data;
     } catch (error) {
       console.error('BusStopRepository Error in delete:', error);
+      throw error;
+    }
+  }
+
+  static async findByLocation(locationId) {
+    try {
+      const params = {
+        filters: {
+          is_active: { $eq: true },
+          location: { id: { $eq: locationId } }
+        },
+        fields: ['id', 'stop_name'],
+        populate: { location: { fields: ['id', 'name'] } },
+        sort: ['stop_name:asc']
+      };
+      const response = await apiClient.get('/bus-stops', { params });
+      return transformBusStopResponse(response.data.data);
+    } catch (error) {
+      console.error('BusStopRepository Error in findByLocation:', error);
+      throw error;
+    }
+  }
+
+  static async groupedByLocation() {
+    try {
+      const response = await apiClient.get('/bus-stops/grouped-by-location');
+      return response.data; // already minimal shape for UI
+    } catch (error) {
+      console.error('BusStopRepository Error in groupedByLocation:', error);
       throw error;
     }
   }

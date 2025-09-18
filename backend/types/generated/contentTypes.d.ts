@@ -622,20 +622,16 @@ export interface ApiBusStopBusStop extends Struct.CollectionTypeSchema {
   };
   attributes: {
     stop_name: Schema.Attribute.String & Schema.Attribute.Required;
-    location: Schema.Attribute.String & Schema.Attribute.Required;
     address: Schema.Attribute.Text;
     coordinates: Schema.Attribute.JSON;
     landmark: Schema.Attribute.String;
+    location: Schema.Attribute.Relation<'manyToOne', 'api::location.location'>;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     bus_routes: Schema.Attribute.Relation<
       'manyToMany',
       'api::bus-route.bus-route'
     >;
     pickup_allocations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::seat-allocation.seat-allocation'
-    >;
-    drop_allocations: Schema.Attribute.Relation<
       'oneToMany',
       'api::seat-allocation.seat-allocation'
     >;
@@ -857,6 +853,7 @@ export interface ApiEnrollmentAdministrationEnrollmentAdministration
     singularName: 'enrollment-administration';
     pluralName: 'enrollment-administrations';
     displayName: 'Enrollment Administration';
+    description: '';
   };
   options: {
     draftAndPublish: false;
@@ -868,11 +865,6 @@ export interface ApiEnrollmentAdministrationEnrollmentAdministration
     >;
     division: Schema.Attribute.Relation<'manyToOne', 'api::division.division'>;
     date_of_admission: Schema.Attribute.Date & Schema.Attribute.Required;
-    mode: Schema.Attribute.Enumeration<['online', 'offline']> &
-      Schema.Attribute.DefaultTo<'offline'>;
-    transport_details: Schema.Attribute.Text;
-    hostel_details: Schema.Attribute.Text;
-    fees_details: Schema.Attribute.Text;
     seat_allocations: Schema.Attribute.Relation<
       'oneToMany',
       'api::seat-allocation.seat-allocation'
@@ -997,6 +989,39 @@ export interface ApiHouseHouse extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
+  collectionName: 'locations';
+  info: {
+    singularName: 'location';
+    pluralName: 'locations';
+    displayName: 'Location';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    address: Schema.Attribute.Text;
+    coordinates: Schema.Attribute.JSON;
+    landmark: Schema.Attribute.String;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    bus_stops: Schema.Attribute.Relation<'oneToMany', 'api::bus-stop.bus-stop'>;
+    students: Schema.Attribute.Relation<'oneToMany', 'api::student.student'>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::location.location'
+    >;
+  };
+}
+
 export interface ApiPlacePlace extends Struct.CollectionTypeSchema {
   collectionName: 'places';
   info: {
@@ -1052,7 +1077,6 @@ export interface ApiSeatAllocationSeatAllocation
       'manyToOne',
       'api::bus-stop.bus-stop'
     >;
-    drop_stop: Schema.Attribute.Relation<'manyToOne', 'api::bus-stop.bus-stop'>;
     allocation_date: Schema.Attribute.Date & Schema.Attribute.Required;
     valid_from: Schema.Attribute.Date & Schema.Attribute.Required;
     valid_until: Schema.Attribute.Date;
@@ -1107,6 +1131,7 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
     place: Schema.Attribute.Relation<'manyToOne', 'api::place.place'>;
     caste: Schema.Attribute.Relation<'manyToOne', 'api::caste.caste'>;
     house: Schema.Attribute.Relation<'manyToOne', 'api::house.house'>;
+    village: Schema.Attribute.Relation<'manyToOne', 'api::location.location'>;
     guardians: Schema.Attribute.Relation<'oneToMany', 'api::guardian.guardian'>;
     enrollments: Schema.Attribute.Relation<
       'oneToOne',
@@ -1569,6 +1594,7 @@ declare module '@strapi/strapi' {
       'api::exam-result.exam-result': ApiExamResultExamResult;
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::house.house': ApiHouseHouse;
+      'api::location.location': ApiLocationLocation;
       'api::place.place': ApiPlacePlace;
       'api::seat-allocation.seat-allocation': ApiSeatAllocationSeatAllocation;
       'api::student.student': ApiStudentStudent;

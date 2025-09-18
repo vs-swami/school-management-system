@@ -8,6 +8,17 @@ module.exports = {
       path: '/bus-stops',
       handler: 'bus-stop.find',
     },
+    // Custom helpers
+    {
+      method: 'GET',
+      path: '/bus-stops/by-location/:locationId',
+      handler: 'bus-stop.findByLocation',
+    },
+    {
+      method: 'GET',
+      path: '/bus-stops/grouped-by-location',
+      handler: 'bus-stop.groupedByLocation',
+    },
     {
       method: 'GET',
       path: '/bus-stops/with-routes/:id',

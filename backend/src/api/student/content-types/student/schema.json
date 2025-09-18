@@ -78,6 +78,13 @@
       "target": "api::house.house",
       "inversedBy": "students"
     },
+    "village": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location",
+      "inversedBy": "students",
+      "description": "Village (Location) where the student resides"
+    },
     "guardians": {
       "type": "relation",
       "relation": "oneToMany",

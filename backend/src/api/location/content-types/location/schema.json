@@ -1,0 +1,44 @@
+{
+  "kind": "collectionType",
+  "collectionName": "locations",
+  "info": {
+    "singularName": "location",
+    "pluralName": "locations",
+    "displayName": "Location"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "address": {
+      "type": "text"
+    },
+    "coordinates": {
+      "type": "json",
+      "description": "GPS coordinates {lat: number, lng: number}"
+    },
+    "landmark": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "bus_stops": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::bus-stop.bus-stop",
+      "mappedBy": "location"
+    },
+    "students": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::student.student",
+      "mappedBy": "village"
+    }
+  }
+}

@@ -30,16 +30,32 @@ const transformBusRouteResponse = (busRouteData) => {
 export class BusRouteRepository {
   static async findByStop(stopId) {
     try {
-      const populateParams = {
-        populate: {
-          bus: true
-        }
+      const idNum = Number(stopId);
+      const params = {
+        filters: { bus_stops: { id: { $eq: isNaN(idNum) ? stopId : idNum } } },
+        populate: { bus: true, bus_stops: true },
+        sort: ['route_name:asc']
       };
-      const response = await apiClient.get(`/bus-routes/by-stop/${stopId}`, { params: populateParams });
-      console.log('BusRouteRepository findByStop response:', response.data);
-      return transformBusRouteResponse(response.data);
+      const response = await apiClient.get('/bus-routes', { params });
+      return transformBusRouteResponse(response.data.data);
     } catch (error) {
       console.error('BusRouteRepository Error in findByStop:', error);
+      throw error;
+    }
+  }
+
+  static async findByLocation(locationId) {
+    try {
+      const idNum = Number(locationId);
+      const params = {
+        filters: { bus_stops: { location: { id: { $eq: isNaN(idNum) ? locationId : idNum } } } },
+        populate: { bus: true, bus_stops: true },
+        sort: ['route_name:asc']
+      };
+      const response = await apiClient.get('/bus-routes', { params });
+      return transformBusRouteResponse(response.data.data);
+    } catch (error) {
+      console.error('BusRouteRepository Error in findByLocation:', error);
       throw error;
     }
   }

@@ -10,12 +10,18 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     // DEFAULT populate configuration - this is the key fix!
     const defaultPopulate = [
       'place',
-      'caste', 
+      'caste',
       'house',
       'guardians',
       'enrollments.academic_year',
       'enrollments.class',
       'enrollments.administration.division',
+      'enrollments.administration.seat_allocations',
+      'enrollments.administration.seat_allocations.pickup_stop',
+      'enrollments.administration.seat_allocations.pickup_stop.location',
+      'enrollments.administration.seat_allocations.pickup_stop.bus_routes',
+      'enrollments.administration.seat_allocations.pickup_stop.bus_routes.bus',
+      'enrollments.administration.seat_allocations.bus',
       'documents.file',
       'exam_results',
     ];
@@ -53,6 +59,12 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       'enrollments.academic_year',
       'enrollments.class',
       'enrollments.administration.division',
+      'enrollments.administration.seat_allocations',
+      'enrollments.administration.seat_allocations.pickup_stop',
+      'enrollments.administration.seat_allocations.pickup_stop.location',
+      'enrollments.administration.seat_allocations.pickup_stop.bus_routes',
+      'enrollments.administration.seat_allocations.pickup_stop.bus_routes.bus',
+      'enrollments.administration.seat_allocations.bus',
       'documents.file',
       'exam_results', // Ensure exam_results is always populated
     ];
@@ -178,6 +190,16 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       }
     }
 
+    // 4. Create/Update administration + seat allocation if provided in input
+    try {
+      if (createdEnrollment) {
+        await this.upsertAdministrationAndSeat(createdEnrollment.id, enrollmentsData[0]);
+      }
+    } catch (e) {
+      console.error('Student Service - createStudent: admin/seat upsert failed:', e.message);
+      // Do not fail the whole creation; admin/seat can be managed later
+    }
+
     // Handle student photo upload if it exists
     
 
@@ -221,6 +243,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     }
 
     // 3. Update or create enrollments
+    let targetEnrollmentId = null;
     if (enrollmentsData.length > 0) {
       const enrollmentInput = enrollmentsData[0]; // Assuming one enrollment per student
       try {
@@ -234,7 +257,8 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
         if (existingEnrollments.length > 0) {
           // Update existing enrollment
-          await strapi.entityService.update('api::enrollment.enrollment', existingEnrollments[0].id, {
+          targetEnrollmentId = existingEnrollments[0].id;
+          await strapi.entityService.update('api::enrollment.enrollment', targetEnrollmentId, {
             data: {
               ...enrollmentInput,
               student: studentId, // Link to the student
@@ -247,7 +271,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
         } else {
           // Create new enrollment (should not happen in typical update flow if always one enrollment)
           const grNo = await strapi.service('api::enrollment.enrollment').generateGRNumber(enrollmentInput.class_standard, academicYearId);
-          await strapi.entityService.create('api::enrollment.enrollment', {
+          const created = await strapi.entityService.create('api::enrollment.enrollment', {
             data: {
               ...enrollmentInput,
               student: studentId, // Link to the student
@@ -257,12 +281,23 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
               date_enrolled: new Date(enrollmentInput.date_enrolled).toISOString().split('T')[0],
             }
           });
+          targetEnrollmentId = created.id;
           console.log('Student Service - updateWithGuardians: Successfully created new enrollment during update');
         }
       } catch (error) {
         console.error('Student Service - updateWithGuardians: Error processing enrollment', error.message);
         throw error;
       }
+    }
+
+    // 4. Create/Update administration + seat allocation if provided in input
+    try {
+      if (targetEnrollmentId) {
+        await this.upsertAdministrationAndSeat(targetEnrollmentId, enrollmentsData[0]);
+      }
+    } catch (e) {
+      console.error('Student Service - updateStudent: admin/seat upsert failed:', e.message);
+      // Non-fatal
     }
 
     // Handle student photo upload if it exists during update
@@ -312,5 +347,116 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       studentCount,
       enrollmentsByAcademicYear,
     };
+  },
+
+  // Helper: create or update administration + seat allocation from enrollment input
+  async upsertAdministrationAndSeat(enrollmentId, enrollmentInput = {}) {
+    if (!enrollmentInput || !enrollmentInput.administration) return;
+    const adminInput = enrollmentInput.administration;
+
+    const parseId = (val) => {
+      if (!val) return null;
+      if (typeof val === 'object') return val.id || null;
+      const n = parseInt(val, 10);
+      return isNaN(n) ? null : n;
+    };
+
+    const divisionId = parseId(adminInput.division);
+    const dateOfAdmission = (enrollmentInput.date_enrolled || new Date().toISOString().split('T')[0]).slice(0, 10);
+
+    // Find existing administration for this enrollment
+    const existingAdmins = await strapi.entityService.findMany('api::enrollment-administration.enrollment-administration', {
+      filters: { enrollment: enrollmentId },
+    });
+
+    let adminId;
+    if (existingAdmins && existingAdmins.length > 0) {
+      adminId = existingAdmins[0].id;
+      await strapi.entityService.update('api::enrollment-administration.enrollment-administration', adminId, {
+        data: {
+          division: divisionId || undefined,
+          date_of_admission: dateOfAdmission,
+          enrollment: enrollmentId,
+        }
+      });
+    } else {
+      const createdAdmin = await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
+        data: {
+          division: divisionId || undefined,
+          date_of_admission: dateOfAdmission,
+          enrollment: enrollmentId,
+        }
+      });
+      adminId = createdAdmin.id;
+    }
+
+    // Handle seat allocation if pickup stop present
+    const seatAllocInput = Array.isArray(adminInput.seat_allocations) && adminInput.seat_allocations.length > 0
+      ? adminInput.seat_allocations[0]
+      : null;
+    if (!seatAllocInput) return;
+
+    const pickupStopId = parseId(seatAllocInput.pickup_stop);
+    if (!pickupStopId) return;
+
+    // Try to derive a bus serving this stop via any route
+    let busId = null;
+    try {
+      const routes = await strapi.entityService.findMany('api::bus-route.bus-route', {
+        filters: { bus_stops: { id: pickupStopId } },
+        populate: { bus: true },
+      });
+      if (routes && routes.length > 0 && routes[0].bus) {
+        busId = routes[0].bus.id;
+      }
+    } catch (e) {
+      // ignore; seat allocation can be created without bus
+    }
+
+    // Determine seat number if bus is known
+    let seatNumber = 1;
+    if (busId) {
+      try {
+        const bus = await strapi.entityService.findOne('api::bus.bus', busId, {
+          populate: {
+            seat_allocations: {
+              filters: { is_active: true },
+            }
+          }
+        });
+        const allocated = (bus.seat_allocations || []).map(a => a.seat_number);
+        for (let i = 1; i <= (bus.total_seats || 60); i++) {
+          if (!allocated.includes(i)) { seatNumber = i; break; }
+        }
+      } catch (e) {
+        // fallback seat number 1
+      }
+    }
+
+    // Upsert active seat allocation for this admin
+    const existingActive = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
+      filters: { enrollment_administration: adminId, is_active: true },
+    });
+
+    const allocData = {
+      enrollment_administration: adminId,
+      pickup_stop: pickupStopId,
+      bus: busId || undefined,
+      seat_number: seatNumber,
+      allocation_date: new Date().toISOString().slice(0,10),
+      valid_from: new Date().toISOString().slice(0,10),
+      is_active: true,
+      allocation_type: 'regular',
+    };
+
+    if (existingActive && existingActive.length > 0) {
+      await strapi.entityService.update('api::seat-allocation.seat-allocation', existingActive[0].id, {
+        data: allocData,
+      });
+    } else {
+      await strapi.entityService.create('api::seat-allocation.seat-allocation', {
+        data: allocData,
+      });
+    }
   },
 }));

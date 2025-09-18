@@ -4,7 +4,8 @@
   "info": {
     "singularName": "enrollment-administration",
     "pluralName": "enrollment-administrations",
-    "displayName": "Enrollment Administration"
+    "displayName": "Enrollment Administration",
+    "description": ""
   },
   "options": {
     "draftAndPublish": false
@@ -24,26 +25,6 @@
     "date_of_admission": {
       "type": "date",
       "required": true
-    },
-    "mode": {
-      "type": "enumeration",
-      "enum": [
-        "online",
-        "offline"
-      ],
-      "default": "offline"
-    },
-    "transport_details": {
-      "type": "text",
-      "private": false
-    },
-    "hostel_details": {
-      "type": "text",
-      "private": false
-    },
-    "fees_details": {
-      "type": "text",
-      "private": false
     },
     "seat_allocations": {
       "type": "relation",

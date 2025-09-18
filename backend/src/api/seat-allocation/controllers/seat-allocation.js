@@ -13,8 +13,7 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
     ctx.query.populate = ctx.query.populate || {
       bus: true,
       student: true,
-      pickup_stop: true,
-      drop_stop: true
+      pickup_stop: true
     };
     return await super.find(ctx);
   },
@@ -68,8 +67,7 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
       ctx.query.populate = {
         bus: true,
         student: true,
-        pickup_stop: true,
-        drop_stop: true
+        pickup_stop: true
       };
 
       return await super.create(ctx);
@@ -91,8 +89,7 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
         },
         populate: {
           student: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         },
         sort: { seat_number: 'asc' }
       });
@@ -107,17 +104,16 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
   // Get allocations by student
   async findByStudent(ctx) {
     const { studentId } = ctx.params;
-    
+
     try {
       const allocations = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
-        filters: { 
+        filters: {
           student: studentId,
-          is_active: true 
+          is_active: true
         },
         populate: {
           bus: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         }
       });
 
@@ -165,8 +161,7 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
             populate: {
               bus: true,
               student: true,
-              pickup_stop: true,
-              drop_stop: true
+              pickup_stop: true
             }
           });
 
@@ -226,8 +221,7 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
         populate: {
           bus: true,
           student: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         }
       });
 
@@ -241,15 +235,14 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
   // Deactivate allocation
   async deactivate(ctx) {
     const { id } = ctx.params;
-    
+
     try {
       const updated = await strapi.entityService.update('api::seat-allocation.seat-allocation', id, {
         data: { is_active: false },
         populate: {
           bus: true,
           student: true,
-          pickup_stop: true,
-          drop_stop: true
+          pickup_stop: true
         }
       });
 

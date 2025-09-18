@@ -39,8 +39,18 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
   },
 
   async enrollStudent(data) {
-    const { student_id, academic_year_id, division, date_of_admission, mode, admission_type, ...enrollmentData } = data;
-    
+    console.log('🎯 BACKEND: Starting enrollStudent with data:', data);
+    const { student_id, academic_year_id, division, date_of_admission, admission_type, ...enrollmentData } = data;
+
+    console.log('📝 BACKEND: Parsed enrollment data:', {
+      student_id,
+      academic_year_id,
+      division,
+      date_of_admission,
+      admission_type,
+      enrollmentData
+    });
+
     // Check if student is already enrolled
     const existingEnrollment = await strapi.entityService.findMany('api::enrollment.enrollment', {
       filters: {
@@ -69,15 +79,21 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
     });
 
     // Create enrollment administration entry
-    await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
+    console.log('📋 BACKEND: Creating enrollment-administration with:', {
+      enrollment: enrollment.id,
+      division: division,
+      date_of_admission: date_of_admission
+    });
+
+    const administrationEntry = await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
       data: {
         enrollment: enrollment.id,
         division: division,
-        date_of_admission: date_of_admission,
-        mode: mode,
-        // admission_type: admission_type, // Removed
+        date_of_admission: date_of_admission
       }
     });
+
+    console.log('✅ BACKEND: Created enrollment-administration:', administrationEntry);
 
     return await strapi.entityService.findOne('api::enrollment.enrollment', enrollment.id, {
       populate: [

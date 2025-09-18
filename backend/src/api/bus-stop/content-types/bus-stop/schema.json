@@ -14,10 +14,6 @@
       "type": "string",
       "required": true
     },
-    "location": {
-      "type": "string",
-      "required": true
-    },
     "address": {
       "type": "text"
     },
@@ -27,6 +23,13 @@
     },
     "landmark": {
       "type": "string"
+    },
+    "location": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::location.location",
+      "inversedBy": "bus_stops",
+      "description": "Reference to Location entity"
     },
     "is_active": {
       "type": "boolean",
@@ -43,12 +46,6 @@
       "relation": "oneToMany",
       "target": "api::seat-allocation.seat-allocation",
       "mappedBy": "pickup_stop"
-    },
-    "drop_allocations": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::seat-allocation.seat-allocation",
-      "mappedBy": "drop_stop"
     }
   }
 }

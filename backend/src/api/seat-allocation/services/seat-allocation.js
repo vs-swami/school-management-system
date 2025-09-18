@@ -5,13 +5,13 @@ const { createCoreService } = require('@strapi/strapi').factories;
 module.exports = createCoreService('api::seat-allocation.seat-allocation', ({ strapi }) => ({
   
   // Auto-assign seat to student
-  async autoAssignSeat(studentId, pickupStopId, dropStopId) {
+  async autoAssignSeat(studentId, pickupStopId) {
     try {
-      // Find buses that serve both pickup and drop stops
+      // Find buses that serve the pickup stop
       const routes = await strapi.entityService.findMany('api::bus-route.bus-route', {
         filters: {
-          bus_stops: { 
-            id: { $in: [pickupStopId, dropStopId] }
+          bus_stops: {
+            id: pickupStopId
           }
         },
         populate: {
@@ -26,15 +26,11 @@ module.exports = createCoreService('api::seat-allocation.seat-allocation', ({ st
         }
       });
 
-      // Filter routes that serve both stops
-      const validRoutes = routes.filter(route => {
-        const stopIds = route.bus_stops.map(stop => stop.id);
-        return stopIds.includes(pickupStopId) && stopIds.includes(dropStopId);
-      });
-
-      if (validRoutes.length === 0) {
-        throw new Error('No routes found serving both pickup and drop stops');
+      if (routes.length === 0) {
+        throw new Error('No routes found serving the pickup stop');
       }
+
+      const validRoutes = routes;
 
       // Find bus with available seats
       for (const route of validRoutes) {
@@ -58,7 +54,6 @@ module.exports = createCoreService('api::seat-allocation.seat-allocation', ({ st
               student: studentId,
               seat_number: seatNumber,
               pickup_stop: pickupStopId,
-              drop_stop: dropStopId,
               allocation_date: new Date(),
               valid_from: new Date(),
               is_active: true
@@ -66,8 +61,7 @@ module.exports = createCoreService('api::seat-allocation.seat-allocation', ({ st
             populate: {
               bus: true,
               student: true,
-              pickup_stop: true,
-              drop_stop: true
+              pickup_stop: true
             }
           });
 
@@ -75,7 +69,7 @@ module.exports = createCoreService('api::seat-allocation.seat-allocation', ({ st
         }
       }
 
-      throw new Error('No available seats found on routes serving the specified stops');
+      throw new Error('No available seats found on routes serving the pickup stop');
     } catch (error) {
       throw new Error(`Error auto-assigning seat: ${error.message}`);
     }

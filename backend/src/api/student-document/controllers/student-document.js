@@ -25,20 +25,31 @@ module.exports = createCoreController('api::student-document.student-document', 
       // Handle file upload first if files exist
       let fileId = null;
       if (files && Object.keys(files).length > 0) {
-        const fileToUpload = files.files || files.file || Object.values(files)[0];
+        // Try different file field names that might be sent
+        const fileToUpload = files.files || files.file || files['files.file'] || Object.values(files)[0];
         console.log('StudentDocument Controller - create: File to upload:', JSON.stringify(fileToUpload, null, 2));
-        
+
         if (fileToUpload) {
-          const uploadedFiles = await strapi.plugins.upload.services.upload.upload({
-            data: {},
-            files: fileToUpload,
-          });
-          console.log('StudentDocument Controller - create: Uploaded Files:', JSON.stringify(uploadedFiles, null, 2));
-          
-          if (uploadedFiles && uploadedFiles.length > 0) {
-            fileId = uploadedFiles[0].id;
+          try {
+            const uploadedFiles = await strapi.plugins.upload.services.upload.upload({
+              data: {},
+              files: fileToUpload,
+            });
+            console.log('StudentDocument Controller - create: Uploaded Files:', JSON.stringify(uploadedFiles, null, 2));
+
+            if (uploadedFiles && uploadedFiles.length > 0) {
+              fileId = uploadedFiles[0].id;
+              console.log('StudentDocument Controller - create: File uploaded with ID:', fileId);
+            }
+          } catch (uploadError) {
+            console.error('StudentDocument Controller - create: File upload error:', uploadError);
+            return ctx.badRequest('Error uploading file', { error: uploadError.message });
           }
+        } else {
+          console.log('StudentDocument Controller - create: No valid file found in request');
         }
+      } else {
+        console.log('StudentDocument Controller - create: No files in request');
       }
 
       // Create student document with file ID
@@ -143,17 +154,35 @@ module.exports = createCoreController('api::student-document.student-document', 
       });
       console.log('StudentDocument Controller - delete: Recent documents:', recentDocs.map(doc => ({ id: doc.id, type: typeof doc.id, document_type: doc.document_type })));
 
-      const documentToDelete = await strapi.entityService.findOne('api::student-document.student-document', documentId, {
-        populate: ['file'],
-      });
+      // Try to find the document first
+      let documentToDelete;
+      try {
+        documentToDelete = await strapi.entityService.findOne('api::student-document.student-document', documentId, {
+          populate: ['file'],
+        });
+      } catch (findError) {
+        console.error('StudentDocument Controller - delete: Error finding document:', findError);
+        // Try with string ID if number failed
+        if (typeof documentId === 'number') {
+          try {
+            documentToDelete = await strapi.entityService.findOne('api::student-document.student-document', String(documentId), {
+              populate: ['file'],
+            });
+          } catch (stringFindError) {
+            console.error('StudentDocument Controller - delete: Error with string ID:', stringFindError);
+          }
+        }
+      }
 
       if (!documentToDelete) {
         console.log('StudentDocument Controller - delete: Document not found for ID:', documentId);
         return ctx.notFound('Student document not found.');
       }
 
+      console.log('StudentDocument Controller - delete: Found document:', JSON.stringify(documentToDelete, null, 2));
+
       // Delete file if exists
-      if (documentToDelete.file) {
+      if (documentToDelete.file && documentToDelete.file.id) {
         try {
           await strapi.plugins.upload.services.upload.remove(documentToDelete.file.id);
           console.log('StudentDocument Controller - delete: Associated file deleted.');
@@ -162,8 +191,20 @@ module.exports = createCoreController('api::student-document.student-document', 
         }
       }
 
-      // Delete the document
-      const result = await strapi.entityService.delete('api::student-document.student-document', documentId);
+      // Delete the document using the same ID that worked for findOne
+      let result;
+      try {
+        result = await strapi.entityService.delete('api::student-document.student-document', documentToDelete.id);
+      } catch (deleteError) {
+        console.error('StudentDocument Controller - delete: Error with delete:', deleteError);
+        // Try alternative delete approach
+        try {
+          result = await strapi.entityService.delete('api::student-document.student-document', documentToDelete.documentId || documentToDelete.id);
+        } catch (altDeleteError) {
+          console.error('StudentDocument Controller - delete: Alternative delete failed:', altDeleteError);
+          throw deleteError;
+        }
+      }
       console.log('StudentDocument Controller - delete: Document deleted successfully');
       
       return this.transformResponse(result || { id: documentId, deleted: true });

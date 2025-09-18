@@ -33,12 +33,6 @@
       "target": "api::bus-stop.bus-stop",
       "inversedBy": "pickup_allocations"
     },
-    "drop_stop": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::bus-stop.bus-stop",
-      "inversedBy": "drop_allocations"
-    },
     "allocation_date": {
       "type": "date",
       "required": true
@@ -56,7 +50,11 @@
     },
     "allocation_type": {
       "type": "enumeration",
-      "enum": ["regular", "temporary", "emergency"],
+      "enum": [
+        "regular",
+        "temporary",
+        "emergency"
+      ],
       "default": "regular"
     },
     "monthly_fee": {

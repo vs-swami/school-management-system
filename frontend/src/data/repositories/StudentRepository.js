@@ -192,7 +192,17 @@ export class StudentRepository {
               admission_type: true,
               administration: {
                 populate: {
-                  division: true
+                  division: true,
+                  seat_allocations: {
+                    populate: {
+                      bus: true,
+                      pickup_stop: {
+                        populate: {
+                          location: true
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
