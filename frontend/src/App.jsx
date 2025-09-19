@@ -19,6 +19,13 @@ import FeeStructure from './presentation/pages/fees/FeeStructure';
 import PaymentProcessing from './presentation/pages/fees/PaymentProcessing';
 import PaymentHistory from './presentation/pages/fees/PaymentHistory';
 import FeeDemo from './presentation/pages/fees/FeeDemo';
+import FeeManagement from './presentation/pages/fees/FeeManagement';
+import ClassFeeManagementPage from './presentation/pages/fees/ClassFeeManagementPage';
+import ClassManagement from './presentation/pages/classes/ClassManagement';
+import EnhancedClassManagement from './presentation/pages/classes/EnhancedClassManagement';
+import DivisionManagementDashboard from './presentation/pages/classes/DivisionManagementDashboard';
+import ClassDivisionDashboard from './presentation/pages/classes/ClassDivisionDashboard';
+import BusManagementDashboard from './presentation/pages/transport/BusManagementDashboard';
 
 // Error Boundary and Configuration
 import ErrorBoundary from './presentation/components/common/ErrorBoundary';
@@ -84,8 +91,16 @@ function App() {
                             <Route path="/enrollments" element={<EnrollmentList />} />
                             <Route path="/enrollments/:id/admin" element={<EnrollmentAdminPage />} />
 
+                            {/* Class Management Routes */}
+                            <Route path="/classes" element={<ClassDivisionDashboard />} />
+                            <Route path="/classes/:classId/fees" element={<ClassFeeManagementPage />} />
+
+                            {/* Transport Management Routes */}
+                            <Route path="/transport" element={<BusManagementDashboard />} />
+
                             {/* Fee Management Routes */}
-                            <Route path="/fees" element={<FeeDemo />} />
+                            <Route path="/fees" element={<FeeManagement />} />
+                            <Route path="/fees/manage" element={<FeeManagement />} />
                             <Route path="/fees/demo" element={<FeeDemo />} />
                             <Route path="/fees/dashboard" element={<FeeDashboard />} />
                             <Route path="/fees/structure" element={<FeeStructure />} />

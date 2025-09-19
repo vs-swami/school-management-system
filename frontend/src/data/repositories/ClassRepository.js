@@ -22,13 +22,35 @@ const transformClassResponse = (classData) => {
 
 export class ClassRepository {
   static async findAll() {
-    const response = await apiClient.get('/classes?sort=classname:asc');
+    const response = await apiClient.get('/classes?sort=classname:asc&populate=*');
     return transformClassResponse(response.data.data);
   }
 
   static async findById(id) {
-    const response = await apiClient.get(`/classes/${id}`);
+    const response = await apiClient.get(`/classes/${id}?populate=*`);
     return transformClassResponse(response.data.data);
+  }
+
+  static async findAllWithSummary() {
+    try {
+      const response = await apiClient.get('/classes/summary');
+      return response.data?.data || response.data || [];
+    } catch (error) {
+      // Fallback to regular findAll if custom endpoint doesn't exist
+      console.log('Summary endpoint not available, using regular findAll');
+      return this.findAll();
+    }
+  }
+
+  static async findWithStats(id) {
+    try {
+      const response = await apiClient.get(`/classes/${id}/stats`);
+      return response.data?.data || response.data;
+    } catch (error) {
+      // Fallback to regular findById if custom endpoint doesn't exist
+      console.log('Stats endpoint not available, using regular findById');
+      return this.findById(id);
+    }
   }
 
   static async create(data) {

@@ -355,15 +355,24 @@ const StudentPage = ({ mode = 'create', initialData = null }) => {
   };
 
   const getButtonText = () => {
+    // Show loading state when saving from first step
+    if (currentStep === STEPS.COMBINED_INFO) {
+      if (loading) return localStudentId ? 'Updating...' : 'Saving...';
+      if (isSuccess) return 'Saved!';
+      return 'Save & Continue';
+    }
+
     if (currentStep < TOTAL_STEPS - 1) {
       if (currentStep === STEPS.ADMINISTRATION) return 'Review Summary';
       return 'Next';
     }
+
     if (currentStep === STEPS.SUMMARY) {
       if (loading) return mode === 'edit' ? 'Updating...' : 'Creating...';
       if (isSuccess) return mode === 'edit' ? 'Updated!' : 'Created!';
       return mode === 'edit' ? 'Update Student' : 'Create Student';
     }
+
     if (currentStep === STEPS.EXAM_RESULTS) return 'Continue to Administration';
     return 'Next';
   };
@@ -412,9 +421,15 @@ const StudentPage = ({ mode = 'create', initialData = null }) => {
             <button
               type="button"
               onClick={currentStep === STEPS.SUMMARY ? handleSubmit : handleNextStep}
-              className="btn btn-primary"
-              disabled={loading || isSuccess}
+              className={`btn btn-primary flex items-center gap-2 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+              disabled={loading}
             >
+              {loading && (
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              )}
               {getButtonText()}
             </button>
           </div>

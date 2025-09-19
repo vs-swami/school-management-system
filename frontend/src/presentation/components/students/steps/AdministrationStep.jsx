@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { BookOpen, Gauge, Users, Sparkles, Activity, Tag } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight } from 'lucide-react';
 import Alert from '../Alert';
 import FormField from '../FormField';
 import SideBySideRoutes from '../SideBySideRoutes';
@@ -125,23 +125,70 @@ const AdministrationStep = ({
     }
   }, [currentAdmin?.division?.id, currentSeatInfo?.pickup_stop_id, currentSeatInfo?.pickup_stop_location_id]); // Only depend on the saved data IDs
 
+  const [expandedSection, setExpandedSection] = useState('all');
+  const [animateCards, setAnimateCards] = useState(false);
+
+  useEffect(() => {
+    setAnimateCards(true);
+  }, []);
+
   return (
     <div className="space-y-6">
-      <h4 className="text-md font-semibold text-gray-800 mb-4">Administration Details</h4>
-      <p className="text-gray-600">This section is for administration-related information.</p>
+      {/* Enhanced Header with Progress Indicator */}
+      <div className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-2xl font-bold flex items-center gap-2">
+              <Activity className="h-7 w-7" />
+              Administration & Enrollment
+            </h4>
+            <p className="text-indigo-100 mt-2">
+              Configure division assignment and bus allocation for the student
+            </p>
+          </div>
+          <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+            <p className="text-sm font-medium">Step 4 of 5</p>
+            <div className="w-32 bg-white/30 rounded-full h-2 mt-1">
+              <div className="bg-white h-2 rounded-full" style={{ width: '80%' }} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {(currentDivisionName || currentSeatInfo) && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-sm text-indigo-900 font-semibold">Current Administration</p>
-              <div className="mt-1 text-sm text-indigo-800">
-                <span className="mr-4">
-                  Division: {currentDivisionName || 'Not set'}
-                </span>
-                <span>
-                  Seat: {currentSeatInfo ? `Bus ${currentSeatInfo.bus_number || 'N/A'} · Seat ${currentSeatInfo.seat_number} · ${currentSeatInfo.stop_name || ''}` : 'Not allocated'}
-                </span>
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-3">
+                <Info className="h-5 w-5 text-indigo-600" />
+                <p className="text-lg font-semibold text-indigo-900">Current Enrollment Status</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm">
+                  <div className="bg-indigo-100 rounded-full p-2">
+                    <Tag className="h-4 w-4 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Division</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {currentDivisionName || 'Not Assigned'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm">
+                  <div className="bg-blue-100 rounded-full p-2">
+                    <Bus className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Transport</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {currentSeatInfo ? `Bus ${currentSeatInfo.bus_number} · Seat ${currentSeatInfo.seat_number}` : 'Not Allocated'}
+                    </p>
+                    {currentSeatInfo?.stop_name && (
+                      <p className="text-xs text-gray-600">{currentSeatInfo.stop_name}</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -154,21 +201,26 @@ const AdministrationStep = ({
 
 
 
-      {/* Bus Allocation */}
+      {/* Bus Allocation Section with Better Visual Design */}
       {!isStudentRejected && (
-        <section className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
-          <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-blue-600" />
-            Bus Allocation
-          </h4>
+        <section className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-xl">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200">
+            <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Bus className="h-6 w-6 text-blue-600" />
+              Transport Allocation
+            </h4>
+            <p className="text-sm text-gray-600 mt-1">Select pickup location for bus route assignment</p>
+          </div>
+          <div className="p-6">
           <div className="grid grid-cols-1 gap-6">
-            {/* Pickup Location (cascading parent) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                Pickup Location
+            {/* Enhanced Pickup Location Selection */}
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-indigo-600" />
+                Select Pickup Location
               </label>
               <select
-                className="input"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-white hover:border-indigo-400"
                 value={(() => {
                   console.log('🎯 DROPDOWN VALUE CALCULATION:');
                   console.log('  selectedPickupLocationId (form):', selectedPickupLocationId);
@@ -221,6 +273,7 @@ const AdministrationStep = ({
 
             {/* Pickup Stop dropdown removed as per requirement */}
           </div>
+          </div>
         </section>
       )}
 
@@ -240,27 +293,31 @@ const AdministrationStep = ({
       />
 
       {classCapacityData?.summary && (
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-xl">
 
 
-          <div className="flex items-center justify-between mb-6">
-            <h4 className="text-lg font-bold text-gray-800 flex items-center">
-              <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
-              Class Capacity: {classCapacityData.class?.classname}
-            </h4>
-            <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
+          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <BookOpen className="h-6 w-6 text-indigo-600" />
+                Class {classCapacityData.class?.classname} Capacity Overview
+              </h4>
+              <div className={`px-5 py-2 rounded-full text-sm font-bold shadow-sm ${
               classCapacityData.summary.overallUtilization < 50
-                ? 'bg-green-100 text-green-800'
+                ? 'bg-gradient-to-r from-green-400 to-green-500 text-white'
                 : classCapacityData.summary.overallUtilization < 80
-                ? 'bg-yellow-100 text-yellow-800'
-                : 'bg-red-100 text-red-800'
-            }`}>
+                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                : 'bg-gradient-to-r from-red-400 to-red-500 text-white'
+            } animate-pulse`}>
+              <Activity className="h-4 w-4 inline mr-1" />
               {classCapacityData.summary.overallUtilization}% Utilized
+            </div>
             </div>
           </div>
 
-          {/* Visual Progress Bar */}
-          <div className="mb-6">
+          <div className="p-6">
+          {/* Enhanced Visual Progress Bar */}
+          <div className="mb-8">
             {(() => {
               // Only increase total if it's a new enrollment, not a division change
               const newTotalEnrolled = isNewEnrollment ? classCapacityData.summary.totalEnrolled + 1 : classCapacityData.summary.totalEnrolled;
@@ -316,9 +373,9 @@ const AdministrationStep = ({
             })()}
           </div>
 
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg p-4 shadow-md border border-indigo-100">
+          {/* Enhanced Key Metrics Cards with Animations */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className={`bg-gradient-to-br from-indigo-50 to-white rounded-xl p-5 shadow-lg border-2 border-indigo-200 hover:scale-105 transition-all duration-300 ${animateCards ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`} style={{animationDelay: '0ms'}}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Total Capacity</p>
@@ -330,7 +387,7 @@ const AdministrationStep = ({
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 shadow-md border border-green-100">
+            <div className={`bg-gradient-to-br from-green-50 to-white rounded-xl p-5 shadow-lg border-2 border-green-200 hover:scale-105 transition-all duration-300 ${animateCards ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`} style={{animationDelay: '100ms'}}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Enrolled</p>
@@ -349,7 +406,7 @@ const AdministrationStep = ({
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 shadow-md border border-blue-100">
+            <div className={`bg-gradient-to-br from-blue-50 to-white rounded-xl p-5 shadow-lg border-2 border-blue-200 hover:scale-105 transition-all duration-300 ${animateCards ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`} style={{animationDelay: '200ms'}}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Available</p>
@@ -368,7 +425,7 @@ const AdministrationStep = ({
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-4 shadow-md border border-purple-100">
+            <div className={`bg-gradient-to-br from-purple-50 to-white rounded-xl p-5 shadow-lg border-2 border-purple-200 hover:scale-105 transition-all duration-300 ${animateCards ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`} style={{animationDelay: '300ms'}}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Utilization</p>
@@ -394,21 +451,30 @@ const AdministrationStep = ({
             </div>
           </div>
 
-          {/* Division Breakdown */}
+          {/* Enhanced Division Selection Section */}
           {classCapacityData.divisions && classCapacityData.divisions.length > 0 && (
-            <div>
-              <h5 className="text-lg font-bold text-indigo-800 mb-4 flex items-center">
-                <Tag className="h-5 w-5 mr-2" />
-                Division Selection & Breakdown
-              </h5>
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between mb-6">
+                <h5 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                  <Tag className="h-6 w-6 text-indigo-600" />
+                  Division Selection
+                </h5>
+                <span className="text-sm text-gray-500">
+                  {classCapacityData.divisions.length} divisions available
+                </span>
+              </div>
               {!isStudentRejected && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>💡 Click on a division card below</strong> to select your preferred division. The admin will review your choice and make the final assignment based on availability.
-                  </p>
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-indigo-500 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-gray-700">
+                      <strong className="text-indigo-900">Select your preferred division</strong> by clicking on a card below.
+                      The administration will review and confirm your selection based on availability.
+                    </p>
+                  </div>
                 </div>
               )}
-              <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {classCapacityData.divisions.map((div, index) => {
                   const utilizationColor = div.utilizationPercent < 50 ? 'green' :
                                          div.utilizationPercent < 80 ? 'yellow' : 'red';
@@ -444,14 +510,20 @@ const AdministrationStep = ({
                       key={index}
                       onClick={isClickable ? () => handleDivisionSelect(div.division.id, div.division.name) : undefined}
                       className={`
-                        bg-white rounded-lg p-4 shadow-md transition-all duration-200
-                        ${isClickable ? 'cursor-pointer hover:shadow-lg hover:scale-[1.02]' : 'cursor-default'}
+                        relative bg-white rounded-xl p-5 shadow-lg transition-all duration-300 overflow-hidden
+                        ${isClickable ? 'cursor-pointer hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1' : 'cursor-default'}
                         ${isSelected
-                          ? 'border-2 border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50'
-                          : 'border border-gray-200 hover:border-indigo-300'
+                          ? 'border-2 border-indigo-500 ring-4 ring-indigo-100 bg-gradient-to-br from-indigo-50 to-blue-50'
+                          : 'border-2 border-gray-200 hover:border-indigo-400'
                         }
                       `}
+                      style={{
+                        animation: animateCards ? `fadeIn 0.5s ease-out ${index * 100}ms both` : 'none'
+                      }}
                     >
+                      {isSelected && (
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-indigo-400 to-blue-500 transform rotate-45 translate-x-10 -translate-y-10" />
+                      )}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${
@@ -476,8 +548,9 @@ const AdministrationStep = ({
                         </div>
                         <div className="flex items-center gap-2">
                           {isSelected && (
-                            <div className="px-2 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full">
-                              ✓ SELECTED
+                            <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-bold rounded-full shadow-lg z-10 relative">
+                              <CheckCircle className="h-4 w-4" />
+                              SELECTED
                             </div>
                           )}
                           {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.division.id))) ? (
@@ -568,8 +641,8 @@ const AdministrationStep = ({
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          {/* Enhanced Action Buttons Section */}
+          <div className="mt-8 pt-6 border-t-2 border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-lg p-6">
             {(() => {
               const hasSelectedDivision = selectedDivisionId;
               const hasSelectedStop = pickupStopId;
@@ -580,7 +653,7 @@ const AdministrationStep = ({
                 return (
                   <button
                     type="button"
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                     onClick={async () => {
                       if (onEnrollStudent) {
                         await onEnrollStudent({
@@ -600,7 +673,11 @@ const AdministrationStep = ({
                         <span>Enrolling Student...</span>
                       </span>
                     ) : (
-                      <span>✅ Enroll Student</span>
+                      <>
+                        <CheckCircle className="h-5 w-5" />
+                        <span>Confirm Enrollment</span>
+                        <ChevronRight className="h-5 w-5" />
+                      </>
                     )}
                   </button>
                 );
@@ -609,7 +686,7 @@ const AdministrationStep = ({
                 return (
                   <button
                     type="button"
-                    className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
                     onClick={async () => {
                       if (onUpdateToWaiting) {
                         await onUpdateToWaiting();
@@ -620,7 +697,10 @@ const AdministrationStep = ({
                     {loading ? (
                       <span>🔄 Updating...</span>
                     ) : (
-                      <span>⏳ Update Status to Waiting</span>
+                      <>
+                        <Clock className="h-5 w-5" />
+                        <span>Add to Waiting List</span>
+                      </>
                     )}
                   </button>
                 );
@@ -632,20 +712,25 @@ const AdministrationStep = ({
 
                 return (
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-3">
-                      Please select {missing.join(' and ')} to continue enrollment
-                    </p>
+                    <div className="flex items-center justify-center gap-2 mb-4 text-amber-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      <p className="text-sm font-medium">
+                        Please select {missing.join(' and ')} to continue
+                      </p>
+                    </div>
                     <button
                       type="button"
                       disabled
-                      className="w-full bg-gray-300 text-gray-500 font-semibold py-3 px-6 rounded-lg cursor-not-allowed"
+                      className="w-full bg-gray-200 text-gray-400 font-semibold py-4 px-6 rounded-xl border-2 border-gray-300 border-dashed cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                      Complete Selection to Enroll
+                      <AlertTriangle className="h-5 w-5" />
+                      Complete Selection Required
                     </button>
                   </div>
                 );
               }
             })()}
+          </div>
           </div>
         </div>
       )}

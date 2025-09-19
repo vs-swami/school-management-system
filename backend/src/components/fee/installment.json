@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_fee_installments",
+  "info": {
+    "displayName": "installment",
+    "icon": "money-check-alt",
+    "description": "Fee installment with amount and due date"
+  },
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "due_date": {
+      "type": "date"
+    },
+    "index": {
+      "type": "integer"
+    }
+  }
+}
+

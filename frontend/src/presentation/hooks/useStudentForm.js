@@ -269,10 +269,74 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
   const handleNextStep = async () => {
     const isValid = (currentStep === STEPS.DOCUMENTS && skipDocuments) ? true : await trigger();
 
-    if (isValid && currentStep < Object.keys(STEPS).length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else if (!isValid) {
+    if (!isValid) {
       setApiError(ERROR_MESSAGES.VALIDATION_ERROR);
+      return;
+    }
+
+    // Save student information when moving from first step
+    if (currentStep === STEPS.COMBINED_INFO) {
+      setApiError('');
+      setIsSuccess(false);
+      setLoading(true);
+
+      try {
+        const formData = getValues();
+
+        // Prepare the student data for creation/update
+        const studentData = {
+          ...formData,
+          // Ensure enrollment status is set
+          enrollments: [{
+            ...formData.enrollments[0],
+            enrollment_status: formData.enrollments[0].enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY
+          }]
+        };
+
+        let result;
+        if (localStudentId) {
+          // Update existing student
+          result = await updateStudent(localStudentId, studentData);
+        } else {
+          // Create new student
+          result = await createStudent(studentData);
+        }
+
+        if (result.success) {
+          setIsSuccess(true);
+
+          // Save the student ID for subsequent steps
+          if (!localStudentId && result.data?.id) {
+            setLocalStudentId(result.data.id);
+            // Also update the form with the new student ID
+            setValue('id', result.data.id);
+          }
+
+          // Proceed to next step after a brief success indication
+          setTimeout(() => {
+            setIsSuccess(false);
+            setCurrentStep(prev => prev + 1);
+            setLoading(false);
+          }, 500);
+        } else {
+          // Handle error object properly
+          const errorMessage = typeof result.error === 'string'
+            ? result.error
+            : result.error?.message || 'Failed to save student information';
+          setApiError(errorMessage);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error saving student:', error);
+        const errorMessage = error?.message || 'An error occurred while saving student information';
+        setApiError(errorMessage);
+        setLoading(false);
+      }
+    } else {
+      // For other steps, just move forward
+      if (currentStep < Object.keys(STEPS).length - 1) {
+        setCurrentStep(prev => prev + 1);
+      }
     }
   };
 
@@ -283,11 +347,12 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
   };
 
   const handleSubmit = async () => {
+    // Only called from Summary step to finalize the student creation/update
     setApiError('');
     setIsSuccess(false);
     setLoading(true);
 
-    const isValid = (currentStep === STEPS.DOCUMENTS && skipDocuments) ? true : await trigger();
+    const isValid = await trigger();
     if (!isValid) {
       setLoading(false);
       setApiError(ERROR_MESSAGES.VALIDATION_ERROR);
@@ -296,24 +361,34 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
 
     try {
       const allFormData = getValues();
-      const result = localStudentId ?
-        await updateStudent(localStudentId, allFormData) :
-        await createStudent(allFormData);
+
+      // Since student is already created in first step, always update here
+      if (!localStudentId) {
+        setApiError('Student ID not found. Please go back and save student information first.');
+        setLoading(false);
+        return;
+      }
+
+      const result = await updateStudent(localStudentId, allFormData);
 
       if (result.success) {
         setIsSuccess(true);
-        if (mode === 'create' && result.data?.id) {
-          setLocalStudentId(result.data.id);
-        }
         setTimeout(() => {
           setIsSuccess(false);
-          handleNextStep();
-        }, 1000);
+          // Could redirect to student list or reset form here
+          // For now, just showing success message
+        }, 2000);
       } else {
-        setApiError(result.error || 'An error occurred');
+        // Handle error object properly
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || 'An error occurred';
+        setApiError(errorMessage);
       }
     } catch (error) {
-      setApiError('An unexpected error occurred');
+      console.error('Error in handleSubmit:', error);
+      const errorMessage = error?.message || 'An unexpected error occurred';
+      setApiError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -323,6 +398,8 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
     setApiError('');
     setIsSuccess(false);
     setSkipDocuments(false);
+    setLocalStudentId(null);
+    setCurrentStep(STEPS.COMBINED_INFO);
     reset(formatInitialData(null, 'create'));
   };
 

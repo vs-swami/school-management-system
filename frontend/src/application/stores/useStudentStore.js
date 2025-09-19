@@ -97,11 +97,16 @@ export default create((set, get) => ({
       });
       return { success: true, data: newStudent };
     } else {
+      // Ensure error is a string
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message || JSON.stringify(result.error);
+
       set({
-        error: result.error,
+        error: errorMessage,
         loading: false
       });
-      return { success: false, error: result.error, details: result.details };
+      return { success: false, error: errorMessage, details: result.details };
     }
   },
 
@@ -125,11 +130,16 @@ export default create((set, get) => ({
       });
       return { success: true, data: updatedStudent };
     } else {
+      // Ensure error is a string
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message || JSON.stringify(result.error);
+
       set({
-        error: result.error,
+        error: errorMessage,
         loading: false
       });
-      return { success: false, error: result.error, details: result.details };
+      return { success: false, error: errorMessage, details: result.details };
     }
   },
 
@@ -142,8 +152,11 @@ export default create((set, get) => ({
         set({ loading: false });
         return { success: true, data: result.data };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store uploading student document:', error);
@@ -161,8 +174,11 @@ export default create((set, get) => ({
         set({ loading: false });
         return { success: true, data: result.data };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store updating student document:', error);
@@ -180,8 +196,11 @@ export default create((set, get) => ({
         set({ loading: false });
         return { success: true };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store deleting student document:', error);
@@ -200,8 +219,11 @@ export default create((set, get) => ({
         set({ loading: false });
         return { success: true, data: result.data };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store approving next stage:', error);
@@ -221,8 +243,11 @@ export default create((set, get) => ({
         const examResults = get().extractData(result);
         return { success: true, data: examResults };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store fetching student exam results:', error);
@@ -242,8 +267,11 @@ export default create((set, get) => ({
         set({ loading: false });
         return { success: true, data: result.data };
       } else {
-        set({ loading: false, error: result.error });
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        set({ loading: false, error: errorMessage });
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error in store saving exam results:', error);
@@ -347,7 +375,10 @@ export default create((set, get) => ({
       if (result.success) {
         return { success: true, data: result.data };
       } else {
-        return { success: false, error: result.error };
+        const errorMessage = typeof result.error === 'string'
+          ? result.error
+          : result.error?.message || JSON.stringify(result.error);
+        return { success: false, error: errorMessage };
       }
     } catch (error) {
       console.error('Error fetching class capacity:', error);

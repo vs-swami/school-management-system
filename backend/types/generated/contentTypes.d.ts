@@ -690,9 +690,6 @@ export interface ApiClassClass extends Struct.CollectionTypeSchema {
     classname: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
-    class_fee_yearly: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    class_fee_term1: Schema.Attribute.Decimal & Schema.Attribute.Required;
-    class_fee_term2: Schema.Attribute.Decimal & Schema.Attribute.Required;
     enrollments: Schema.Attribute.Relation<
       'oneToMany',
       'api::enrollment.enrollment'
@@ -700,6 +697,10 @@ export interface ApiClassClass extends Struct.CollectionTypeSchema {
     class_thresholds: Schema.Attribute.Relation<
       'oneToMany',
       'api::class-threshold.class-threshold'
+    >;
+    fee_assignments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-assignment.fee-assignment'
     >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
@@ -919,6 +920,121 @@ export interface ApiExamResultExamResult extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::exam-result.exam-result'
+    >;
+  };
+}
+
+export interface ApiFeeAssignmentFeeAssignment
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'fee_assignments';
+  info: {
+    singularName: 'fee-assignment';
+    pluralName: 'fee-assignments';
+    displayName: 'Fee Assignment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    fee: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::fee-definition.fee-definition'
+    > &
+      Schema.Attribute.Required;
+    class: Schema.Attribute.Relation<'manyToOne', 'api::class.class'>;
+    bus_route: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::bus-route.bus-route'
+    >;
+    student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
+    start_date: Schema.Attribute.Date;
+    end_date: Schema.Attribute.Date;
+    priority: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<10>;
+    conditions: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-assignment.fee-assignment'
+    >;
+  };
+}
+
+export interface ApiFeeDefinitionFeeDefinition
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'fee_definitions';
+  info: {
+    singularName: 'fee-definition';
+    pluralName: 'fee-definitions';
+    displayName: 'Fee Definition';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    type: Schema.Attribute.Relation<'manyToOne', 'api::fee-type.fee-type'> &
+      Schema.Attribute.Required;
+    base_amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    currency: Schema.Attribute.String & Schema.Attribute.DefaultTo<'INR'>;
+    frequency: Schema.Attribute.Enumeration<
+      ['yearly', 'term', 'monthly', 'one_time']
+    > &
+      Schema.Attribute.Required;
+    calculation_method: Schema.Attribute.Enumeration<
+      ['flat', 'per_unit', 'formula']
+    > &
+      Schema.Attribute.DefaultTo<'flat'>;
+    metadata: Schema.Attribute.JSON;
+    installments: Schema.Attribute.Component<'fee.installment', true>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-definition.fee-definition'
+    >;
+  };
+}
+
+export interface ApiFeeTypeFeeType extends Struct.CollectionTypeSchema {
+  collectionName: 'fee_types';
+  info: {
+    singularName: 'fee-type';
+    pluralName: 'fee-types';
+    displayName: 'Fee Type';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-type.fee-type'
     >;
   };
 }
@@ -1592,6 +1708,9 @@ declare module '@strapi/strapi' {
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::enrollment-administration.enrollment-administration': ApiEnrollmentAdministrationEnrollmentAdministration;
       'api::exam-result.exam-result': ApiExamResultExamResult;
+      'api::fee-assignment.fee-assignment': ApiFeeAssignmentFeeAssignment;
+      'api::fee-definition.fee-definition': ApiFeeDefinitionFeeDefinition;
+      'api::fee-type.fee-type': ApiFeeTypeFeeType;
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::house.house': ApiHouseHouse;
       'api::location.location': ApiLocationLocation;

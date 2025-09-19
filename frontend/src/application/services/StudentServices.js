@@ -19,9 +19,13 @@ export class StudentService {
         data: students,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -34,9 +38,13 @@ export class StudentService {
         data: student,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -67,9 +75,13 @@ export class StudentService {
         data: student,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -98,9 +110,13 @@ export class StudentService {
         data: student,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -169,9 +185,13 @@ export class StudentService {
         data: students,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }
@@ -184,9 +204,13 @@ export class StudentService {
         data: stats,
       };
     } catch (error) {
+      console.error('Error in StudentService:', error);
+      const errorMessage = error?.response?.data?.error?.message ||
+                          error?.message ||
+                          'An error occurred while processing your request';
       return {
         success: false,
-        error: error.message,
+        error: errorMessage,
       };
     }
   }

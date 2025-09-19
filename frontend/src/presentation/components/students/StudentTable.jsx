@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../common/Button';
+import { Eye, Edit, Trash2, ChevronUp, ChevronDown, Users, Search } from 'lucide-react';
 
 export const StudentTable = ({ students = [], loading = false, onEdit, onDelete, onView }) => {
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [selectedStudents, setSelectedStudents] = useState([]);
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [animateRows, setAnimateRows] = useState(false);
+
+  useEffect(() => {
+    setAnimateRows(true);
+  }, [students]);
 
   // Sort students
   const sortedStudents = [...students].sort((a, b) => {
@@ -72,17 +79,18 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
   };
 
   const getStatusBadge = (enrollment_status) => {
-    const statusClasses = {
-      Enquiry: 'bg-blue-100 text-blue-800',
-      Waiting: 'bg-yellow-100 text-yellow-800',
-      Enrolled: 'bg-green-100 text-green-800',
-      Rejected: 'bg-red-100 text-red-800',
-      Processing: 'bg-purple-100 text-purple-800',
-      default: 'bg-gray-100 text-gray-800',
+    const statusConfig = {
+      Enquiry: { bg: 'from-blue-400 to-blue-500', text: 'white', icon: '🔍' },
+      Waiting: { bg: 'from-yellow-400 to-orange-500', text: 'white', icon: '⏳' },
+      Enrolled: { bg: 'from-green-400 to-emerald-500', text: 'white', icon: '✅' },
+      Rejected: { bg: 'from-red-400 to-red-500', text: 'white', icon: '❌' },
+      Processing: { bg: 'from-purple-400 to-purple-500', text: 'white', icon: '⚙️' },
+      default: { bg: 'from-gray-400 to-gray-500', text: 'white', icon: '📋' },
     };
-    const className = statusClasses[enrollment_status] || statusClasses.default;
+    const config = statusConfig[enrollment_status] || statusConfig.default;
     return (
-      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${className}`}>
+      <span className={`px-3 py-1 inline-flex items-center gap-1 text-xs leading-5 font-bold rounded-full bg-gradient-to-r ${config.bg} text-${config.text} shadow-sm`}>
+        <span>{config.icon}</span>
         {enrollment_status?.charAt(0).toUpperCase() + enrollment_status?.slice(1) || 'N/A'}
       </span>
     );
@@ -91,20 +99,17 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
   const SortIcon = ({ field }) => {
     if (sortField !== field) {
       return (
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-        </svg>
+        <div className="flex flex-col text-gray-400">
+          <ChevronUp className="h-3 w-3 -mb-1" />
+          <ChevronDown className="h-3 w-3 -mt-1" />
+        </div>
       );
     }
 
     return sortDirection === 'asc' ? (
-      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-      </svg>
+      <ChevronUp className="h-4 w-4 text-indigo-600 animate-bounce" />
     ) : (
-      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4" />
-      </svg>
+      <ChevronDown className="h-4 w-4 text-indigo-600 animate-bounce" />
     );
   };
 
@@ -130,33 +135,51 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
 
   if (students.length === 0) {
     return (
-      <div className="card p-8 text-center">
-        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-        <p className="text-gray-500 mb-4">Get started by adding your first student.</p>
-        <Button variant="primary" onClick={() => console.log('Add student clicked')}>
-          Add First Student
+      <div className="p-12 text-center bg-gradient-to-br from-gray-50 to-white rounded-xl">
+        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full mb-6">
+          <Users className="w-10 h-10 text-indigo-600" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">No Students Found</h3>
+        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+          Start building your student database by adding your first student.
+        </p>
+        <Button
+          variant="primary"
+          className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+        >
+          Add Your First Student
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="card overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Table Header Actions */}
       {selectedStudents.length > 0 && (
-        <div className="bg-blue-50 px-6 py-3 border-b border-blue-200">
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 px-6 py-4 border-b-2 border-indigo-200 animate-in slide-in-from-top duration-300">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-blue-800">
-              {selectedStudents.length} student{selectedStudents.length !== 1 ? 's' : ''} selected
-            </span>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-100 rounded-full p-2">
+                <Users className="h-5 w-5 text-indigo-600" />
+              </div>
+              <span className="text-sm font-semibold text-indigo-900">
+                {selectedStudents.length} student{selectedStudents.length !== 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+              >
                 Export Selected
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+              >
                 Bulk Actions
               </Button>
             </div>
@@ -164,11 +187,11 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="table w-full">
+      {/* Enhanced Table */}
+      <div className="overflow-x-auto shadow-inner">
+        <table className="w-full">
           <thead>
-            <tr className="bg-gray-50">
+            <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
               <th className="px-6 py-3 text-left">
                 <input
                   type="checkbox"
@@ -177,59 +200,65 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                   className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
               </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              <th
+                className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide cursor-pointer hover:bg-gray-200 transition-colors"
                 onClick={() => handleSort('name')}
               >
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-2">
                   <span>Name</span>
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              <th
+                className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide cursor-pointer hover:bg-gray-200 transition-colors"
                 onClick={() => handleSort('studentId')}
               >
-                <div className="flex items-center space-x-1">
-                  <span>Student ID (SSA/APAAR)</span>
+                <div className="flex items-center gap-2">
+                  <span>Student ID</span>
                   <SortIcon field="studentId" />
                 </div>
               </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              <th
+                className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide cursor-pointer hover:bg-gray-200 transition-colors"
                 onClick={() => handleSort('grade')}
               >
-                <div className="flex items-center space-x-1">
+                <div className="flex items-center gap-2">
                   <span>Grade</span>
                   <SortIcon field="grade" />
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Section
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">
+                Division
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Guardian Contact
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">
+                Status
               </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">
+                Guardian
+              </th>
+              <th
+                className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wide cursor-pointer hover:bg-gray-200 transition-colors"
                 onClick={() => handleSort('enrollmentDate')}
               >
-                <div className="flex items-center space-x-1">
-                  <span>Enrollment Date</span>
+                <div className="flex items-center gap-2">
+                  <span>Enrolled</span>
                   <SortIcon field="enrollmentDate" />
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Gender
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wide">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {sortedStudents.map((student) => (
-              <tr key={student.id} className="hover:bg-gray-50">
+          <tbody className="bg-white divide-y divide-gray-100">
+            {sortedStudents.map((student, index) => (
+              <tr
+                key={student.id}
+                className={`hover:bg-gradient-to-r hover:from-indigo-50 hover:to-blue-50 transition-all duration-200 ${animateRows ? 'animate-in fade-in slide-in-from-bottom-2' : ''}`}
+                style={{ animationDelay: `${index * 50}ms` }}
+                onMouseEnter={() => setHoveredRow(student.id)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <input
                     type="checkbox"
@@ -240,19 +269,20 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-800">
+                    <div className="flex-shrink-0">
+                      <div className={`h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center shadow-md transform transition-transform ${hoveredRow === student.id ? 'scale-110' : ''}`}>
+                        <span className="text-sm font-bold text-white">
                           {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
                         </span>
                       </div>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-bold text-gray-900">
                         {student.gr_full_name}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {student.dob ? `DoB: ${formatDate(student.dob)}` : ''}
+                      <div className="text-xs text-gray-500">
+                        {student.gender ? `${student.gender.charAt(0).toUpperCase() + student.gender.slice(1)}` : ''}
+                        {student.dob ? ` • ${formatDate(student.dob)}` : ''}
                       </div>
                     </div>
                   </div>
@@ -260,57 +290,52 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {student.ssa_uid || student.apaar_id || 'N/A'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  <span className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                    {student.enrollments?.[0]?.division?.grade || 'N/A'}
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span className="inline-flex px-3 py-1 text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-800 rounded-full shadow-sm">
+                    Grade {student.enrollments?.[0]?.class?.classname || 'N/A'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {student.enrollments?.[0]?.division?.name || 'N/A'}
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  {student.enrollments?.[0]?.administration?.division?.name || 'Not Assigned'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div>
-                    {student.guardians?.[0]?.mobile || 'N/A'}
-                    {student.guardians?.[0]?.full_name && (
-                      <div className="text-xs">({student.guardians[0].full_name})</div>
-                    )}
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {getStatusBadge(student.enrollments?.[0]?.enrollment_status)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-900">
+                      {student.guardians?.[0]?.full_name || 'N/A'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {student.guardians?.[0]?.mobile || 'No contact'}
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatDate(student.enrollments?.[0]?.academic_year?.start_date || student.createdAt)}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  {formatDate(student.enrollments?.[0]?.administration?.date_of_admission || student.createdAt)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {student.gender ? student.gender.charAt(0).toUpperCase() + student.gender.slice(1) : 'N/A'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex space-x-2">
+                <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <div className={`flex justify-center gap-1 transition-all duration-200 ${hoveredRow === student.id ? 'scale-110' : ''}`}>
                     <button
                       onClick={() => onView && onView(student)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-all duration-200 hover:scale-110"
                       title="View Student"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
+                      <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onEdit && onEdit(student)}
-                      className="text-green-600 hover:text-green-900"
+                      className="p-2 bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition-all duration-200 hover:scale-110"
                       title="Edit Student"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
+                      <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onDelete && onDelete(student)}
-                      className="text-red-600 hover:text-red-900"
+                      className="p-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-all duration-200 hover:scale-110"
                       title="Delete Student"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </td>

@@ -59,4 +59,58 @@ export class BusRouteRepository {
       throw error;
     }
   }
+
+  static async findAll() {
+    try {
+      const params = {
+        populate: {
+          bus: true,
+          bus_stops: {
+            populate: {
+              location: true
+            }
+          }
+        },
+        sort: ['route_name:asc'],
+        pagination: {
+          pageSize: 100
+        }
+      };
+      const response = await apiClient.get('/bus-routes', { params });
+      return transformBusRouteResponse(response.data.data);
+    } catch (error) {
+      console.error('BusRouteRepository Error in findAll:', error);
+      throw error;
+    }
+  }
+
+  static async create(routeData) {
+    try {
+      const response = await apiClient.post('/bus-routes', { data: routeData });
+      return transformBusRouteResponse(response.data.data);
+    } catch (error) {
+      console.error('BusRouteRepository Error in create:', error);
+      throw error;
+    }
+  }
+
+  static async update(id, routeData) {
+    try {
+      const response = await apiClient.put(`/bus-routes/${id}`, { data: routeData });
+      return transformBusRouteResponse(response.data.data);
+    } catch (error) {
+      console.error('BusRouteRepository Error in update:', error);
+      throw error;
+    }
+  }
+
+  static async delete(id) {
+    try {
+      const response = await apiClient.delete(`/bus-routes/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('BusRouteRepository Error in delete:', error);
+      throw error;
+    }
+  }
 }

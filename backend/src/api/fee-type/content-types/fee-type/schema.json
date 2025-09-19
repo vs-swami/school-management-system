@@ -1,0 +1,28 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fee_types",
+  "info": {
+    "singularName": "fee-type",
+    "pluralName": "fee-types",
+    "displayName": "Fee Type"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "code": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}
+

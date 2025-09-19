@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { EnrollmentRepository } from '../../data/repositories/EnrollmentRepository';
+import { EnrollmentService } from '../services/EnrollmentService';
+
+const enrollmentService = new EnrollmentService();
 
 export const useEnrollmentStore = create((set) => ({
   enrollments: [],
@@ -8,45 +10,53 @@ export const useEnrollmentStore = create((set) => ({
 
   fetchEnrollments: async () => {
     set({ loading: true, error: null });
-    try {
-      const response = await EnrollmentRepository.getAllEnrollments();
-      set({ enrollments: response || [], loading: false });
-    } catch (error) {
-      set({ error: error, loading: false });
+
+    const result = await enrollmentService.getAllEnrollments();
+
+    if (result.success) {
+      console.log('Enrollments fetched successfully:', result.data);
+      set({ enrollments: result.data || [], loading: false });
+    } else {
+      console.error('Error fetching enrollments:', result.error);
+      set({ error: result.error, loading: false });
     }
   },
 
   updateEnrollmentStatus: async (id, enrollment_status) => {
     set({ loading: true, error: null });
-    try {
-      const response = await EnrollmentRepository.updateEnrollment(id, { enrollment_status });
+
+    const result = await enrollmentService.updateEnrollmentStatus(id, enrollment_status);
+
+    if (result.success) {
       set((state) => ({
         enrollments: state.enrollments.map((enrollment) =>
-          enrollment.id === id ? { ...enrollment, enrollment_status: response.enrollment_status, administration: response.administration } : enrollment
+          enrollment.id === id ? { ...enrollment, enrollment_status, administration: result.data.administration } : enrollment
         ),
         loading: false,
       }));
-      return { success: true, data: response };
-    } catch (error) {
-      set({ loading: false, error: error.message });
-      return { success: false, error: error.message };
+      return result;
+    } else {
+      set({ loading: false, error: result.error });
+      return result;
     }
   },
 
   updateEnrollmentAdministration: async (enrollmentId, administrationData) => {
     set({ loading: true, error: null });
-    try {
-      const response = await EnrollmentRepository.updateEnrollmentAdministration(enrollmentId, administrationData);
+
+    const result = await enrollmentService.updateEnrollmentAdministration(enrollmentId, administrationData);
+
+    if (result.success) {
       set((state) => ({
         enrollments: state.enrollments.map((enrollment) =>
-          enrollment.id === enrollmentId ? { ...enrollment, administration: response } : enrollment
+          enrollment.id === enrollmentId ? { ...enrollment, administration: result.data } : enrollment
         ),
         loading: false,
       }));
-      return response;
-    } catch (error) {
-      set({ error: error, loading: false });
-      throw error;
+      return result.data;
+    } else {
+      set({ error: result.error, loading: false });
+      throw new Error(result.error);
     }
   },
 }));

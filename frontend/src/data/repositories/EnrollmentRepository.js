@@ -1,72 +1,67 @@
 import { apiClient } from '../api/config';
 
-// Helper function to transform Strapi API response structure for enrollments (Strapi 5 flattened)
-const transformEnrollmentResponse = (enrollmentData) => {
-  console.log('transformEnrollmentResponse: received data', enrollmentData);
-  if (!enrollmentData) {
-    console.log('transformEnrollmentResponse: data is null or undefined');
-    return null;
-  }
-
-  if (Array.isArray(enrollmentData)) {
-    console.log('transformEnrollmentResponse: data is an array', enrollmentData);
-    return enrollmentData.map(item => transformEnrollmentResponse(item));
-  }
-
-  // For a single enrollment object, extract id and attributes
-  const transformed = {
-    id: enrollmentData.id,
-    ...enrollmentData.attributes,
-  };
-
-  // No more recursive flattening for .data.attributes as backend should handle it
-  console.log('transformEnrollmentResponse: transformed item', transformed);
-  return transformed;
-};
-
 export const EnrollmentRepository = {
+  // Get all enrollments with populated relations
   getAllEnrollments: async () => {
-    const populateParams = {
-      populate: 'student,academic_year,administration.division,class',
-    };
-    const response = await apiClient.get('/enrollments', { params: populateParams });
-    return transformEnrollmentResponse(response.data.data);
+    try {
+      // For Strapi v5, use populate=* to get all relations
+      const response = await apiClient.get('/enrollments?populate=*');
+
+      console.log('Raw enrollment API response:', response);
+
+      // Return the data array
+      return response.data?.data || [];
+    } catch (error) {
+      console.error('Error fetching enrollments:', {
+        status: error.response?.status,
+        error: error.response?.data?.error,
+        message: error.message,
+        fullResponse: error.response
+      });
+      throw error;
+    }
   },
 
+  // Get a single enrollment by ID
+  getEnrollmentById: async (id) => {
+    const response = await apiClient.get(`/enrollments/${id}?populate=*`);
+    return response.data?.data;
+  },
+
+  // Create a new enrollment
+  createEnrollment: async (enrollmentData) => {
+    const response = await apiClient.post('/enrollments', { data: enrollmentData });
+    return response.data.data;
+  },
+
+  // Update an enrollment
   updateEnrollment: async (id, data) => {
-    const response = await apiClient.put(`/enrollments/${id}/enrollment_status`, { data });
+    const response = await apiClient.put(`/enrollments/${id}`, { data });
+    return response.data.data;
+  },
+
+  // Delete an enrollment
+  deleteEnrollment: async (id) => {
+    const response = await apiClient.delete(`/enrollments/${id}`);
     return response.data;
   },
 
-  getEnrollmentById: async (id) => {
-    const populateParams = {
-      populate: 'student,academic_year,administration.division,class',
-    };
-    const response = await apiClient.get(`/enrollments/${id}`, { params: populateParams });
-    return transformEnrollmentResponse(response.data.data);
-  },
-
-  createEnrollment: async (data) => {
-    const { division, date_of_admission, mode, admission_type, ...enrollmentData } = data;
-    const response = await apiClient.post('/enrollments', {
-      data: enrollmentData,
-      administration: {
-        division,
-        date_of_admission,
-        mode,
-        admission_type,
-      },
+  // Custom method to update only enrollment status
+  updateEnrollmentStatus: async (id, enrollment_status) => {
+    const response = await apiClient.put(`/enrollments/${id}/enrollment_status`, {
+      data: { enrollment_status }
     });
-    return transformEnrollmentResponse(response.data);
+    return response.data.data;
   },
 
-  deleteEnrollment: async (id) => {
-    const response = await apiClient.delete(`/enrollments/${id}`);
-    return response.data; // Deletion usually doesn't require transformation
-  },
-
+  // Update enrollment administration data
   updateEnrollmentAdministration: async (enrollmentId, administrationData) => {
-    const response = await apiClient.put(`/enrollment-administrations/${enrollmentId}`, { data: administrationData });
-    return transformEnrollmentResponse(response.data);
+    // This should update the administration relation of the enrollment
+    const response = await apiClient.put(`/enrollments/${enrollmentId}`, {
+      data: {
+        administration: administrationData
+      }
+    });
+    return response.data.data;
   },
 };

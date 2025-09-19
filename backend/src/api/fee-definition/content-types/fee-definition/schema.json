@@ -1,0 +1,50 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fee_definitions",
+  "info": {
+    "singularName": "fee-definition",
+    "pluralName": "fee-definitions",
+    "displayName": "Fee Definition"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fee-type.fee-type",
+      "required": true
+    },
+    "base_amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "currency": {
+      "type": "string",
+      "default": "INR"
+    },
+    "frequency": {
+      "type": "enumeration",
+      "enum": ["yearly", "term", "monthly", "one_time"],
+      "required": true
+    },
+    "calculation_method": {
+      "type": "enumeration",
+      "enum": ["flat", "per_unit", "formula"],
+      "default": "flat"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "installments": {
+      "type": "component",
+      "repeatable": true,
+      "component": "fee.installment"
+    }
+  }
+}

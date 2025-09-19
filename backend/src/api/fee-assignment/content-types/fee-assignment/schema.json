@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fee_assignments",
+  "info": {
+    "singularName": "fee-assignment",
+    "pluralName": "fee-assignments",
+    "displayName": "Fee Assignment"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "fee": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fee-definition.fee-definition",
+      "required": true
+    },
+    "class": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::class.class"
+    },
+    "bus_route": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus-route.bus-route"
+    },
+    "student": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student.student"
+    },
+    "start_date": {
+      "type": "date"
+    },
+    "end_date": {
+      "type": "date"
+    },
+    "priority": {
+      "type": "integer",
+      "default": 10
+    },
+    "conditions": {
+      "type": "json"
+    }
+  }
+}
