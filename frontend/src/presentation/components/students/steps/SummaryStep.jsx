@@ -70,7 +70,11 @@ const SummaryStep = ({
   // Get enrollment data - prioritize selectedStudent over form data for saved information
   const enrollment = selectedStudent?.enrollments?.[0] || formData.enrollments?.[0] || {};
   const administration = enrollment.administration || formData.enrollments?.[0]?.administration || {};
-  const seatAllocation = administration.seat_allocations?.[0] || formData.enrollments?.[0]?.administration?.seat_allocations?.[0] || {};
+
+  // Handle both camelCase (domain model) and snake_case (API) properties for seat allocations
+  const seatAllocations = administration.seatAllocations || administration.seat_allocations ||
+                          formData.enrollments?.[0]?.administration?.seat_allocations || [];
+  const seatAllocation = seatAllocations?.[0] || {};
 
   console.log('SummaryStep - Enrollment data:', {
     enrollment,
@@ -79,28 +83,54 @@ const SummaryStep = ({
     academicYearValue: enrollment.academic_year,
     classValue: enrollment.class,
     academicYears,
-    classes
+    classes,
+    seatAllocation,
+    administration
   });
 
-  // Get transport information - check both selectedStudent and form data
-  const pickupStopId = seatAllocation.pickup_stop || formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.pickup_stop;
-  const busRouteId = seatAllocation.bus_route || formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.bus_route;
+  // Get transport information - handle both camelCase and snake_case
+  const pickupStopData = seatAllocation.pickupStop || seatAllocation.pickup_stop ||
+                        formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.pickup_stop;
+  const pickupStopId = typeof pickupStopData === 'object' && pickupStopData?.id ? pickupStopData.id : pickupStopData;
+
+  const busRouteData = seatAllocation.busRoute || seatAllocation.bus_route ||
+                       formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.bus_route;
+  const busRouteId = typeof busRouteData === 'object' && busRouteData?.id ? busRouteData.id : busRouteData;
 
   // Find the actual stop and route from the provided arrays
-  const pickupStop = pickupStopId ? busStops.find(stop => String(stop.id) === String(pickupStopId)) : null;
-  const pickupRoute = busRouteId ? pickupStopRoutes.find(route => String(route.id) === String(busRouteId)) : null;
+  // If pickupStopData is already the full object with stop_name or stopName, use it directly
+  const pickupStop = typeof pickupStopData === 'object' && (pickupStopData?.stop_name || pickupStopData?.stopName)
+    ? pickupStopData
+    : (pickupStopId ? busStops.find(stop => String(stop.id) === String(pickupStopId)) : null);
+
+  // If busRouteData is already the full object with route_name, use it directly
+  const pickupRoute = typeof busRouteData === 'object' && busRouteData?.route_name
+    ? busRouteData
+    : (busRouteId ? pickupStopRoutes.find(route => String(route.id) === String(busRouteId)) : null);
+
   const assignedBus = seatAllocation.bus || pickupRoute?.bus || null;
 
   // Get division information - check both sources
-  const divisionId = administration.division || formData.enrollments?.[0]?.administration?.division;
-  const division = divisionId ? divisions.find(div => String(div.id) === String(divisionId)) : null;
+  // Handle division as either an object or an ID
+  const divisionData = administration.division || formData.enrollments?.[0]?.administration?.division;
+  const divisionId = typeof divisionData === 'object' && divisionData?.id ? divisionData.id : divisionData;
+  // If divisionData is already the full object with divisionName, use it directly
+  const division = typeof divisionData === 'object' && divisionData?.divisionName
+    ? divisionData
+    : (divisionId ? divisions.find(div => String(div.id) === String(divisionId)) : null);
 
   // Debug logging for transport and division data
   console.log('🔍 SUMMARY - Transport Data:', {
+    pickupStopData,
+    pickupStopId,
     pickupStop,
+    busRouteData,
+    busRouteId,
     pickupRoute,
     assignedBus,
     seatAllocation,
+    busStops: busStops?.length || 0,
+    pickupStopRoutes: pickupStopRoutes?.length || 0
   });
 
   console.log('🔍 SUMMARY - Division Data:', {
@@ -389,7 +419,7 @@ const SummaryStep = ({
                         <Bus className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h4 className="font-bold text-green-900">{pickupStop.stop_name}</h4>
+                        <h4 className="font-bold text-green-900">{pickupStop.stopName || pickupStop.stop_name}</h4>
                         <p className="text-sm text-green-700">Pickup Location</p>
                       </div>
                     </div>
@@ -399,39 +429,39 @@ const SummaryStep = ({
                   <div className="space-y-2">
                     <InfoRow
                       label="Route Name"
-                      value={pickupRoute?.route_name || 'Route information not available'}
+                      value={pickupRoute?.routeName || pickupRoute?.route_name || 'Route information not available'}
                       icon={Navigation}
                     />
                     <InfoRow
                       label="Bus Number"
                       value={
-                        assignedBus?.bus_number ||
-                        pickupRoute?.bus?.bus_number ||
+                        assignedBus?.busNumber || assignedBus?.bus_number ||
+                        pickupRoute?.bus?.busNumber || pickupRoute?.bus?.bus_number ||
                         'Bus assignment pending'
                       }
                       icon={Bus}
                     />
                     <InfoRow
                       label="Seat Number"
-                      value={seatAllocation.seat_number || 'Seat not assigned'}
+                      value={seatAllocation.seatNumber || seatAllocation.seat_number || 'Seat not assigned'}
                       icon={Award}
                     />
                     {pickupStop.location && (
                       <InfoRow
                         label="Area"
-                        value={pickupStop.location.name}
+                        value={pickupStop.location.name || pickupStop.location.locationName}
                         icon={MapPin}
                       />
                     )}
                     <InfoRow
                       label="Valid From"
-                      value={formatDate(seatAllocation.valid_from)}
+                      value={formatDate(seatAllocation.validFrom || seatAllocation.valid_from)}
                       icon={Calendar}
                     />
-                    {seatAllocation.monthly_fee && (
+                    {(seatAllocation.monthlyFee || seatAllocation.monthly_fee) && (
                       <InfoRow
                         label="Monthly Fee"
-                        value={`₹${seatAllocation.monthly_fee}`}
+                        value={`₹${seatAllocation.monthlyFee || seatAllocation.monthly_fee}`}
                         icon={Building}
                       />
                     )}

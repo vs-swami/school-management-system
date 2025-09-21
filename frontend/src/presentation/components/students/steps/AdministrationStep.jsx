@@ -27,8 +27,8 @@ const AdministrationStep = ({
 }) => {
   // Derive current administration info from selectedStudent if available (must be first)
   const currentAdmin = selectedStudent?.enrollments?.[0]?.administration;
-  const currentDivisionName = typeof currentAdmin?.division === 'object' && currentAdmin?.division?.name
-    ? currentAdmin.division.name
+  const currentDivisionName = typeof currentAdmin?.division === 'object' && (currentAdmin?.division?.divisionName || currentAdmin?.division?.name)
+    ? (currentAdmin.division.divisionName || currentAdmin.division.name)
     : null;
   const currentSeat = (currentAdmin?.seat_allocations && currentAdmin.seat_allocations[0]) || null;
   const currentSeatInfo = currentSeat ? {
@@ -627,7 +627,9 @@ const AdministrationStep = ({
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-indigo-600" />
                     <span className="text-sm font-medium text-indigo-900">
-                      Division <strong>{(classCapacityData?.divisions || divisions || []).find(d => String(d.id) === String(selectedDivisionId))?.name || `ID: ${selectedDivisionId}`}</strong> selected
+                      Division <strong>{(classCapacityData?.divisions || divisions || []).find(d => String(d.id) === String(selectedDivisionId))?.divisionName ||
+                                      (classCapacityData?.divisions || divisions || []).find(d => String(d.id) === String(selectedDivisionId))?.name ||
+                                      `ID: ${selectedDivisionId}`}</strong> selected
                     </span>
                   </div>
                   {formSelectedDivisionId && String(formSelectedDivisionId) !== String(currentAdmin?.division?.id) && (
@@ -652,7 +654,7 @@ const AdministrationStep = ({
                 {(classCapacityData?.divisions || divisions || []).map((div, index) => {
                   // Handle both simple division objects and nested structures
                   const divisionId = div.id;
-                  const divisionName = div.name;
+                  const divisionName = div.divisionName || div.name;
                   const enrolled = div.enrolled || 0;
                   const capacity = div.capacity || div.max_capacity || 30; // Default capacity if not provided
                   const utilizationPercent = div.utilizationPercent || (capacity > 0 ? Math.round((enrolled / capacity) * 100) : 0);
@@ -724,14 +726,14 @@ const AdministrationStep = ({
                             utilizationColor === 'green' ? 'bg-green-500' :
                             utilizationColor === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
                           }`}>
-                            {div.name}
+                            {div.divisionName || div.name}
                           </div>
                           <div className="ml-3">
                             <h6 className={`font-semibold ${
                               isCurrentDivision ? 'text-green-800' :
                               isSelected ? 'text-indigo-900' : 'text-gray-900'
                             }`}>
-                              Division {div.name}
+                              Division {div.divisionName || div.name}
                             </h6>
                             {isSelectedNewDivision ? (
                               <div>
