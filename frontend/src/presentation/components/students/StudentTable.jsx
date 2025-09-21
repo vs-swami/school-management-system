@@ -299,20 +299,20 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                   {student.enrollments?.[0]?.division?.divisionName || student.currentEnrollment?.division?.divisionName || 'Not Assigned'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(student.enrollments?.[0]?.status || student.currentEnrollment?.status)}
+                  {getStatusBadge(student.enrollments?.[0]?.enrollmentStatus || student.currentEnrollment?.enrollmentStatus)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900">
-                      {student.guardians?.[0]?.fullName || student.guardians?.[0]?.firstName + ' ' + student.guardians?.[0]?.lastName || 'N/A'}
+                      {student.guardians?.[0]?.fullName || (student.guardians?.[0]?.firstName && student.guardians?.[0]?.lastName ? `${student.guardians?.[0]?.firstName} ${student.guardians?.[0]?.lastName}` : 'N/A')}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {student.guardians?.[0]?.phone || 'No contact'}
+                      {student.guardians?.[0]?.primaryPhone || 'No contact'}
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {formatDate(student.enrollments?.[0]?.enrollmentDate || student.currentEnrollment?.enrollmentDate || student.admissionDate || student.createdAt)}
+                  {formatDate(student.enrollments?.[0]?.dateEnrolled || student.currentEnrollment?.dateEnrolled || student.admissionDate || student.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <div className={`flex justify-center gap-1 transition-all duration-200 ${hoveredRow === student.id ? 'scale-110' : ''}`}>

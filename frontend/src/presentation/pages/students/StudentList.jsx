@@ -5,8 +5,9 @@ import { StudentFilters } from '../../components/students/StudentFilters';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorAlert } from '../../components/common/ErrorAlert';
+import { StudentSummaryReport } from '../../components/reports/StudentSummaryReport';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, GraduationCap, TrendingUp, AlertCircle, CheckCircle, Clock, Activity } from 'lucide-react';
+import { Users, UserPlus, GraduationCap, TrendingUp, AlertCircle, CheckCircle, Clock, Activity, FileText } from 'lucide-react';
 
 export const StudentList = () => {
   const {
@@ -23,6 +24,7 @@ export const StudentList = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetrics, setShowMetrics] = useState(true);
+  const [showSummaryReport, setShowSummaryReport] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,16 +47,16 @@ export const StudentList = () => {
 
     const total = students.length;
     const enrolled = students.filter(s =>
-      s.enrollments?.[0]?.status === 'Enrolled' || s.currentEnrollment?.status === 'Enrolled'
+      s.enrollments?.[0]?.enrollmentStatus === 'Enrolled' || s.currentEnrollment?.enrollmentStatus === 'Enrolled'
     ).length;
     const pending = students.filter(s =>
-      s.enrollments?.[0]?.status === 'Pending' || s.currentEnrollment?.status === 'Pending'
+      s.enrollments?.[0]?.enrollmentStatus === 'Pending' || s.currentEnrollment?.enrollmentStatus === 'Pending'
     ).length;
     const waiting = students.filter(s =>
-      s.enrollments?.[0]?.status === 'Waiting' || s.currentEnrollment?.status === 'Waiting'
+      s.enrollments?.[0]?.enrollmentStatus === 'Waiting' || s.currentEnrollment?.enrollmentStatus === 'Waiting'
     ).length;
     const rejected = students.filter(s =>
-      s.enrollments?.[0]?.status === 'Rejected' || s.currentEnrollment?.status === 'Rejected'
+      s.enrollments?.[0]?.enrollmentStatus === 'Rejected' || s.currentEnrollment?.enrollmentStatus === 'Rejected'
     ).length;
 
     // Calculate growth rate (mock data for demo)
@@ -135,6 +137,14 @@ export const StudentList = () => {
               >
                 {showMetrics ? 'Hide' : 'Show'} Metrics
               </button>
+              <Button
+                onClick={() => setShowSummaryReport(true)}
+                variant="outline"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+              >
+                <FileText className="h-5 w-5" />
+                Generate Summary
+              </Button>
               <Button
                 onClick={handleAddStudent}
                 variant="primary"
@@ -246,6 +256,15 @@ export const StudentList = () => {
           />
         </div>
       </div>
+
+      {/* Summary Report Modal */}
+      {showSummaryReport && (
+        <StudentSummaryReport
+          students={students}
+          metrics={metrics}
+          onClose={() => setShowSummaryReport(false)}
+        />
+      )}
     </div>
   );
 };
