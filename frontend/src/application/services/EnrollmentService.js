@@ -139,9 +139,9 @@ export class EnrollmentService {
     }
   }
 
-  async getEnrollmentsByClass(classId) {
+  async getEnrollmentsByClass(classId, divisionId = null) {
     try {
-      const enrollments = await this.repository.findByClass(classId);
+      const enrollments = await this.repository.findByClass(classId, divisionId);
       return {
         success: true,
         data: enrollments

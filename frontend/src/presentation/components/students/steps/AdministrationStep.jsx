@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route } from 'lucide-react';
+import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route, Clock } from 'lucide-react';
 import Alert from '../Alert';
 import FormField from '../FormField';
 import BusAllocationDebug from '../BusAllocationDebug';
@@ -92,27 +92,8 @@ const AdministrationStep = ({
 
     // Force a re-render by watching the value change
     const newValue = watch('enrollments.0.administration.division');
-    console.log('📊 New form value:', newValue);
   };
 
-  console.log('=== AdministrationStep Debug ===');
-  console.log('formSelectedDivisionId:', formSelectedDivisionId, typeof formSelectedDivisionId);
-  console.log('currentAdmin?.division?.id:', currentAdmin?.division?.id, typeof currentAdmin?.division?.id);
-  console.log('selectedDivisionId (resolved):', selectedDivisionId, typeof selectedDivisionId);
-  console.log('classCapacityData.divisions:', classCapacityData?.divisions?.map(d => ({
-    id: d.division.id,
-    idType: typeof d.division.id,
-    name: d.division.name,
-    isSelected: String(selectedDivisionId) === String(d.division.id),
-    comparison: `'${String(selectedDivisionId)}' === '${String(d.division.id)}'`
-  })));
-  console.log('isStudentRejected:', isStudentRejected);
-  console.log('🔍 DEBUG: selectedStudent data:', JSON.stringify(selectedStudent, null, 2));
-  console.log('🔍 DEBUG: currentAdmin:', JSON.stringify(currentAdmin, null, 2));
-  console.log('🔍 DEBUG: currentSeat:', JSON.stringify(currentSeat, null, 2));
-  console.log('🔍 DEBUG: currentSeatInfo:', JSON.stringify(currentSeatInfo, null, 2));
-  console.log('🔍 DEBUG: selectedPickupLocationId:', selectedPickupLocationId);
-  console.log('🔍 DEBUG: locations array:', JSON.stringify(locations, null, 2));
 
   // Sync current administration data to form when component loads (only if form is empty)
   useEffect(() => {
@@ -439,7 +420,7 @@ const AdministrationStep = ({
             <div className="flex items-center justify-between">
               <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                 <BookOpen className="h-6 w-6 text-indigo-600" />
-                Class {classCapacityData.class?.classname} Capacity Overview
+                Class {classCapacityData.class?.classname || classCapacityData.class?.className || classCapacityData.className || `ID: ${classCapacityData.classId || ''}`} Capacity Overview
               </h4>
               <div className={`px-5 py-2 rounded-full text-sm font-bold shadow-sm ${
               classCapacityData.summary.overallUtilization < 50
@@ -591,7 +572,7 @@ const AdministrationStep = ({
           </div>
 
           {/* Enhanced Division Selection Section */}
-          {classCapacityData.divisions && classCapacityData.divisions.length > 0 && (
+          {((classCapacityData?.divisions && classCapacityData.divisions.length > 0) || (divisions && divisions.length > 0)) && (
             <div className="border-t border-gray-200 pt-6">
               <div className="flex items-center justify-between mb-4">
                 <h5 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -599,7 +580,7 @@ const AdministrationStep = ({
                   Division Selection
                 </h5>
                 <span className="text-sm text-gray-500">
-                  {classCapacityData.divisions.length} divisions available
+                  {(classCapacityData?.divisions || divisions || []).length} divisions available
                 </span>
               </div>
 
@@ -609,7 +590,7 @@ const AdministrationStep = ({
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-indigo-600" />
                     <span className="text-sm font-medium text-indigo-900">
-                      Division <strong>{classCapacityData.divisions.find(d => String(d.division.id) === String(selectedDivisionId))?.division?.name || `ID: ${selectedDivisionId}`}</strong> selected
+                      Division <strong>{(classCapacityData?.divisions || divisions || []).find(d => String(d.id) === String(selectedDivisionId))?.name || `ID: ${selectedDivisionId}`}</strong> selected
                     </span>
                   </div>
                   {formSelectedDivisionId && String(formSelectedDivisionId) !== String(currentAdmin?.division?.id) && (
@@ -631,32 +612,39 @@ const AdministrationStep = ({
                 </div>
               )}
               <div className="grid gap-4 md:grid-cols-2">
-                {classCapacityData.divisions.map((div, index) => {
-                  const utilizationColor = div.utilizationPercent < 50 ? 'green' :
-                                         div.utilizationPercent < 80 ? 'yellow' : 'red';
-                  const isSelected = selectedDivisionId && String(selectedDivisionId) === String(div.division.id);
+                {(classCapacityData?.divisions || divisions || []).map((div, index) => {
+                  // Handle both simple division objects and nested structures
+                  const divisionId = div.id;
+                  const divisionName = div.name;
+                  const enrolled = div.enrolled || 0;
+                  const capacity = div.capacity || div.max_capacity || 30; // Default capacity if not provided
+                  const utilizationPercent = div.utilizationPercent || (capacity > 0 ? Math.round((enrolled / capacity) * 100) : 0);
+
+                  const utilizationColor = utilizationPercent < 50 ? 'green' :
+                                         utilizationPercent < 80 ? 'yellow' : 'red';
+                  const isSelected = selectedDivisionId && String(selectedDivisionId) === String(divisionId);
                   const isClickable = !isStudentRejected;
 
                   // Calculate provisional metrics if this division is selected
                   const currentDivisionId = currentAdmin?.division?.id;
-                  const isCurrentDivision = String(currentDivisionId) === String(div.division.id);
-                  const isSelectedNewDivision = isSelected && String(currentDivisionId) !== String(div.division.id);
+                  const isCurrentDivision = String(currentDivisionId) === String(divisionId);
+                  const isSelectedNewDivision = isSelected && String(currentDivisionId) !== String(divisionId);
 
                   // Calculate provisional counts based on whether this is a new assignment or a change
-                  let provisionalEnrolled = div.enrolled;
+                  let provisionalEnrolled = enrolled;
                   if (isSelectedNewDivision) {
                     // User is selecting a new division (different from current)
-                    provisionalEnrolled = div.enrolled + 1;
-                  } else if (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.division.id)) {
+                    provisionalEnrolled = enrolled + 1;
+                  } else if (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(divisionId)) {
                     // User was in this division but selected a different one
-                    provisionalEnrolled = div.enrolled - 1;
+                    provisionalEnrolled = enrolled - 1;
                   } else if (isSelected && !currentDivisionId) {
                     // User has no current division and is selecting this one
-                    provisionalEnrolled = div.enrolled + 1;
+                    provisionalEnrolled = enrolled + 1;
                   }
 
-                  const provisionalAvailable = div.capacity - provisionalEnrolled;
-                  const provisionalUtilization = Math.round((provisionalEnrolled / div.capacity) * 100);
+                  const provisionalAvailable = capacity - provisionalEnrolled;
+                  const provisionalUtilization = Math.round((provisionalEnrolled / capacity) * 100);
 
                   const provisionalColor = provisionalUtilization < 50 ? 'green' :
                                          provisionalUtilization < 80 ? 'yellow' : 'red';
@@ -664,7 +652,7 @@ const AdministrationStep = ({
                   return (
                     <div
                       key={index}
-                      onClick={isClickable ? () => handleDivisionSelect(div.division.id, div.division.name) : undefined}
+                      onClick={isClickable ? () => handleDivisionSelect(divisionId, divisionName) : undefined}
                       className={`
                         relative bg-white rounded-xl p-5 shadow-lg transition-all duration-300 overflow-hidden
                         ${isClickable ? 'cursor-pointer hover:shadow-xl hover:scale-[1.03] hover:-translate-y-1' : 'cursor-default'}
@@ -699,14 +687,14 @@ const AdministrationStep = ({
                             utilizationColor === 'green' ? 'bg-green-500' :
                             utilizationColor === 'yellow' ? 'bg-yellow-500' : 'bg-red-500'
                           }`}>
-                            {div.division.name}
+                            {div.name}
                           </div>
                           <div className="ml-3">
                             <h6 className={`font-semibold ${
                               isCurrentDivision ? 'text-green-800' :
                               isSelected ? 'text-indigo-900' : 'text-gray-900'
                             }`}>
-                              Division {div.division.name}
+                              Division {div.name}
                             </h6>
                             {isSelectedNewDivision ? (
                               <div>
@@ -732,7 +720,7 @@ const AdministrationStep = ({
                               SELECTED
                             </div>
                           ) : null}
-                          {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.division.id))) ? (
+                          {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.id))) ? (
                             <div className="flex flex-col items-end gap-1">
                               <div className={`px-2 py-1 rounded text-xs line-through ${
                                 utilizationColor === 'green' ? 'bg-green-50 text-green-600' :
@@ -778,7 +766,7 @@ const AdministrationStep = ({
                       </div>
 
                       <div className="flex justify-between items-center text-xs">
-                        {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.division.id))) ? (
+                        {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.id))) ? (
                           <div className="flex flex-col">
                             <span className="text-gray-400 line-through">{div.available} seats available</span>
                             <span className={`font-medium ${provisionalAvailable <= 0 ? 'text-red-600' : 'text-indigo-600'}`}>
@@ -789,7 +777,7 @@ const AdministrationStep = ({
                           <span className="text-gray-600">{provisionalAvailable} seats available</span>
                         )}
                         <div className="flex items-center gap-2">
-                          {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.division.id))) ? (
+                          {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.id))) ? (
                             <div className="flex flex-col items-end">
                               <span className="text-gray-400 line-through">
                                 {div.utilizationPercent < 50 ? 'Low' : div.utilizationPercent < 80 ? 'Moderate' : 'High'} utilization

@@ -176,17 +176,32 @@ const StudentPage = ({ mode = 'create' }) => {
   useEffect(() => {
     if (currentStep === STEPS.ADMINISTRATION && localStudentId && selectedStudent) {
       const fetchAndSetClassCapacity = async () => {
-        const classId = selectedStudent.enrollments?.[0]?.class?.id;
+        // Handle class as either object with id or direct ID
+        const enrollment = selectedStudent.enrollments?.[0];
+        const classId = enrollment?.class?.id || enrollment?.class;
+
         if (classId) {
           const result = await fetchClassCapacity(classId);
           if (result.success) {
-            setClassCapacityData(result.data);
+            // Find class name from the classes array if not in the result
+            let className = result.data.class?.classname || result.data.class?.className;
+            if (!className && classes && classes.length > 0) {
+              const classObj = classes.find(c => String(c.id) === String(classId));
+              className = classObj?.classname || classObj?.className;
+            }
+
+            // Also fetch the actual class data if we need more details
+            setClassCapacityData({
+              ...result.data,
+              classId: classId,
+              className: className
+            });
           }
         }
       };
       fetchAndSetClassCapacity();
     }
-  }, [currentStep, localStudentId, selectedStudent, fetchClassCapacity, setClassCapacityData]);
+  }, [currentStep, localStudentId, selectedStudent, fetchClassCapacity, setClassCapacityData, classes]);
 
   // Effect for pickup stop routes
   useEffect(() => {

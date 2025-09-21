@@ -140,7 +140,19 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
 
     try {
       const student = await strapi.entityService.findOne('api::student.student', studentId, {
-        populate: ['enrollments', 'enrollments.class'],
+        populate: {
+          enrollments: {
+            populate: {
+              class: true,
+              academic_year: true,
+              administration: {
+                populate: {
+                  division: true
+                }
+              }
+            }
+          }
+        }
       });
 
       console.log('Approve Student: Fetched student:', JSON.stringify(student, null, 2));
@@ -151,14 +163,27 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
 
       // Find the current/active enrollment
       const enrollments = Array.isArray(student.enrollments) ? student.enrollments : (student.enrollments ? [student.enrollments] : []);
-      const currentEnrollment = enrollments.find(enrollment => 
-        enrollment.enrollment_status === 'Processing' || enrollment.is_current === true
+      console.log('Approve Student: Total enrollments found:', enrollments.length);
+
+      // Look for active enrollment with various status options
+      const currentEnrollment = enrollments.find(enrollment =>
+        enrollment && (
+          enrollment.enrollment_status === 'Processing' ||
+          enrollment.enrollment_status === 'Enrolled' ||
+          enrollment.enrollment_status === 'Enquiry' ||
+          enrollment.is_current === true
+        )
       ) || enrollments?.[0]; // fallback to first enrollment
 
       console.log('Approve Student: Current Enrollment:', JSON.stringify(currentEnrollment, null, 2));
 
-      if (!currentEnrollment || !currentEnrollment.class) {
-        return ctx.badRequest('Student has no active enrollment or class information.');
+      if (!currentEnrollment) {
+        return ctx.badRequest('Student has no enrollment records.');
+      }
+
+      if (!currentEnrollment.class) {
+        console.log('Approve Student: Enrollment found but class is missing:', currentEnrollment);
+        return ctx.badRequest('Student enrollment has no associated class information.');
       }
 
       const currentClass = currentEnrollment.class.classname;

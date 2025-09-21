@@ -68,10 +68,13 @@ export class ClassMapper {
     return normalizedDivisions.map(division => ({
       id: division.id,
       documentId: division.documentId,
-      divisionName: division.division_name || division.divisionName,
+      name: division.name || division.division_name || division.divisionName,
+      divisionName: division.name || division.division_name || division.divisionName,
       divisionCode: division.division_code || division.divisionCode,
-      capacity: division.capacity,
-      studentCount: division.student_count || division.studentCount || 0
+      capacity: division.student_limit || division.capacity || division.max_capacity,
+      max_capacity: division.student_limit || division.max_capacity || division.capacity,
+      studentCount: division.student_count || division.studentCount || 0,
+      enrolled: division.enrolled || division.student_count || 0
     }));
   }
 

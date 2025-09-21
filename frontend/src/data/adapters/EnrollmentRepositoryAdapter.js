@@ -23,10 +23,16 @@ export class EnrollmentRepositoryAdapter {
     return EnrollmentMapper.toDomainList(filteredData);
   }
 
-  async findByClass(classId) {
+  async findByClass(classId, divisionId = null) {
     // The repository doesn't have this method, so we'll use getAllEnrollments with a filter
     const allEnrollments = await this.repository.getAllEnrollments();
-    const filteredData = allEnrollments.filter(e => e.class?.id === classId);
+    let filteredData = allEnrollments.filter(e => e.class?.id === classId);
+
+    // If divisionId is provided, also filter by division
+    if (divisionId) {
+      filteredData = filteredData.filter(e => e.administration?.division?.id === divisionId);
+    }
+
     return EnrollmentMapper.toDomainList(filteredData);
   }
 

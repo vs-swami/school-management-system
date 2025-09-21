@@ -32,13 +32,6 @@ const formatInitialData = (initialData, mode) => {
         date_enrolled: '',
         admission_type: '',
         enrollment_status: STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY, // Only for new students
-        administration: {
-          division: '',
-          seat_allocations: [{
-            pickup_stop: '',
-            drop_stop: '',
-          }]
-        },
       }],
       student_photo: null,
       guardian_photo: null,
@@ -51,25 +44,19 @@ const formatInitialData = (initialData, mode) => {
   const formattedData = {
     ...initialData,
     // Map firstName/lastName to form field names
-    first_name: initialData.firstName || initialData.first_name || '',
-    last_name: initialData.lastName || initialData.last_name || '',
-    middle_name: initialData.middleName || initialData.middle_name || '',
+    first_name: initialData.first_name,
+    last_name: initialData.last_name,
+    middle_name: initialData.middle_name,
     // Construct fullName if not present
     gr_full_name: initialData.fullName || initialData.gr_full_name ||
-                  `${initialData.firstName || initialData.first_name || ''} ${initialData.middleName || initialData.middle_name || ''} ${initialData.lastName || initialData.last_name || ''}`.trim() || '',
-    gender: initialData.gender || '',
+                  `${initialData.first_name} ${initialData.middle_name} ${initialData.last_name || ''}`.trim() || '',
+    gender: initialData.gender,
     dob: initialData.dob ?
       new Date(initialData.dob).toISOString().split('T')[0] : '',
   };
 
   const rawGuardians = extractGuardianData(initialData.guardians);
-  formattedData.guardians = rawGuardians.length > 0 ? rawGuardians : [{
-    full_name: '',
-    relation: '',
-    mobile: '',
-    occupation: '',
-    primary_contact: false,
-  }];
+  formattedData.guardians = rawGuardians
 
   const enrollmentToFormat = (initialData.enrollments && Array.isArray(initialData.enrollments) && initialData.enrollments.length > 0)
     ? initialData.enrollments[0] : {};
@@ -333,13 +320,18 @@ export const useStudentForm = (mode = 'create') => {
         console.log('Current form data:', formData);  
 
         // Prepare the student data for creation/update
+        // Fix: Ensure enrollments is always an array
+        const enrollmentData = Array.isArray(formData.enrollments)
+          ? formData.enrollments[0]
+          : formData.enrollments;
+
         const studentData = {
           ...formData,
-          // Ensure enrollment status is set
-          enrollments: [{
-            ...formData.enrollments[0],
-            enrollment_status: formData.enrollments[0].enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY
-          }]
+          // Ensure enrollment status is set and enrollments is always an array
+          enrollments: enrollmentData ? [{
+            ...enrollmentData,
+            enrollment_status: enrollmentData.enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY
+          }] : []
         };
 
         let result;

@@ -1,14 +1,12 @@
 import { StudentRepositoryAdapter } from '../../data/adapters/StudentRepositoryAdapter';
 import { ValidationStrategy } from '../strategies/ValidationStrategy';
 import { StudentDocumentRepository } from '../../data/repositories/StudentDocumentRepository'; // Import the new repository
-import { EnrollmentService } from './EnrollmentService'; // NEW: Import EnrollmentService
 //import { AuditService } from './AuditService';
 
 export class StudentService {
   constructor() {
     this.repository = new StudentRepositoryAdapter();
     this.validationStrategy = new ValidationStrategy();
-    this.enrollmentService = new EnrollmentService(); // NEW: Initialize EnrollmentService
     //this.auditService = new AuditService();
   }
 
@@ -63,32 +61,10 @@ export class StudentService {
         };
       }
 
-      console.log('Creating student with data:', data);
-
-      // Extract enrollment data before creating student
-      const enrollmentData = data.enrollments && data.enrollments.length > 0 ? data.enrollments[0] : null;
-
-      // Create student without enrollment data
-      const studentData = { ...data };
-      delete studentData.enrollments; // Remove enrollments from student creation
-
-      const student = await this.repository.create(studentData);
-
-      // If enrollment data exists, create enrollment separately
-      if (enrollmentData && student?.id) {
-        try {
-          const enrichedEnrollmentData = {
-            ...enrollmentData,
-            student: student.id // Connect to the created student
-          };
-
-          console.log('Creating enrollment with data:', enrichedEnrollmentData);
-          await this.enrollmentService.createEnrollment(enrichedEnrollmentData);
-        } catch (enrollmentError) {
-          console.warn('Student created but enrollment failed:', enrollmentError);
-          // Student is still created successfully, enrollment can be added later
-        }
-      }
+      // Keep enrollment data with student data - backend handles the creation
+      // The backend createStudent method expects enrollments to be included
+      // and will handle creating them separately after student creation
+      const student = await this.repository.create(data);
 
       // Audit log
       //await this.auditService.log('STUDENT_CREATED', {

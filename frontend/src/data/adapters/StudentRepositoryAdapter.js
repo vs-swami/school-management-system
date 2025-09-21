@@ -29,6 +29,7 @@ export class StudentRepositoryAdapter {
 
   async create(studentData) {
     const apiData = StudentMapper.toStrapi(studentData);
+    console.log('API Data for creation:', apiData);
     const result = await this.repository.create(apiData);
     return StudentMapper.toDomain(result);
   }

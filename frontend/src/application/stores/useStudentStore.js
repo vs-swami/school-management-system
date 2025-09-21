@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { StudentService } from '../services/StudentServices';
 import { ExamResultService } from '../services/ExamResultService';
+import { ClassService } from '../services/ClassService';
+import { EnrollmentService } from '../services/EnrollmentService';
 
 const studentService = new StudentService();
 const examResultService = new ExamResultService();
+const classService = new ClassService();
+const enrollmentService = new EnrollmentService();
 
 export default create((set, get) => ({
   // State
@@ -91,7 +95,7 @@ export default create((set, get) => ({
 
   createStudent: async (submissionData) => {
     set({ loading: true, error: null });
-    
+    console.log('Creating student with data:', submissionData); 
     const result = await studentService.createStudent(submissionData);
     
     if (result.success) {
@@ -377,17 +381,46 @@ export default create((set, get) => ({
   fetchClassCapacity: async (classId, divisionId = null) => {
     set({ loading: true, error: null });
     try {
-      const classThresholdService = new ClassThresholdService();
-      const result = await classThresholdService.getAvailableCapacity(classId, divisionId);
-      set({ loading: false });
-      if (result.success) {
-        return { success: true, data: result.data };
-      } else {
-        const errorMessage = typeof result.error === 'string'
-          ? result.error
-          : result.error?.message || JSON.stringify(result.error);
-        return { success: false, error: errorMessage };
+      // Fetch class data to get student_limit
+      const classResult = await classService.getClassById(classId);
+
+      if (!classResult.success) {
+        set({ loading: false, error: classResult.error });
+        return { success: false, error: classResult.error };
       }
+
+      const classData = classResult.data;
+      const studentLimit = classData?.student_limit || 0;
+
+      // Get current enrollment count for the class
+      const enrollmentResult = await enrollmentService.getEnrollmentsByClass(classId, divisionId);
+
+      if (!enrollmentResult.success) {
+        set({ loading: false, error: enrollmentResult.error });
+        return { success: false, error: enrollmentResult.error };
+      }
+
+      const currentEnrollments = enrollmentResult.data?.length || 0;
+      const availableCapacity = studentLimit - currentEnrollments;
+
+      set({ loading: false });
+
+      return {
+        success: true,
+        data: {
+          studentLimit,
+          currentEnrollments,
+          availableCapacity,
+          isFull: availableCapacity <= 0,
+          class: classData, // Include the full class data
+          summary: {
+            totalCapacity: studentLimit,
+            totalEnrolled: currentEnrollments,
+            overallUtilization: studentLimit > 0 ? Math.round((currentEnrollments / studentLimit) * 100) : 0
+          },
+          divisions: classData?.divisions || [] // Use divisions from the class data
+        }
+      };
     } catch (error) {
       console.error('Error fetching class capacity:', error);
       set({ loading: false, error: error.message });

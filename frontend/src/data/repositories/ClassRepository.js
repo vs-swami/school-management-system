@@ -7,8 +7,32 @@ export class ClassRepository {
   }
 
   static async findById(id) {
-    const response = await apiClient.get(`/classes/${id}?populate=*`);
-    return response.data;
+    try {
+      // First try direct ID lookup (for document IDs)
+      const response = await apiClient.get(`/classes/${id}?populate=*`);
+      return response.data;
+    } catch (error) {
+      // If 404, try filtering by numeric ID
+      if (error.response?.status === 404) {
+        const filterResponse = await apiClient.get('/classes', {
+          params: {
+            filters: {
+              id: {
+                $eq: id
+              }
+            },
+            populate: '*'
+          }
+        });
+
+        const classes = filterResponse.data?.data || [];
+        if (classes.length > 0) {
+          return { data: classes[0] };
+        }
+        throw new Error(`Class with ID ${id} not found`);
+      }
+      throw error;
+    }
   }
 
   static async findAllWithSummary() {

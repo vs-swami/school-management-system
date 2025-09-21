@@ -5,7 +5,7 @@ export const StudentRepository = {
   async findAll(filters = {}) {
     try {
       const params = {
-        populate: '*',
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results'],
         ...filters
       };
 
@@ -22,7 +22,7 @@ export const StudentRepository = {
   async findById(id) {
     try {
       const params = {
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get(`/students/${id}`, { params });
@@ -47,7 +47,7 @@ export const StudentRepository = {
             $eq: grNo
           }
         },
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get('/students', { params });
@@ -173,7 +173,7 @@ export const StudentRepository = {
             }
           }
         },
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get('/students', { params });
@@ -196,7 +196,7 @@ export const StudentRepository = {
             }
           }
         },
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get('/students', { params });
@@ -215,7 +215,7 @@ export const StudentRepository = {
             enrollment_status: { $eq: status }
           }
         },
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get('/students', { params });
@@ -237,7 +237,7 @@ export const StudentRepository = {
             { last_name: { $containsi: query } }
           ]
         },
-        populate: '*'
+        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
       };
 
       const response = await apiClient.get('/students', { params });

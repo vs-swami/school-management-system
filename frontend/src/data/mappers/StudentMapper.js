@@ -80,6 +80,7 @@ export class StudentMapper {
   }
 
   static toStrapi(domainModel) {
+    console.log('Mapping domain model to Strapi format:', domainModel);
     if (!domainModel) return null;
 
     // Use domain model fields (which are already in snake_case)
@@ -148,10 +149,14 @@ export class StudentMapper {
       }
     }
 
-    // Handle enrollments - one-to-one relation in schema but we store as array
-    if (domainModel.enrollments && domainModel.enrollments.length > 0) {
-      const enrollment = domainModel.enrollments[0];
-      data.enrollments = enrollment.id || enrollment;
+    // Handle enrollments - keep as array for backend processing
+    if (domainModel.enrollments) {
+      // Ensure enrollments is always an array
+      if (Array.isArray(domainModel.enrollments)) {
+        data.enrollments = domainModel.enrollments;
+      } else {
+        data.enrollments = [domainModel.enrollments];
+      }
     }
 
     // Only include document IDs if they exist

@@ -28,7 +28,6 @@ export const extractEnrollmentData = (enrollments) => {
 
   // Strapi 5: Handle single enrollment object
   if (enrollments.id && !Array.isArray(enrollments)) {
-    console.log('Processing enrollment object:', enrollments);
 
     // Handle both domain model properties and API fields
     return {
