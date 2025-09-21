@@ -96,13 +96,17 @@ module.exports = createCoreService('api::enrollment.enrollment', ({ strapi }) =>
     console.log('✅ BACKEND: Created enrollment-administration:', administrationEntry);
 
     return await strapi.entityService.findOne('api::enrollment.enrollment', enrollment.id, {
-      populate: [
-        'student',
-        'academic_year',
-        'administration.division',
-        'class',
-        'admission_type',
-      ],
+      populate: {
+        student: true,
+        academic_year: true,
+        class: true,
+        administration: {
+          populate: {
+            division: true,
+            seat_allocations: true
+          }
+        }
+      }
     });
   },
 

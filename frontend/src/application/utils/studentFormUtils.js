@@ -22,6 +22,33 @@ export const extractGuardianData = (guardians) => {
   return [];
 };
 
+// Helper to extract administration data from domain models or API responses
+const extractAdministrationData = (administration) => {
+  if (!administration) return null;
+
+  // Handle both camelCase (domain model) and snake_case (API) properties
+  return {
+    id: administration.id,
+    division: administration.division,
+    date_of_admission: administration.dateOfAdmission || administration.date_of_admission || '',
+    // Handle seat allocations - check both camelCase and snake_case
+    seat_allocations: (() => {
+      const seatAllocations = administration.seatAllocations || administration.seat_allocations;
+      if (!seatAllocations || !Array.isArray(seatAllocations) || seatAllocations.length === 0) {
+        return [];
+      }
+
+      return seatAllocations.map(allocation => ({
+        id: allocation.id,
+        // Handle pickup stop - check both camelCase and snake_case
+        pickup_stop: allocation.pickupStop || allocation.pickup_stop || null,
+        // Note: No drop_stop as user confirmed they don't have it
+        bus_route: allocation.busRoute || allocation.bus_route || null,
+      }));
+    })()
+  };
+};
+
 // Helper to extract enrollment data for Strapi 5
 export const extractEnrollmentData = (enrollments) => {
   if (!enrollments) return null;
@@ -51,7 +78,7 @@ export const extractEnrollmentData = (enrollments) => {
         ''
       ),
       admission_type: enrollments.admissionType || enrollments.admission_type || '',
-      administration: enrollments.administration || null,
+      administration: extractAdministrationData(enrollments.administration),
       createdAt: enrollments.createdAt,
       updatedAt: enrollments.updatedAt,
     };
@@ -80,7 +107,7 @@ export const extractEnrollmentData = (enrollments) => {
         rawEnrollment.class ||
         ''
       ),
-      administration: rawEnrollment.administration || null,
+      administration: extractAdministrationData(rawEnrollment.administration),
       admission_type: rawEnrollment.admissionType || rawEnrollment.admission_type || '',
     };
   }

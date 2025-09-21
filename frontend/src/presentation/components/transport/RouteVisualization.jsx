@@ -16,29 +16,50 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
 
   // Support both old bus_stops array and new stop_schedules component structure
   const stops = route?.stop_schedules?.length > 0
-    ? route.stop_schedules.map(schedule => ({
-        ...(schedule.busStop || schedule.bus_stop || {}),
-        pickup_time: schedule.pickupTime || schedule.pickup_time,
-        drop_time: schedule.dropTime || schedule.drop_time,
-        stop_order: schedule.order || schedule.stop_order,
-        waiting_time: schedule.waiting_time,
-        distance_from_previous: schedule.distance_from_previous,
-        schedule_is_active: schedule.is_active,
-        // Ensure we have the ID
-        id: schedule.busStop?.id || schedule.bus_stop?.id,
-        stop_name: schedule.busStop?.stopName || schedule.bus_stop?.stop_name || schedule.busStop?.stop_name,
-        stop_code: schedule.busStop?.stopCode || schedule.bus_stop?.stop_code || schedule.busStop?.stop_code
-      }))
-    : route?.bus_stops || [];
+    ? route.stop_schedules.map(schedule => {
+        const busStop = schedule.busStop || schedule.bus_stop || {};
+        const stopId = busStop.id || busStop.documentId || schedule.bus_stop_id;
+
+        return {
+          ...busStop,
+          pickup_time: schedule.pickupTime || schedule.pickup_time,
+          drop_time: schedule.dropTime || schedule.drop_time,
+          stop_order: schedule.order || schedule.stop_order,
+          waiting_time: schedule.waiting_time,
+          distance_from_previous: schedule.distance_from_previous,
+          schedule_is_active: schedule.is_active,
+          // Ensure we have the ID - check multiple possible locations
+          id: stopId,
+          stop_name: busStop.stopName || busStop.stop_name || busStop.name,
+          stop_code: busStop.stopCode || busStop.stop_code || busStop.code,
+          location: busStop.location
+        };
+      })
+    : (route?.bus_stops || []).map(stop => ({
+        ...stop,
+        // Ensure consistent ID field
+        id: stop.id || stop.documentId,
+        stop_name: stop.stop_name || stop.stopName || stop.name,
+        stop_code: stop.stop_code || stop.stopCode || stop.code
+      }));
 
   console.log('[RouteVisualization] Extracted stops:', {
     stopsCount: stops.length,
-    stops: stops,
+    stops: stops.map(s => ({ id: s.id, name: s.stop_name, hasId: !!s.id })),
     firstStop: stops[0]
   });
 
-  if (!route || stops.length === 0) {
-    console.log('[RouteVisualization] No route or stops, returning null');
+  // Filter out stops without IDs and warn
+  const validStops = stops.filter(stop => {
+    if (!stop.id) {
+      console.warn('[RouteVisualization] Stop missing ID:', stop);
+      return false;
+    }
+    return true;
+  });
+
+  if (!route || validStops.length === 0) {
+    console.log('[RouteVisualization] No route or valid stops, returning null');
     return null;
   }
 
@@ -66,7 +87,8 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
   const getStopStatus = (stop) => {
     if (stop.id === parseInt(selectedStopId)) return 'selected';
     // Check both stop is_active and schedule is_active
-    if (!stop.is_active || stop.schedule_is_active === false) return 'inactive';
+    // Default to active if is_active is undefined to allow selection
+    if (stop.is_active === false || stop.schedule_is_active === false) return 'inactive';
     return 'active';
   };
 
@@ -217,9 +239,9 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
       {/* Full-width route visualization */}
       <div className="relative overflow-x-auto bg-gray-50 py-6 px-4 rounded-lg mb-6">
         <div className="flex items-center space-x-4 min-w-max pb-4">
-          {stops.map((stop, index) => {
+          {validStops.map((stop, index) => {
             const status = getStopStatus(stop);
-            const isLast = index === stops.length - 1;
+            const isLast = index === validStops.length - 1;
 
             return (
               <div key={stop.id} className="relative flex flex-col items-center">

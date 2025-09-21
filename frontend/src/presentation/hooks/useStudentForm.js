@@ -63,6 +63,10 @@ const formatInitialData = (initialData, mode) => {
 
   const enrollmentData = extractEnrollmentData(enrollmentToFormat);
 
+  console.log('📋 formatInitialData - enrollmentToFormat:', enrollmentToFormat);
+  console.log('📋 formatInitialData - extractedEnrollmentData:', enrollmentData);
+  console.log('📋 formatInitialData - administration from extracted:', enrollmentData?.administration);
+
   // CRITICAL: Never allow enrolled status to revert to enquiry
   let enrollmentStatus = enrollmentData?.enrollment_status || enrollmentToFormat?.enrollment_status || '';
 
@@ -81,26 +85,30 @@ const formatInitialData = (initialData, mode) => {
     admission_type: enrollmentData?.admission_type || '',
     enrollment_status: enrollmentStatus,
     lc_received: enrollmentData?.lc_received || false,
-    administration: {
+    administration: enrollmentData?.administration ? {
       // Handle both division as object and as ID
-      division: (typeof enrollmentData?.administration?.division === 'object' && enrollmentData?.administration?.division?.id)
+      division: (typeof enrollmentData.administration.division === 'object' && enrollmentData.administration.division?.id)
         ? String(enrollmentData.administration.division.id)
-        : (enrollmentData?.administration?.division ? String(enrollmentData.administration.division) : ''),
-      seat_allocations: [{
+        : (enrollmentData.administration.division ? String(enrollmentData.administration.division) : ''),
+      date_of_admission: enrollmentData.administration.date_of_admission || '',
+      seat_allocations: enrollmentData.administration.seat_allocations && enrollmentData.administration.seat_allocations.length > 0 ? [{
         // Handle pickup_stop as object or ID
-        pickup_stop: (typeof enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop === 'object' &&
-                     enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop?.id)
+        pickup_stop: (typeof enrollmentData.administration.seat_allocations[0].pickup_stop === 'object' &&
+                     enrollmentData.administration.seat_allocations[0].pickup_stop?.id)
           ? String(enrollmentData.administration.seat_allocations[0].pickup_stop.id)
-          : (enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop ?
+          : (enrollmentData.administration.seat_allocations[0].pickup_stop ?
              String(enrollmentData.administration.seat_allocations[0].pickup_stop) : ''),
-        drop_stop: (typeof enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop === 'object' &&
-                   enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop?.id)
-          ? String(enrollmentData.administration.seat_allocations[0].drop_stop.id)
-          : (enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop ?
-             String(enrollmentData.administration.seat_allocations[0].drop_stop) : ''),
-      }]
+        bus_route: enrollmentData.administration.seat_allocations[0]?.bus_route || '',
+      }] : [{ pickup_stop: '', bus_route: '' }]
+    } : {
+      division: '',
+      date_of_admission: '',
+      seat_allocations: [{ pickup_stop: '', bus_route: '' }]
     },
   }];
+
+  console.log('📌 formatInitialData - Final enrollment administration:', formattedData.enrollments[0].administration);
+  console.log('📌 formatInitialData - Pickup stop ID:', formattedData.enrollments[0].administration?.seat_allocations?.[0]?.pickup_stop);
 
   const rawExamResults = extractExamResultsData(initialData.examResults || initialData.exam_results);
   formattedData.exam_results = rawExamResults.length > 0 ? rawExamResults : [];
@@ -270,13 +278,18 @@ export const useStudentForm = (mode = 'create') => {
 
               // Extract and set the pickup location if it exists
               const administration = studentData.enrollments?.[0]?.administration;
-              if (administration?.seat_allocations?.[0]?.pickup_stop) {
-                const pickupStop = administration.seat_allocations[0].pickup_stop;
+              // Handle both camelCase (domain model) and snake_case (API) properties
+              const seatAllocations = administration?.seatAllocations || administration?.seat_allocations;
+              const firstAllocation = seatAllocations?.[0];
+              const pickupStop = firstAllocation?.pickupStop || firstAllocation?.pickup_stop;
+
+              if (pickupStop) {
                 // Handle pickup_stop as either object or ID
                 if (typeof pickupStop === 'object' && pickupStop.location) {
                   const locationId = typeof pickupStop.location === 'object' ?
                     pickupStop.location.id : pickupStop.location;
                   if (locationId) {
+                    console.log('🎯 Setting pickup location from saved data:', locationId);
                     setSelectedPickupLocationId(String(locationId));
                   }
                 }

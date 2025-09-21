@@ -11,7 +11,13 @@ export class BusRouteRepository {
           bus: true,
           bus_stops: true,
           stop_schedules: {
-            populate: '*'  // Populate all fields in the component including bus_stop relation
+            populate: {
+              bus_stop: {
+                populate: {
+                  location: true
+                }
+              }
+            }
           }
         },
         sort: ['route_name:asc']
@@ -39,7 +45,13 @@ export class BusRouteRepository {
             }
           },
           stop_schedules: {
-            populate: '*'  // Populate all fields in the component including bus_stop relation
+            populate: {
+              bus_stop: {
+                populate: {
+                  location: true
+                }
+              }
+            }
           }
         },
         sort: ['route_name:asc'],
@@ -57,24 +69,66 @@ export class BusRouteRepository {
       console.log('Raw routes from API:', allRoutes);
 
       // Filter routes that have the specified location in either bus_stops or stop_schedules
-      const filteredRoutes = allRoutes.filter(route => {
+      const filteredRoutes = allRoutes.filter((route, index) => {
+        console.log(`Checking route ${index}:`, {
+          routeName: route.route_name,
+          hasBusStops: !!route.bus_stops,
+          busStopsCount: route.bus_stops?.length,
+          hasStopSchedules: !!route.stop_schedules,
+          stopSchedulesCount: route.stop_schedules?.length
+        });
+
         // Check bus_stops relation
         if (route.bus_stops && route.bus_stops.length > 0) {
-          const hasLocation = route.bus_stops.some(stop =>
-            stop.location && (stop.location.id === idNum || stop.location === idNum)
-          );
+          console.log(`Route ${route.route_name} bus_stops:`, route.bus_stops.map(stop => ({
+            stopName: stop.stop_name,
+            locationId: stop.location?.id,
+            locationDocId: stop.location?.documentId,
+            locationType: typeof stop.location,
+            locationValue: stop.location
+          })));
+
+          const hasLocation = route.bus_stops.some(stop => {
+            const locationMatch = stop.location && (
+              stop.location.id === idNum ||
+              stop.location === idNum ||
+              stop.location.id === String(idNum) ||
+              stop.location.documentId === String(locationId)
+            );
+            if (locationMatch) {
+              console.log(`✅ Location match found in bus_stops for stop:`, stop.stop_name);
+            }
+            return locationMatch;
+          });
           if (hasLocation) return true;
         }
 
         // Check stop_schedules component
         if (route.stop_schedules && route.stop_schedules.length > 0) {
-          const hasLocation = route.stop_schedules.some(schedule =>
-            schedule.bus_stop && schedule.bus_stop.location &&
-            (schedule.bus_stop.location.id === idNum || schedule.bus_stop.location === idNum)
-          );
+          console.log(`Route ${route.route_name} stop_schedules:`, route.stop_schedules.map(schedule => ({
+            busStop: schedule.bus_stop?.stop_name,
+            locationId: schedule.bus_stop?.location?.id,
+            locationDocId: schedule.bus_stop?.location?.documentId,
+            locationType: typeof schedule.bus_stop?.location,
+            locationValue: schedule.bus_stop?.location
+          })));
+
+          const hasLocation = route.stop_schedules.some(schedule => {
+            const locationMatch = schedule.bus_stop && schedule.bus_stop.location && (
+              schedule.bus_stop.location.id === idNum ||
+              schedule.bus_stop.location === idNum ||
+              schedule.bus_stop.location.id === String(idNum) ||
+              schedule.bus_stop.location.documentId === String(locationId)
+            );
+            if (locationMatch) {
+              console.log(`✅ Location match found in stop_schedules for stop:`, schedule.bus_stop.stop_name);
+            }
+            return locationMatch;
+          });
           if (hasLocation) return true;
         }
 
+        console.log(`❌ No location match for route ${route.route_name}`);
         return false;
       });
 
@@ -97,7 +151,13 @@ export class BusRouteRepository {
             }
           },
           stop_schedules: {
-            populate: '*'  // Populate all fields in the component including bus_stop relation
+            populate: {
+              bus_stop: {
+                populate: {
+                  location: true
+                }
+              }
+            }
           }
         },
         sort: ['route_name:asc'],

@@ -109,9 +109,20 @@ const StudentPage = ({ mode = 'create' }) => {
     }
 
     // Step 3: Administration - Check if division and pickup stop are selected
-    if (formData.enrollments?.[0]?.administration?.division &&
-        formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.pickup_stop) {
-      completed.push(3);
+    const administration = formData.enrollments?.[0]?.administration;
+    if (administration) {
+      // Handle both object and ID formats for division and pickup_stop
+      const hasDivision = administration.division &&
+        (typeof administration.division === 'object' ? administration.division.id : administration.division);
+
+      const hasPickupStop = administration.seat_allocations?.[0]?.pickup_stop &&
+        (typeof administration.seat_allocations[0].pickup_stop === 'object' ?
+          administration.seat_allocations[0].pickup_stop.id :
+          administration.seat_allocations[0].pickup_stop);
+
+      if (hasDivision && hasPickupStop) {
+        completed.push(3);
+      }
     }
 
     // Step 4: Summary - Always completed if reached (it's just a review step)
@@ -253,6 +264,9 @@ const StudentPage = ({ mode = 'create' }) => {
         enrollments: updatedFormData.enrollments,
         administration: updatedFormData.enrollments?.[0]?.administration
       });
+
+      // Log the full enrollment object to debug
+      console.log('📊 Full enrollment data to be sent:', JSON.stringify(updatedFormData.enrollments?.[0], null, 2));
 
       console.log('🚀 SUBMITTING ENROLLMENT...');
 

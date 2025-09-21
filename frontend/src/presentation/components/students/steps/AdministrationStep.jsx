@@ -68,7 +68,6 @@ const AdministrationStep = ({
 
   // Handler for division selection
   const handleDivisionSelect = (divisionId, divisionName) => {
-    console.log('🎯 DIVISION CLICKED:', { divisionId, divisionName, type: typeof divisionId });
 
     // Use setValue to update the form field
     if (setValue) {
@@ -355,17 +354,38 @@ const AdministrationStep = ({
                       })()}
                       routeType="pickup"
                       onSelectStop={(stop) => {
-                        console.log('🎯 BUS STOP CLICKED:', {
+                        console.log('🎯 BUS STOP CLICKED - Full stop object:', stop);
+                        console.log('🎯 BUS STOP CLICKED - Details:', {
                           stopId: stop.id,
                           stopName: stop.stop_name,
-                          route: route.route_name
+                          route: route.route_name,
+                          routeId: route.id
                         });
 
+                        if (!stop.id) {
+                          console.error('❌ Stop has no ID!', stop);
+                          return;
+                        }
+
                         // Set the pickup stop value
-                        setValue('enrollments.0.administration.seat_allocations.0.pickup_stop', String(stop.id));
+                        const stopIdStr = String(stop.id);
+                        console.log('📝 Setting pickup stop to:', stopIdStr);
+                        setValue('enrollments.0.administration.seat_allocations.0.pickup_stop', stopIdStr);
 
                         // Also store the route information if needed
-                        setValue('enrollments.0.administration.seat_allocations.0.bus_route', String(route.id));
+                        const routeIdStr = String(route.id);
+                        console.log('📝 Setting bus route to:', routeIdStr);
+                        setValue('enrollments.0.administration.seat_allocations.0.bus_route', routeIdStr);
+
+                        // Verify the values were set
+                        setTimeout(() => {
+                          const currentPickupStop = watch('enrollments.0.administration.seat_allocations.0.pickup_stop');
+                          const currentBusRoute = watch('enrollments.0.administration.seat_allocations.0.bus_route');
+                          console.log('✅ Values after setting:', {
+                            pickup_stop: currentPickupStop,
+                            bus_route: currentBusRoute
+                          });
+                        }, 100);
 
                         console.log(`✅ Pickup stop selected: ${stop.stop_name} on route ${route.route_name}`);
                       }}
@@ -376,6 +396,8 @@ const AdministrationStep = ({
                 {/* Show selected stop confirmation */}
                 {(() => {
                   const formPickupStopId = watch('enrollments.0.administration.seat_allocations.0.pickup_stop');
+                  console.log('📍 Current form pickup stop ID:', formPickupStopId);
+
                   if (formPickupStopId) {
                     // Find the selected stop from routes
                     let selectedStop = null;
@@ -383,9 +405,24 @@ const AdministrationStep = ({
 
                     for (const route of routesToDisplay) {
                       const stops = route?.stop_schedules?.length > 0
-                        ? route.stop_schedules.map(s => s.bus_stop)
+                        ? route.stop_schedules.map(s => {
+                            const busStop = s.bus_stop || s.busStop || {};
+                            return {
+                              ...busStop,
+                              id: busStop.id || busStop.documentId || s.bus_stop_id,
+                              stop_name: busStop.stop_name || busStop.stopName || busStop.name
+                            };
+                          })
                         : route?.bus_stops || [];
-                      selectedStop = stops.find(s => String(s.id) === String(formPickupStopId));
+
+                      selectedStop = stops.find(s => {
+                        const match = String(s.id) === String(formPickupStopId);
+                        if (match) {
+                          console.log('✅ Found matching stop:', s);
+                        }
+                        return match;
+                      });
+
                       if (selectedStop) {
                         selectedRoute = route;
                         break;

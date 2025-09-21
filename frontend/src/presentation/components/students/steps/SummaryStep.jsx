@@ -69,8 +69,8 @@ const SummaryStep = ({
 
   // Get enrollment data - prioritize selectedStudent over form data for saved information
   const enrollment = selectedStudent?.enrollments?.[0] || formData.enrollments?.[0] || {};
-  const administration = enrollment.administration || {};
-  const seatAllocation = administration.seat_allocations?.[0] || {};
+  const administration = enrollment.administration || formData.enrollments?.[0]?.administration || {};
+  const seatAllocation = administration.seat_allocations?.[0] || formData.enrollments?.[0]?.administration?.seat_allocations?.[0] || {};
 
   console.log('SummaryStep - Enrollment data:', {
     enrollment,
@@ -82,15 +82,18 @@ const SummaryStep = ({
     classes
   });
 
-  // Get transport information directly from the populated selectedStudent data
-  const pickupStop = seatAllocation.pickup_stop || null;
-  const assignedBus = seatAllocation.bus || null;
+  // Get transport information - check both selectedStudent and form data
+  const pickupStopId = seatAllocation.pickup_stop || formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.pickup_stop;
+  const busRouteId = seatAllocation.bus_route || formData.enrollments?.[0]?.administration?.seat_allocations?.[0]?.bus_route;
 
-  // Get route information from pickup stop's bus routes (now populated by backend)
-  const pickupRoute = pickupStop?.bus_routes?.[0] || null;
-  // Get division information - prioritize populated data from selectedStudent
-  const division = administration.division || null;
-  const divisionId = division?.id || formData.enrollments?.[0]?.administration?.division;
+  // Find the actual stop and route from the provided arrays
+  const pickupStop = pickupStopId ? busStops.find(stop => String(stop.id) === String(pickupStopId)) : null;
+  const pickupRoute = busRouteId ? pickupStopRoutes.find(route => String(route.id) === String(busRouteId)) : null;
+  const assignedBus = seatAllocation.bus || pickupRoute?.bus || null;
+
+  // Get division information - check both sources
+  const divisionId = administration.division || formData.enrollments?.[0]?.administration?.division;
+  const division = divisionId ? divisions.find(div => String(div.id) === String(divisionId)) : null;
 
   // Debug logging for transport and division data
   console.log('🔍 SUMMARY - Transport Data:', {
@@ -197,13 +200,13 @@ const SummaryStep = ({
               />
               <InfoRow label="Gender" value={formData.gender} icon={Users} />
               <InfoRow label="Date of Birth" value={formatDate(formData.dob)} icon={Calendar} />
-              <InfoRow label="GR Number" value={enrollment.gr_no} icon={BookOpen} />
+              <InfoRow label="GR Number" value={enrollment.gr_no || formData.gr_no || formData.enrollments?.[0]?.gr_no} icon={BookOpen} />
             </div>
             <div className="space-y-2">
-              <InfoRow label="Academic Year" value={getDisplayName(enrollment.academic_year, academicYears, 'code')} icon={Calendar} />
-              <InfoRow label="Class" value={getDisplayName(enrollment.class, classes, 'classname')} icon={GraduationCap} />
-              <InfoRow label="Admission Type" value={enrollment.admission_type} icon={Building} />
-              <InfoRow label="Enrollment Status" value={enrollment.enrollment_status} icon={Award} />
+              <InfoRow label="Academic Year" value={getDisplayName(enrollment.academic_year || formData.enrollments?.[0]?.academic_year, academicYears, 'code')} icon={Calendar} />
+              <InfoRow label="Class" value={getDisplayName(enrollment.class || formData.enrollments?.[0]?.class, classes, 'classname')} icon={GraduationCap} />
+              <InfoRow label="Admission Type" value={enrollment.admission_type || formData.enrollments?.[0]?.admission_type || formData.admission_type} icon={Building} />
+              <InfoRow label="Enrollment Status" value={enrollment.enrollment_status || formData.enrollments?.[0]?.enrollment_status || 'Pending'} icon={Award} />
             </div>
           </div>
         </SectionCard>
@@ -223,7 +226,7 @@ const SummaryStep = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <InfoRow label="Name" value={guardian.full_name} />
                   <InfoRow label="Relation" value={guardian.relation} />
-                  <InfoRow label="Mobile" value={guardian.mobile} icon={Phone} />
+                  <InfoRow label="Mobile" value={guardian.contacts?.[0]?.mobile || guardian.mobile} icon={Phone} />
                   <InfoRow label="Occupation" value={guardian.occupation} />
                 </div>
                 {guardian.primary_contact && (
@@ -337,10 +340,10 @@ const SummaryStep = ({
                   <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
                     <div className="flex items-center space-x-3 mb-3">
                       <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {division.name}
+                        {division.divisionName || division.divisionCode || 'N/A'}
                       </div>
                       <div>
-                        <h4 className="font-bold text-purple-900">Division {division.name}</h4>
+                        <h4 className="font-bold text-purple-900">Division {division.divisionName || division.divisionCode || 'N/A'}</h4>
                         <p className="text-sm text-purple-700">Student Division Assignment</p>
                       </div>
                     </div>

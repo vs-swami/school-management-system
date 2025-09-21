@@ -245,6 +245,9 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
   },
 
   async updateStudent(studentId, data) {
+    console.log('🔍 updateStudent called with studentId:', studentId);
+    console.log('📦 Full data received:', JSON.stringify(data, null, 2));
+
     // Separate student data from guardian data
     const studentData = { ...data
     };
@@ -253,6 +256,8 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
     const enrollmentsData = studentData.enrollments ? [...studentData.enrollments] : [];
     delete studentData.enrollments;
+
+    console.log('📝 Enrollments data extracted:', JSON.stringify(enrollmentsData, null, 2));
 
     // 1. Update student
     const updatedStudent = await strapi.entityService.update('api::student.student', studentId, {
@@ -357,7 +362,11 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     // 4. Create/Update administration + seat allocation if provided in input
     try {
       if (targetEnrollmentId) {
+        console.log('🎯 Calling upsertAdministrationAndSeat with enrollmentId:', targetEnrollmentId);
+        console.log('📋 Enrollment data for admin upsert:', JSON.stringify(enrollmentsData[0], null, 2));
         await this.upsertAdministrationAndSeat(targetEnrollmentId, enrollmentsData[0]);
+      } else {
+        console.log('⚠️ No targetEnrollmentId, skipping admin/seat upsert');
       }
     } catch (e) {
       console.error('Student Service - updateStudent: admin/seat upsert failed:', e.message);
@@ -415,8 +424,19 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
   // Helper: create or update administration + seat allocation from enrollment input
   async upsertAdministrationAndSeat(enrollmentId, enrollmentInput = {}) {
-    if (!enrollmentInput || !enrollmentInput.administration) return;
+    console.log('🔧 upsertAdministrationAndSeat called with:', {
+      enrollmentId,
+      hasEnrollmentInput: !!enrollmentInput,
+      hasAdministration: !!(enrollmentInput && enrollmentInput.administration),
+      enrollmentInput: JSON.stringify(enrollmentInput, null, 2)
+    });
+
+    if (!enrollmentInput || !enrollmentInput.administration) {
+      console.log('⚠️ No administration data found in enrollment input, returning early');
+      return;
+    }
     const adminInput = enrollmentInput.administration;
+    console.log('📌 Administration input:', JSON.stringify(adminInput, null, 2));
 
     const parseId = (val) => {
       if (!val) return null;

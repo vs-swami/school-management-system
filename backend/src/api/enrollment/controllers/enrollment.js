@@ -1,8 +1,53 @@
 const { createCoreController } = require('@strapi/strapi').factories;
 
 module.exports = createCoreController('api::enrollment.enrollment', ({ strapi }) => ({
-  // The default CRUD operations are automatically inherited
-  // We only need to add our custom method for updating status
+  // Override find to populate administration relation
+  async find(ctx) {
+    const { query } = ctx;
+
+    // Ensure administration relation is populated
+    const entities = await strapi.entityService.findMany('api::enrollment.enrollment', {
+      ...query,
+      populate: {
+        student: true,
+        academic_year: true,
+        class: true,
+        administration: {
+          populate: {
+            division: true,
+            seat_allocations: true
+          }
+        }
+      }
+    });
+
+    const sanitizedEntities = await this.sanitizeOutput(entities, ctx);
+    return this.transformResponse(sanitizedEntities);
+  },
+
+  // Override findOne to populate administration relation
+  async findOne(ctx) {
+    const { id } = ctx.params;
+    const { query } = ctx;
+
+    const entity = await strapi.entityService.findOne('api::enrollment.enrollment', id, {
+      ...query,
+      populate: {
+        student: true,
+        academic_year: true,
+        class: true,
+        administration: {
+          populate: {
+            division: true,
+            seat_allocations: true
+          }
+        }
+      }
+    });
+
+    const sanitizedEntity = await this.sanitizeOutput(entity, ctx);
+    return this.transformResponse(sanitizedEntity);
+  },
 
   async updateStatus(ctx) {
     const { id } = ctx.params;
@@ -23,7 +68,17 @@ module.exports = createCoreController('api::enrollment.enrollment', ({ strapi })
         id,
         {
           data: { enrollment_status },
-          populate: ['student', 'academic_year', 'administration.division', 'class']
+          populate: {
+            student: true,
+            academic_year: true,
+            class: true,
+            administration: {
+              populate: {
+                division: true,
+                seat_allocations: true
+              }
+            }
+          }
         }
       );
 
