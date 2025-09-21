@@ -587,7 +587,6 @@ export interface ApiBusRouteBusRoute extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::bus-stop.bus-stop'
     >;
-    stop_order: Schema.Attribute.JSON;
     departure_time: Schema.Attribute.Time & Schema.Attribute.Required;
     arrival_time: Schema.Attribute.Time;
     route_type: Schema.Attribute.Enumeration<['morning', 'evening', 'both']> &
@@ -595,6 +594,10 @@ export interface ApiBusRouteBusRoute extends Struct.CollectionTypeSchema {
     total_distance: Schema.Attribute.Decimal;
     estimated_duration: Schema.Attribute.Integer;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    stop_schedules: Schema.Attribute.Component<
+      'transport.bus-stop-schedule',
+      true
+    >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -622,10 +625,9 @@ export interface ApiBusStopBusStop extends Struct.CollectionTypeSchema {
   };
   attributes: {
     stop_name: Schema.Attribute.String & Schema.Attribute.Required;
-    address: Schema.Attribute.Text;
     coordinates: Schema.Attribute.JSON;
-    landmark: Schema.Attribute.String;
     location: Schema.Attribute.Relation<'manyToOne', 'api::location.location'>;
+    notes: Schema.Attribute.Text;
     is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     bus_routes: Schema.Attribute.Relation<
       'manyToMany',
@@ -634,6 +636,10 @@ export interface ApiBusStopBusStop extends Struct.CollectionTypeSchema {
     pickup_allocations: Schema.Attribute.Relation<
       'oneToMany',
       'api::seat-allocation.seat-allocation'
+    >;
+    fee_assignments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::fee-assignment.fee-assignment'
     >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
@@ -682,6 +688,7 @@ export interface ApiClassClass extends Struct.CollectionTypeSchema {
     singularName: 'class';
     pluralName: 'classes';
     displayName: 'Class';
+    description: 'Class can have multiple divisions';
   };
   options: {
     draftAndPublish: false;
@@ -690,13 +697,10 @@ export interface ApiClassClass extends Struct.CollectionTypeSchema {
     classname: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
+    divisions: Schema.Attribute.Relation<'oneToMany', 'api::division.division'>;
     enrollments: Schema.Attribute.Relation<
       'oneToMany',
       'api::enrollment.enrollment'
-    >;
-    class_thresholds: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::class-threshold.class-threshold'
     >;
     fee_assignments: Schema.Attribute.Relation<
       'oneToMany',
@@ -714,70 +718,35 @@ export interface ApiClassClass extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiClassThresholdClassThreshold
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'class_thresholds';
-  info: {
-    singularName: 'class-threshold';
-    pluralName: 'class-thresholds';
-    displayName: 'Class Threshold';
-    description: 'Manages student capacity thresholds for each class division';
-  };
-  options: {
-    draftAndPublish: true;
-  };
-  pluginOptions: {
-    'content-manager': {
-      visible: true;
-    };
-  };
-  attributes: {
-    class: Schema.Attribute.Relation<'manyToOne', 'api::class.class'>;
-    division: Schema.Attribute.Relation<'manyToOne', 'api::division.division'>;
-    threshold_number: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 1;
-          max: 100;
-        },
-        number
-      >;
-    createdAt: Schema.Attribute.DateTime;
-    updatedAt: Schema.Attribute.DateTime;
-    publishedAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::class-threshold.class-threshold'
-    >;
-  };
-}
-
 export interface ApiDivisionDivision extends Struct.CollectionTypeSchema {
   collectionName: 'divisions';
   info: {
     singularName: 'division';
     pluralName: 'divisions';
     displayName: 'Division';
+    description: 'Division belongs to a single class';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    name: Schema.Attribute.String & Schema.Attribute.Required;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    class: Schema.Attribute.Relation<'manyToOne', 'api::class.class'>;
     enrollments: Schema.Attribute.Relation<
       'oneToMany',
       'api::enrollment.enrollment'
     >;
-    class_thresholds: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::class-threshold.class-threshold'
-    >;
+    student_limit: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+          max: 100;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<30>;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -891,7 +860,7 @@ export interface ApiExamResultExamResult extends Struct.CollectionTypeSchema {
     singularName: 'exam-result';
     pluralName: 'exam-results';
     displayName: 'Exam Result';
-    description: 'Stores individual exam results for students';
+    description: 'Stores exam results with multiple subject scores';
   };
   options: {
     draftAndPublish: false;
@@ -899,11 +868,15 @@ export interface ApiExamResultExamResult extends Struct.CollectionTypeSchema {
   attributes: {
     student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
     exam_type: Schema.Attribute.String & Schema.Attribute.Required;
-    subject: Schema.Attribute.String & Schema.Attribute.Required;
-    marks_obtained: Schema.Attribute.Integer & Schema.Attribute.Required;
-    total_marks: Schema.Attribute.Integer & Schema.Attribute.Required;
-    grade: Schema.Attribute.String;
-    pass_fail: Schema.Attribute.Boolean;
+    exam_name: Schema.Attribute.String;
+    exam_date: Schema.Attribute.Date;
+    subject_scores: Schema.Attribute.Component<'academic.subject-score', true>;
+    total_obtained: Schema.Attribute.Decimal;
+    total_maximum: Schema.Attribute.Decimal;
+    overall_percentage: Schema.Attribute.Decimal;
+    overall_grade: Schema.Attribute.String;
+    rank: Schema.Attribute.Integer;
+    remarks: Schema.Attribute.Text;
     academic_year: Schema.Attribute.Relation<
       'oneToOne',
       'api::academic-year.academic-year'
@@ -946,6 +919,7 @@ export interface ApiFeeAssignmentFeeAssignment
       'manyToOne',
       'api::bus-route.bus-route'
     >;
+    bus_stop: Schema.Attribute.Relation<'manyToOne', 'api::bus-stop.bus-stop'>;
     student: Schema.Attribute.Relation<'manyToOne', 'api::student.student'>;
     start_date: Schema.Attribute.Date;
     end_date: Schema.Attribute.Date;
@@ -1058,13 +1032,24 @@ export interface ApiGuardianGuardian extends Struct.CollectionTypeSchema {
     primary_contact: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     occupation: Schema.Attribute.String;
-    mobile: Schema.Attribute.String & Schema.Attribute.Required;
-    alt_mobile: Schema.Attribute.String;
-    whatsapp_number: Schema.Attribute.String;
     documents: Schema.Attribute.Relation<
       'oneToMany',
       'api::student-document.student-document'
     >;
+    contact_numbers: Schema.Attribute.Component<'common.contact', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 4;
+        },
+        number
+      >;
+    addresses: Schema.Attribute.Component<'common.address', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 2;
+        },
+        number
+      >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -1261,6 +1246,20 @@ export interface ApiStudentStudent extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::exam-result.exam-result'
     >;
+    addresses: Schema.Attribute.Component<'common.address', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 3;
+        },
+        number
+      >;
+    contacts: Schema.Attribute.Component<'common.contact', true> &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 5;
+        },
+        number
+      >;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -1703,7 +1702,6 @@ declare module '@strapi/strapi' {
       'api::bus-stop.bus-stop': ApiBusStopBusStop;
       'api::caste.caste': ApiCasteCaste;
       'api::class.class': ApiClassClass;
-      'api::class-threshold.class-threshold': ApiClassThresholdClassThreshold;
       'api::division.division': ApiDivisionDivision;
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::enrollment-administration.enrollment-administration': ApiEnrollmentAdministrationEnrollmentAdministration;

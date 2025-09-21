@@ -14,15 +14,9 @@
       "type": "string",
       "required": true
     },
-    "address": {
-      "type": "text"
-    },
     "coordinates": {
       "type": "json",
       "description": "GPS coordinates {lat: number, lng: number}"
-    },
-    "landmark": {
-      "type": "string"
     },
     "location": {
       "type": "relation",
@@ -30,6 +24,10 @@
       "target": "api::location.location",
       "inversedBy": "bus_stops",
       "description": "Reference to Location entity"
+    },
+    "notes": {
+      "type": "text",
+      "description": "Additional information about this stop"
     },
     "is_active": {
       "type": "boolean",
@@ -46,6 +44,12 @@
       "relation": "oneToMany",
       "target": "api::seat-allocation.seat-allocation",
       "mappedBy": "pickup_stop"
+    },
+    "fee_assignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::fee-assignment.fee-assignment",
+      "mappedBy": "bus_stop"
     }
   }
 }

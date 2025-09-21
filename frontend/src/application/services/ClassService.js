@@ -1,17 +1,13 @@
-import { ClassRepository } from '../../data/repositories/ClassRepository';
-import { DivisionRepository } from '../../data/repositories/DivisionRepository';
-import { EnrollmentRepository } from '../../data/repositories/EnrollmentRepository';
+import { ClassRepositoryAdapter } from '../../data/adapters/ClassRepositoryAdapter';
 
 export class ClassService {
   constructor() {
-    this.classRepository = ClassRepository;
-    this.divisionRepository = DivisionRepository;
-    this.enrollmentRepository = EnrollmentRepository;
+    this.repository = new ClassRepositoryAdapter();
   }
 
   async getAllClasses() {
     try {
-      const classes = await this.classRepository.findAll();
+      const classes = await this.repository.findAll();
       return {
         success: true,
         data: classes,
@@ -27,7 +23,7 @@ export class ClassService {
 
   async getClassesWithSummary() {
     try {
-      const classes = await this.classRepository.findAllWithSummary();
+      const classes = await this.repository.findWithSummary();
       return {
         success: true,
         data: classes,
@@ -43,7 +39,7 @@ export class ClassService {
 
   async getClassById(id) {
     try {
-      const classItem = await this.classRepository.findById(id);
+      const classItem = await this.repository.findById(id);
       return {
         success: true,
         data: classItem,
@@ -52,14 +48,30 @@ export class ClassService {
       console.error('Error in ClassService.getClassById:', error);
       return {
         success: false,
-        error: error.message || 'Failed to fetch class',
+        error: error.message || `Failed to fetch class with id ${id}`,
       };
     }
   }
 
-  async createClass(data) {
+  async getClassWithStats(id) {
     try {
-      const newClass = await this.classRepository.create(data);
+      const stats = await this.repository.findWithStats(id);
+      return {
+        success: true,
+        data: stats,
+      };
+    } catch (error) {
+      console.error('Error in ClassService.getClassWithStats:', error);
+      return {
+        success: false,
+        error: error.message || `Failed to fetch class stats for id ${id}`,
+      };
+    }
+  }
+
+  async createClass(classData) {
+    try {
+      const newClass = await this.repository.create(classData);
       return {
         success: true,
         data: newClass,
@@ -69,14 +81,13 @@ export class ClassService {
       return {
         success: false,
         error: error.message || 'Failed to create class',
-        details: error.response?.data
       };
     }
   }
 
-  async updateClass(id, data) {
+  async updateClass(id, classData) {
     try {
-      const updatedClass = await this.classRepository.update(id, data);
+      const updatedClass = await this.repository.update(id, classData);
       return {
         success: true,
         data: updatedClass,
@@ -85,30 +96,62 @@ export class ClassService {
       console.error('Error in ClassService.updateClass:', error);
       return {
         success: false,
-        error: error.message || 'Failed to update class',
-        details: error.response?.data
+        error: error.message || `Failed to update class with id ${id}`,
       };
     }
   }
 
   async deleteClass(id) {
     try {
-      await this.classRepository.delete(id);
+      const result = await this.repository.delete(id);
       return {
         success: true,
+        data: result,
       };
     } catch (error) {
       console.error('Error in ClassService.deleteClass:', error);
       return {
         success: false,
-        error: error.message || 'Failed to delete class',
+        error: error.message || `Failed to delete class with id ${id}`,
       };
     }
   }
 
-  async getClassMetrics() {
+  async getActiveClasses() {
     try {
-      const metrics = await this.classRepository.getMetrics();
+      const classes = await this.repository.findActiveClasses();
+      return {
+        success: true,
+        data: classes,
+      };
+    } catch (error) {
+      console.error('Error in ClassService.getActiveClasses:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch active classes',
+      };
+    }
+  }
+
+  async getClassesByAcademicYear(academicYearId) {
+    try {
+      const classes = await this.repository.findByAcademicYear(academicYearId);
+      return {
+        success: true,
+        data: classes,
+      };
+    } catch (error) {
+      console.error('Error in ClassService.getClassesByAcademicYear:', error);
+      return {
+        success: false,
+        error: error.message || `Failed to fetch classes for academic year ${academicYearId}`,
+      };
+    }
+  }
+
+  async getClassMetrics(classId) {
+    try {
+      const metrics = await this.repository.getClassMetrics(classId);
       return {
         success: true,
         data: metrics,
@@ -117,47 +160,46 @@ export class ClassService {
       console.error('Error in ClassService.getClassMetrics:', error);
       return {
         success: false,
-        error: error.message || 'Failed to fetch class metrics',
+        error: error.message || `Failed to fetch metrics for class ${classId}`,
       };
     }
   }
 
+  // These methods would need separate repository adapters
   async getDivisions() {
     try {
-      const divisions = await this.divisionRepository.findAll();
+      // TODO: Use DivisionRepositoryAdapter when created
+      const { DivisionRepository } = await import('../../data/repositories/DivisionRepository');
+      const divisions = await DivisionRepository.findAll();
       return {
         success: true,
-        data: divisions,
+        data: divisions || [],
       };
     } catch (error) {
       console.error('Error in ClassService.getDivisions:', error);
       return {
         success: false,
         error: error.message || 'Failed to fetch divisions',
+        data: [], // Return empty array on error
       };
     }
   }
 
   async getEnrollments() {
     try {
-      const enrollments = await this.enrollmentRepository.getAllEnrollments();
+      // TODO: Use EnrollmentRepositoryAdapter when created
+      const { EnrollmentRepository } = await import('../../data/repositories/EnrollmentRepository');
+      const enrollments = await EnrollmentRepository.getAllEnrollments();
       return {
         success: true,
-        data: enrollments,
+        data: enrollments || [],
       };
     } catch (error) {
       console.error('Error in ClassService.getEnrollments:', error);
-
-      if (error.response?.status === 403 || error.response?.status === 401) {
-        return {
-          success: false,
-          error: 'Authentication required. Please log in to view class data.',
-        };
-      }
-
       return {
         success: false,
-        error: error.message || 'Failed to fetch enrollment data',
+        error: error.message || 'Failed to fetch enrollments',
+        data: [], // Return empty array on error
       };
     }
   }
@@ -165,29 +207,34 @@ export class ClassService {
   async getAllClassData() {
     try {
       const [classesResult, divisionsResult, enrollmentsResult] = await Promise.all([
-        this.getClassesWithSummary(),
+        this.getAllClasses(),
         this.getDivisions(),
         this.getEnrollments()
       ]);
 
-      if (!classesResult.success || !divisionsResult.success || !enrollmentsResult.success) {
-        return {
-          success: false,
-          error: classesResult.error || divisionsResult.error || enrollmentsResult.error,
-          data: {
-            classes: classesResult.success ? classesResult.data : [],
-            divisions: divisionsResult.success ? divisionsResult.data : [],
-            enrollments: enrollmentsResult.success ? enrollmentsResult.data : []
-          }
-        };
+      // Log which requests failed for debugging
+      if (!classesResult.success) {
+        console.error('Failed to fetch classes:', classesResult.error);
+      }
+      if (!divisionsResult.success) {
+        console.error('Failed to fetch divisions:', divisionsResult.error);
+      }
+      if (!enrollmentsResult.success) {
+        console.error('Failed to fetch enrollments:', enrollmentsResult.error);
       }
 
+      // Return partial data even if some requests fail
       return {
-        success: true,
+        success: classesResult.success && divisionsResult.success && enrollmentsResult.success,
         data: {
-          classes: classesResult.data,
-          divisions: divisionsResult.data,
-          enrollments: enrollmentsResult.data
+          classes: classesResult.data || [],
+          divisions: divisionsResult.data || [],
+          enrollments: enrollmentsResult.data || []
+        },
+        errors: {
+          classes: classesResult.error,
+          divisions: divisionsResult.error,
+          enrollments: enrollmentsResult.error
         }
       };
     } catch (error) {

@@ -3,7 +3,9 @@ import { apiClient } from '../api/config';
 export class DivisionRepository {
   static async findAll() {
     const response = await apiClient.get('/divisions');
-    return response.data.data; // The transformResponseData interceptor will flatten this
+    // Strapi 5: Ensure we return an array
+    const divisions = response.data;
+    return Array.isArray(divisions) ? divisions : [];
   }
 
   /**
@@ -15,8 +17,10 @@ export class DivisionRepository {
     if (!classId) return [];
 
     try {
-      const response = await apiClient.get(`/divisions?filters[class_thresholds][class][id][$eq]=${classId}&populate=class_thresholds`);
-      return response.data.data || [];
+      const response = await apiClient.get(`/divisions?filters[class][id][$eq]=${classId}`);
+      // Strapi 5: Ensure we return an array
+      const divisions = response.data || [];
+      return Array.isArray(divisions) ? divisions : [];
     } catch (error) {
       console.error('Error fetching divisions for class:', error);
       return [];
@@ -32,8 +36,8 @@ export class DivisionRepository {
     if (!divisionId) return null;
 
     try {
-      const response = await apiClient.get(`/divisions/${divisionId}?populate=class_thresholds,enrollments`);
-      return response.data.data || null;
+      const response = await apiClient.get(`/divisions/${divisionId}?populate=enrollments`);
+      return response.data || null;
     } catch (error) {
       console.error('Error fetching division capacity:', error);
       return null;
@@ -47,7 +51,7 @@ export class DivisionRepository {
   static async getMetrics() {
     try {
       const response = await apiClient.get('/divisions/metrics');
-      return response.data.data ?? response.data;
+      return response.data;
     } catch (error) {
       console.error('Error fetching division metrics:', error);
       return {};
@@ -60,7 +64,7 @@ export class DivisionRepository {
   static async getDivisionMetrics(divisionId) {
     try {
       const response = await apiClient.get(`/divisions/metrics/${divisionId}`);
-      return response.data.data ?? response.data;
+      return response.data;
     } catch (error) {
       console.error('Error fetching division metrics:', error);
       return null;
@@ -73,7 +77,7 @@ export class DivisionRepository {
   static async getYearGroupComparison() {
     try {
       const response = await apiClient.get('/divisions/year-groups/comparison');
-      return response.data.data ?? response.data;
+      return response.data;
     } catch (error) {
       console.error('Error fetching year group comparison:', error);
       return {};

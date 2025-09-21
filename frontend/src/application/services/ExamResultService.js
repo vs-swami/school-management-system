@@ -45,10 +45,11 @@ export class ExamResultService {
         params['filters[class][id][$eq]'] = filters.classId;
       }
       
-      // Include relations
+      // Include relations with proper deep population
       params['populate[student]'] = 'true';
       params['populate[academic_year]'] = 'true';
       params['populate[class]'] = 'true';
+      params['populate[subject_scores]'] = 'true';
       
       const response = await apiClient.get('/exam-results', { params });
       return { success: true, data: response.data };
@@ -64,7 +65,7 @@ export class ExamResultService {
    */
   async getExamResultById(id) {
     try {
-      const response = await apiClient.get(`/exam-results/${id}?populate=*`);
+      const response = await apiClient.get(`/exam-results/${id}?populate[subject_scores]=*&populate[student]=*&populate[academic_year]=*&populate[class]=*`);
       return { success: true, data: response.data };
     } catch (error) {
       console.error(`Error fetching exam result with ID ${id}:`, error.response?.data || error.message);

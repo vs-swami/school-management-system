@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import { BusRouteRepository } from '../../data/repositories/BusRouteRepository';
+import { useBusRouteService } from '../../application/hooks/useServices';
 import useStudentStore from '../../application/stores/useStudentStore';
 
 export const useRouteManagement = (currentStep, STEPS) => {
+  const busRouteService = useBusRouteService();
   const { setLoading } = useStudentStore();
   const [pickupStopRoutes, setPickupStopRoutes] = useState([]);
   const [classCapacityData, setClassCapacityData] = useState(null);
@@ -11,8 +12,8 @@ export const useRouteManagement = (currentStep, STEPS) => {
     if (pickupStopId && currentStep === STEPS.ADMINISTRATION) {
       try {
         setLoading(true);
-        const routes = await BusRouteRepository.findByStop(pickupStopId);
-        setPickupStopRoutes(routes || []);
+        const result = await busRouteService.findByStop(pickupStopId);
+        setPickupStopRoutes(result.data || []);
       } catch (error) {
         console.error('Error fetching routes for pickup stop:', error);
         setPickupStopRoutes([]);
@@ -23,16 +24,18 @@ export const useRouteManagement = (currentStep, STEPS) => {
     } else {
       setPickupStopRoutes([]);
     }
-  }, [currentStep, STEPS, setLoading]);
+  }, [currentStep, STEPS, setLoading, busRouteService]);
 
   const fetchRoutesByLocation = useCallback(async (locationId) => {
     if (locationId && currentStep === STEPS.ADMINISTRATION) {
       try {
+        console.log('[useRouteManagement] Fetching routes for location:', locationId);
         setLoading(true);
-        const routes = await BusRouteRepository.findByLocation(locationId);
-        setPickupStopRoutes(routes || []);
+        const result = await busRouteService.findByLocation(locationId);
+        console.log('[useRouteManagement] Routes fetched:', result);
+        setPickupStopRoutes(result.data || []);
       } catch (error) {
-        console.error('Error fetching routes for location:', error);
+        console.error('[useRouteManagement] Error fetching routes for location:', error);
         setPickupStopRoutes([]);
         throw new Error('Failed to load routes for location.');
       } finally {
@@ -41,7 +44,7 @@ export const useRouteManagement = (currentStep, STEPS) => {
     } else {
       setPickupStopRoutes([]);
     }
-  }, [currentStep, STEPS, setLoading]);
+  }, [currentStep, STEPS, setLoading, busRouteService]);
 
   return {
     pickupStopRoutes,

@@ -43,10 +43,27 @@ const SummaryStep = ({
     });
   };
 
-  // Helper function to get display name from ID
-  const getDisplayName = (id, array, field = 'name') => {
-    if (!id || !array) return 'Not selected';
-    const item = array.find(item => String(item.id) === String(id));
+  // Helper function to get display name from ID or object
+  const getDisplayName = (idOrObject, array, field = 'name') => {
+    if (!idOrObject) return 'Not selected';
+
+    // If it's an object with an id (Strapi 5 populated relation)
+    if (typeof idOrObject === 'object') {
+      // Try to get the field directly from the object
+      if (idOrObject[field]) {
+        return idOrObject[field];
+      }
+      // If field not found, try to find it in the array by id
+      if (idOrObject.id && array) {
+        const item = array.find(item => String(item.id) === String(idOrObject.id));
+        return item ? item[field] : idOrObject[field] || 'Not found';
+      }
+      return 'Not found';
+    }
+
+    // If it's just an ID
+    if (!array) return 'Not selected';
+    const item = array.find(item => String(item.id) === String(idOrObject));
     return item ? item[field] : 'Not found';
   };
 
@@ -54,6 +71,16 @@ const SummaryStep = ({
   const enrollment = selectedStudent?.enrollments?.[0] || formData.enrollments?.[0] || {};
   const administration = enrollment.administration || {};
   const seatAllocation = administration.seat_allocations?.[0] || {};
+
+  console.log('SummaryStep - Enrollment data:', {
+    enrollment,
+    hasAcademicYear: !!enrollment.academic_year,
+    hasClass: !!enrollment.class,
+    academicYearValue: enrollment.academic_year,
+    classValue: enrollment.class,
+    academicYears,
+    classes
+  });
 
   // Get transport information directly from the populated selectedStudent data
   const pickupStop = seatAllocation.pickup_stop || null;
@@ -173,7 +200,7 @@ const SummaryStep = ({
               <InfoRow label="GR Number" value={enrollment.gr_no} icon={BookOpen} />
             </div>
             <div className="space-y-2">
-              <InfoRow label="Academic Year" value={getDisplayName(enrollment.academic_year, academicYears, 'year')} icon={Calendar} />
+              <InfoRow label="Academic Year" value={getDisplayName(enrollment.academic_year, academicYears, 'code')} icon={Calendar} />
               <InfoRow label="Class" value={getDisplayName(enrollment.class, classes, 'classname')} icon={GraduationCap} />
               <InfoRow label="Admission Type" value={enrollment.admission_type} icon={Building} />
               <InfoRow label="Enrollment Status" value={enrollment.enrollment_status} icon={Award} />
@@ -270,11 +297,16 @@ const SummaryStep = ({
           <div className="space-y-4">
             {formData.exam_results.map((result, index) => (
               <div key={index} className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium text-gray-900 mb-3">Exam Result {index + 1}</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <InfoRow label="Academic Year" value={getDisplayName(result.academic_year, academicYears, 'year')} />
-                  <InfoRow label="Class" value={getDisplayName(result.class, classes, 'classname')} />
-                  <InfoRow label="Result" value={result.result} />
+                <h4 className="font-medium text-gray-900 mb-3">
+                  {result.exam_type || `Exam Result ${index + 1}`}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <InfoRow label="Exam Type" value={result.exam_type || 'Not specified'} />
+                  <InfoRow label="Marks Obtained" value={`${result.total_obtained || 0}/${result.total_maximum || 100}`} />
+                  <InfoRow label="Percentage" value={result.overall_percentage ? `${result.overall_percentage}%` : 'N/A'} />
+                  <InfoRow label="Grade" value={result.overall_grade || 'N/A'} />
+                  {result.rank && <InfoRow label="Rank" value={result.rank} />}
+                  {result.exam_date && <InfoRow label="Exam Date" value={formatDate(result.exam_date)} />}
                 </div>
                 {result.remarks && (
                   <div className="mt-2">

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEnrollmentStore } from '../../../application/stores/useEnrollmentStore';
-import { DivisionRepository } from '../../../data/repositories/DivisionRepository';
+import { useDivisionService } from '../../../application/hooks/useServices';
 import { Calendar, Truck, Home, DollarSign, ArrowLeft, ArrowRight } from 'lucide-react';
 
 export const EnrollmentAdminPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const divisionService = useDivisionService();
   const { enrollments, fetchEnrollments, loading, error, updateEnrollmentAdministration } = useEnrollmentStore();
   const [enrollment, setEnrollment] = useState(null);
   const [adminData, setAdminData] = useState({
@@ -28,8 +29,10 @@ export const EnrollmentAdminPage = () => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const fetchedDivisions = await DivisionRepository.findAll();
-        setDivisions(fetchedDivisions);
+        const result = await divisionService.findAll();
+        if (result.success) {
+          setDivisions(result.data);
+        }
       } catch (err) {
         console.error("Error fetching dropdown data:", err);
         // Optionally, set an error state

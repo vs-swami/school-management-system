@@ -12,7 +12,8 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       'place',
       'caste',
       'house',
-      'guardians',
+      'guardians.contact_numbers',
+      'guardians.addresses',
       'enrollments.academic_year',
       'enrollments.class',
       'enrollments.administration.division',
@@ -55,7 +56,8 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       'place',
       'caste',
       'house',
-      'guardians',
+      'guardians.contact_numbers',
+      'guardians.addresses',
       'enrollments.academic_year',
       'enrollments.class',
       'enrollments.administration.division',
@@ -126,7 +128,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     const enrollmentsData = studentData.enrollments ? [...studentData.enrollments] : [];
     delete studentData.enrollments;
 
-    console.log('Creating student with data:', studentData);
+    console.log('Creating student with data:', JSON.stringify(studentData, null, 2));
     
     // 1. Create student first
     const student = await strapi.entityService.create('api::student.student', {
@@ -179,14 +181,50 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
     // Create guardians
     if (guardiansData.length > 0) {
+      console.log('Student Service - createStudent: Creating guardians, count:', guardiansData.length);
       for (const guardianData of guardiansData) {
-        const createdGuardian = await strapi.entityService.create('api::guardian.guardian', {
-          data: {
-            ...guardianData,
-            student: student.id
+        // Filter out empty contact numbers and addresses to avoid validation errors
+        const processedGuardianData = { ...guardianData };
+
+        // Filter contact_numbers - only keep those with valid numbers
+        if (processedGuardianData.contact_numbers) {
+          processedGuardianData.contact_numbers = processedGuardianData.contact_numbers.filter(
+            contact => contact.number && contact.number.match(/^[+]?[0-9]{10,15}$/)
+          );
+          // If no valid contact numbers, remove the field entirely
+          if (processedGuardianData.contact_numbers.length === 0) {
+            delete processedGuardianData.contact_numbers;
           }
-        });
-        
+        }
+
+        // Filter addresses - only keep those with all required fields
+        if (processedGuardianData.addresses) {
+          processedGuardianData.addresses = processedGuardianData.addresses.filter(
+            addr => addr.address_line1 && addr.city && addr.state &&
+                   addr.pincode && addr.pincode.match(/^[1-9][0-9]{5}$/)
+          );
+          // If no valid addresses, remove the field entirely
+          if (processedGuardianData.addresses.length === 0) {
+            delete processedGuardianData.addresses;
+          }
+        }
+
+        console.log('Student Service - createStudent: Creating guardian with processed data:', JSON.stringify(processedGuardianData, null, 2));
+        try {
+          const createdGuardian = await strapi.entityService.create('api::guardian.guardian', {
+            data: {
+              ...processedGuardianData,
+              student: student.id
+            }
+          });
+          console.log('Student Service - createStudent: Successfully created guardian:', createdGuardian.id);
+        } catch (guardianError) {
+          console.error('Student Service - createStudent: Error creating guardian:', guardianError.message);
+          if (guardianError.details && guardianError.details.errors) {
+            console.error('Validation errors:', JSON.stringify(guardianError.details.errors, null, 2));
+          }
+          throw guardianError;
+        }
       }
     }
 
@@ -223,11 +261,37 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
     // 2. Update or create guardians
     for (const guardianData of guardiansData) {
-      if (guardianData.id) {
+      // Filter out empty contact numbers and addresses to avoid validation errors
+      const processedGuardianData = { ...guardianData };
+
+      // Filter contact_numbers - only keep those with valid numbers
+      if (processedGuardianData.contact_numbers) {
+        processedGuardianData.contact_numbers = processedGuardianData.contact_numbers.filter(
+          contact => contact.number && contact.number.match(/^[+]?[0-9]{10,15}$/)
+        );
+        // If no valid contact numbers, remove the field entirely
+        if (processedGuardianData.contact_numbers.length === 0) {
+          delete processedGuardianData.contact_numbers;
+        }
+      }
+
+      // Filter addresses - only keep those with all required fields
+      if (processedGuardianData.addresses) {
+        processedGuardianData.addresses = processedGuardianData.addresses.filter(
+          addr => addr.address_line1 && addr.city && addr.state &&
+                 addr.pincode && addr.pincode.match(/^[1-9][0-9]{5}$/)
+        );
+        // If no valid addresses, remove the field entirely
+        if (processedGuardianData.addresses.length === 0) {
+          delete processedGuardianData.addresses;
+        }
+      }
+
+      if (processedGuardianData.id) {
         // Update existing guardian
-        await strapi.entityService.update('api::guardian.guardian', guardianData.id, {
+        await strapi.entityService.update('api::guardian.guardian', processedGuardianData.id, {
           data: {
-            ...guardianData,
+            ...processedGuardianData,
             student: studentId
           },
         });
@@ -235,7 +299,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
         // Create new guardian
         await strapi.entityService.create('api::guardian.guardian', {
           data: {
-            ...guardianData,
+            ...processedGuardianData,
             student: studentId
           },
         });

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_wait_for",
+      "Bash(python:*)",
+      "mcp__playwright__browser_select_option"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

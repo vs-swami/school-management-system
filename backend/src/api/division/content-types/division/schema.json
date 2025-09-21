@@ -4,7 +4,8 @@
   "info": {
     "singularName": "division",
     "pluralName": "divisions",
-    "displayName": "Division"
+    "displayName": "Division",
+    "description": "Division belongs to a single class"
   },
   "options": {
     "draftAndPublish": false
@@ -12,7 +13,14 @@
   "attributes": {
     "name": {
       "type": "string",
-      "required": true
+      "required": true,
+      "unique": true
+    },
+    "class": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::class.class",
+      "inversedBy": "divisions"
     },
     "enrollments": {
       "type": "relation",
@@ -20,11 +28,12 @@
       "target": "api::enrollment.enrollment",
       "mappedBy": "division"
     },
-    "class_thresholds": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::class-threshold.class-threshold",
-      "mappedBy": "division"
+    "student_limit": {
+      "type": "integer",
+      "default": 30,
+      "min": 1,
+      "max": 100,
+      "required": false
     }
   }
 }

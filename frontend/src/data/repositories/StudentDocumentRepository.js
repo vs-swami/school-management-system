@@ -43,7 +43,7 @@ export class StudentDocumentRepository {
       });
 
       console.log('StudentDocumentRepository - create: Success response', response.data);
-      return response.data.data || response.data;
+      return response.data;
     } catch (error) {
       console.error('StudentDocumentRepository Error in create:', error.response?.data || error);
       console.error('StudentDocumentRepository Error in create - Full error:', error);
@@ -80,7 +80,7 @@ export class StudentDocumentRepository {
       });
 
       console.log('StudentDocumentRepository - update: Success response', response.data);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       console.error('StudentDocumentRepository Error in update:', error.response?.data || error);
       console.error('StudentDocumentRepository Error in update - Full error:', error);
@@ -117,7 +117,7 @@ export class StudentDocumentRepository {
         },
       });
 
-      return response.data.data || response.data;
+      return response.data;
     } catch (error) {
       console.error('StudentDocumentRepository Error in createSingleStep:', error.response?.data || error);
       throw error;

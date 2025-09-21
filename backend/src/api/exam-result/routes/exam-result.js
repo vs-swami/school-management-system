@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * exam-result router - Core Router Approach (More Reliable)
+ * exam-result router
  */
 
 const { createCoreRouter } = require('@strapi/strapi').factories;

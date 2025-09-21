@@ -1,13 +1,13 @@
-import { EnrollmentRepository } from '../../data/repositories/EnrollmentRepository';
+import { EnrollmentRepositoryAdapter } from '../../data/adapters/EnrollmentRepositoryAdapter';
 
 export class EnrollmentService {
   constructor() {
-    this.repository = EnrollmentRepository;
+    this.repository = new EnrollmentRepositoryAdapter();
   }
 
   async getAllEnrollments() {
     try {
-      const enrollments = await this.repository.getAllEnrollments();
+      const enrollments = await this.repository.findAll();
       return {
         success: true,
         data: enrollments
@@ -23,7 +23,7 @@ export class EnrollmentService {
 
   async getEnrollmentById(id) {
     try {
-      const enrollment = await this.repository.getEnrollmentById(id);
+      const enrollment = await this.repository.findById(id);
       return {
         success: true,
         data: enrollment
@@ -39,7 +39,7 @@ export class EnrollmentService {
 
   async createEnrollment(enrollmentData) {
     try {
-      const enrollment = await this.repository.createEnrollment(enrollmentData);
+      const enrollment = await this.repository.create(enrollmentData);
       return {
         success: true,
         data: enrollment
@@ -56,7 +56,7 @@ export class EnrollmentService {
 
   async updateEnrollment(id, enrollmentData) {
     try {
-      const enrollment = await this.repository.updateEnrollment(id, enrollmentData);
+      const enrollment = await this.repository.update(id, enrollmentData);
       return {
         success: true,
         data: enrollment
@@ -73,7 +73,9 @@ export class EnrollmentService {
 
   async updateEnrollmentStatus(enrollmentId, enrollment_status) {
     try {
-      const response = await this.repository.updateEnrollmentStatus(enrollmentId, enrollment_status);
+      const enrollment = await this.repository.findById(enrollmentId);
+      enrollment.status = enrollment_status;
+      const response = await this.repository.update(enrollmentId, enrollment);
       return {
         success: true,
         data: response
@@ -89,7 +91,9 @@ export class EnrollmentService {
 
   async updateEnrollmentAdministration(enrollmentId, administrationData) {
     try {
-      const response = await this.repository.updateEnrollmentAdministration(enrollmentId, administrationData);
+      const enrollment = await this.repository.findById(enrollmentId);
+      enrollment.administration = administrationData;
+      const response = await this.repository.update(enrollmentId, enrollment);
       return {
         success: true,
         data: response
@@ -106,7 +110,7 @@ export class EnrollmentService {
 
   async deleteEnrollment(id) {
     try {
-      await this.repository.deleteEnrollment(id);
+      await this.repository.delete(id);
       return {
         success: true
       };
@@ -121,7 +125,7 @@ export class EnrollmentService {
 
   async getEnrollmentsByStudent(studentId) {
     try {
-      const enrollments = await this.repository.getEnrollmentsByStudent(studentId);
+      const enrollments = await this.repository.findByStudent(studentId);
       return {
         success: true,
         data: enrollments
@@ -137,7 +141,7 @@ export class EnrollmentService {
 
   async getEnrollmentsByClass(classId) {
     try {
-      const enrollments = await this.repository.getEnrollmentsByClass(classId);
+      const enrollments = await this.repository.findByClass(classId);
       return {
         success: true,
         data: enrollments
@@ -153,7 +157,7 @@ export class EnrollmentService {
 
   async getEnrollmentsByDivision(divisionId) {
     try {
-      const enrollments = await this.repository.getEnrollmentsByDivision(divisionId);
+      const enrollments = await this.repository.findByDivision(divisionId);
       return {
         success: true,
         data: enrollments

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useIsFetching } from 'react-query';
+import { useLoading } from '../../../application/contexts/LoadingContext';
 import useStudentStore from '../../../application/stores/useStudentStore';
 import { useEnrollmentStore } from '../../../application/stores/useEnrollmentStore';
 import useAuthStore from '../../../application/stores/useAuthStore';
 import { UI_CONFIG } from '../../../shared/constants/app';
 
 // Enhanced Loading Animation Component
-const ModernLoadingSpinner = ({ message }) => {
+const ModernLoadingSpinner = ({ message, loadingCount }) => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
@@ -39,6 +40,11 @@ const ModernLoadingSpinner = ({ message }) => {
         <h3 className="text-lg font-semibold text-gray-800 animate-pulse">
           {message || 'Loading'}{dots}
         </h3>
+        {loadingCount > 1 && (
+          <p className="text-xs text-gray-500">
+            {loadingCount} operations in progress
+          </p>
+        )}
         <p className="text-sm text-gray-500 max-w-xs">
           Please wait while we process your request
         </p>
@@ -68,18 +74,31 @@ const BackgroundPattern = () => (
 );
 
 export const GlobalLoadingOverlay = () => {
+  // Use the new loading context
+  const { isLoading: contextLoading, currentMessage, loadingCount } = useLoading();
+
+  // Keep legacy store integrations for backward compatibility
   const isFetching = useIsFetching();
   const studentLoading = useStudentStore((s) => s.loading);
   const enrollmentLoading = useEnrollmentStore((s) => s.loading);
   const authLoading = useAuthStore((s) => s.loading);
 
-  const active = Boolean(isFetching || studentLoading || enrollmentLoading || authLoading);
+  // Combine all loading states
+  const active = Boolean(
+    contextLoading ||
+    isFetching ||
+    studentLoading ||
+    enrollmentLoading ||
+    authLoading
+  );
 
   const [visible, setVisible] = useState(false);
   const [fadeIn, setFadeIn] = useState(false);
 
   // Determine loading context for better messaging
   const getLoadingMessage = () => {
+    // Priority: context message > store-specific messages > default
+    if (currentMessage && contextLoading) return currentMessage;
     if (authLoading) return 'Authenticating';
     if (studentLoading) return 'Processing Student Data';
     if (enrollmentLoading) return 'Managing Enrollment';
@@ -107,25 +126,26 @@ export const GlobalLoadingOverlay = () => {
 
   return (
     <div
-      className={`fixed inset-0 z-[1000] transition-all duration-300 ${
+      className={`fixed inset-0 z-[9999] transition-all duration-300 ${
         fadeIn ? 'opacity-100' : 'opacity-0'
       }`}
-      style={{ pointerEvents: 'none' }}
     >
-      {/* Enhanced Backdrop */}
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm">
+      {/* Enhanced Backdrop - now blocks interaction */}
+      <div className="absolute inset-0 bg-white/80 backdrop-blur-sm">
         <BackgroundPattern />
       </div>
 
       {/* Loading Content */}
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div
-          className={`bg-white/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 p-8 max-w-sm w-full mx-4 transform transition-all duration-500 ${
+          className={`bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl border border-white/50 p-8 max-w-sm w-full mx-4 transform transition-all duration-500 ${
             fadeIn ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
           }`}
-          style={{ pointerEvents: 'auto' }}
         >
-          <ModernLoadingSpinner message={getLoadingMessage()} />
+          <ModernLoadingSpinner
+            message={getLoadingMessage()}
+            loadingCount={loadingCount}
+          />
 
           {/* Tips Section */}
           <div className="mt-6 pt-4 border-t border-gray-100">

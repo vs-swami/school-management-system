@@ -30,23 +30,19 @@ const transformBusStopResponse = (busStopData) => {
 export class BusStopRepository {
   static async findAll(params = {}) {
     try {
+      // Use populate * to get all relations
       const populateParams = {
-        populate: {
-          bus_routes: {
-            populate: {
-              bus: true
-            }
-          },
-          pickup_allocations: true,
-          location: { fields: ['id', 'name'] },
-        }
+        populate: '*'
       };
 
       const response = await apiClient.get('/bus-stops', {
         params: { ...params, ...populateParams }
       });
 
-      return transformBusStopResponse(response.data.data);
+      // Strapi 5: Ensure we have an array
+      const stopsData = Array.isArray(response.data) ? response.data :
+                       (response.data?.data || []);
+      return transformBusStopResponse(stopsData);
     } catch (error) {
       console.error('BusStopRepository Error in findAll:', error);
       throw error;
@@ -72,15 +68,11 @@ export class BusStopRepository {
   static async findById(id) {
     try {
       const populateParams = {
-        populate: {
-          bus_routes: true,
-          pickup_allocations: true,
-          location: { fields: ['id', 'name'] },
-        }
+        populate: '*'
       };
 
       const response = await apiClient.get(`/bus-stops/${id}`, { params: populateParams });
-      return transformBusStopResponse(response.data.data);
+      return transformBusStopResponse(response.data);
     } catch (error) {
       console.error('BusStopRepository Error in findById:', error);
       throw error;
@@ -90,26 +82,60 @@ export class BusStopRepository {
   static async create(data) {
     try {
       const response = await apiClient.post('/bus-stops', { data });
-      return transformBusStopResponse(response.data.data);
+      return transformBusStopResponse(response.data);
     } catch (error) {
       console.error('BusStopRepository Error in create:', error);
       throw error;
     }
   }
 
-  static async update(id, data) {
+  static async update(idOrDocumentId, data) {
     try {
-      const response = await apiClient.put(`/bus-stops/${id}`, { data });
-      return transformBusStopResponse(response.data.data);
+      // For Strapi v5, we need to use documentId for updates
+      // If the id looks like a documentId (string), use it directly
+      // Otherwise, we need to fetch the documentId first
+      let updateId = idOrDocumentId;
+
+      if (typeof idOrDocumentId === 'number' || /^\d+$/.test(idOrDocumentId)) {
+        // This is a numeric ID, we need to get the documentId
+        const busStop = await this.findById(idOrDocumentId);
+        if (!busStop || !busStop.documentId) {
+          throw new Error(`Bus stop with ID ${idOrDocumentId} not found or missing documentId`);
+        }
+        updateId = busStop.documentId;
+      }
+
+      // Ensure monthly_fee is properly formatted if present
+      const updateData = { ...data };
+      if (updateData.monthly_fee !== undefined) {
+        updateData.monthly_fee = parseFloat(updateData.monthly_fee) || 0;
+      }
+
+      const response = await apiClient.put(`/bus-stops/${updateId}`, { data: updateData });
+      return transformBusStopResponse(response.data);
     } catch (error) {
       console.error('BusStopRepository Error in update:', error);
       throw error;
     }
   }
 
-  static async delete(id) {
+  static async delete(idOrDocumentId) {
     try {
-      const response = await apiClient.delete(`/bus-stops/${id}`);
+      // For Strapi v5, we need to use documentId for deletions
+      // If the id looks like a documentId (string), use it directly
+      // Otherwise, we need to fetch the documentId first
+      let deleteId = idOrDocumentId;
+
+      if (typeof idOrDocumentId === 'number' || /^\d+$/.test(idOrDocumentId)) {
+        // This is a numeric ID, we need to get the documentId
+        const busStop = await this.findById(idOrDocumentId);
+        if (!busStop || !busStop.documentId) {
+          throw new Error(`Bus stop with ID ${idOrDocumentId} not found or missing documentId`);
+        }
+        deleteId = busStop.documentId;
+      }
+
+      const response = await apiClient.delete(`/bus-stops/${deleteId}`);
       return response.data;
     } catch (error) {
       console.error('BusStopRepository Error in delete:', error);
@@ -129,7 +155,7 @@ export class BusStopRepository {
         sort: ['stop_name:asc']
       };
       const response = await apiClient.get('/bus-stops', { params });
-      return transformBusStopResponse(response.data.data);
+      return transformBusStopResponse(response.data);
     } catch (error) {
       console.error('BusStopRepository Error in findByLocation:', error);
       throw error;
@@ -142,6 +168,59 @@ export class BusStopRepository {
       return response.data; // already minimal shape for UI
     } catch (error) {
       console.error('BusStopRepository Error in groupedByLocation:', error);
+      throw error;
+    }
+  }
+
+  static async findWithFees(params = {}) {
+    try {
+      const populateParams = {
+        populate: {
+          location: true,
+          bus_routes: true,
+          pickup_allocations: {
+            count: true
+          }
+        },
+        filters: {
+          is_active: { $eq: true }
+        },
+        sort: ['stop_name:asc']
+      };
+
+      const response = await apiClient.get('/bus-stops', {
+        params: { ...params, ...populateParams }
+      });
+
+      const stopsData = Array.isArray(response.data) ? response.data :
+                       (response.data?.data || []);
+
+      // Transform and include fee information
+      return stopsData.map(stop => ({
+        ...transformBusStopResponse(stop),
+        monthlyFee: stop.monthly_fee || 0,
+        studentCount: stop.pickup_allocations?.count || 0
+      }));
+    } catch (error) {
+      console.error('BusStopRepository Error in findWithFees:', error);
+      throw error;
+    }
+  }
+
+  static async bulkUpdateFees(updates) {
+    try {
+      const updatePromises = updates.map(({ id, documentId, monthly_fee }) => {
+        const updateId = documentId || id;
+        return this.update(updateId, { monthly_fee });
+      });
+
+      const results = await Promise.allSettled(updatePromises);
+      return {
+        successful: results.filter(r => r.status === 'fulfilled').map(r => r.value),
+        failed: results.filter(r => r.status === 'rejected').map(r => r.reason)
+      };
+    } catch (error) {
+      console.error('BusStopRepository Error in bulkUpdateFees:', error);
       throw error;
     }
   }

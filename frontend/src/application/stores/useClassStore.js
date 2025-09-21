@@ -21,8 +21,10 @@ export const useClassStore = create((set, get) => ({
 
     if (result.success) {
       console.log('Classes fetched:', result.data);
-      set({ classes: result.data || [], loading: false });
-      return result.data;
+      // Ensure data is always an array
+      const classesData = Array.isArray(result.data) ? result.data : [];
+      set({ classes: classesData, loading: false });
+      return classesData;
     } else {
       set({ error: result.error, loading: false });
       return [];
@@ -89,11 +91,17 @@ export const useClassStore = create((set, get) => ({
     const { classes, enrollments, divisions } = get();
     const metrics = {};
 
+    // Ensure data is arrays (Strapi 5 compatibility)
+    const classesArray = Array.isArray(classes) ? classes : [];
+    const enrollmentsArray = Array.isArray(enrollments) ? enrollments : [];
+    const divisionsArray = Array.isArray(divisions) ? divisions : [];
+
     console.log('=== CALCULATING CLASS METRICS ===');
-    console.log('Classes:', classes.length, 'Enrollments:', enrollments.length, 'Divisions:', divisions.length);
+    console.log('Classes:', classesArray.length, 'Enrollments:', enrollmentsArray.length, 'Divisions:', divisionsArray.length);
+    console.log('Raw enrollment data sample:', enrollmentsArray[0]);
 
     // Always initialize metrics for ALL classes from backend
-    classes.forEach(cls => {
+    classesArray.forEach(cls => {
       const className = cls.classname || cls.name || `Class ${cls.id}`;
       metrics[className] = {
         classId: cls.id,
@@ -121,36 +129,10 @@ export const useClassStore = create((set, get) => ({
       };
     });
 
-    // If no classes from backend but we have enrollments, create placeholder classes
-    if (classes.length === 0 && enrollments.length > 0) {
-      const uniqueClasses = [...new Set(enrollments.map(e => e.class_standard || e.class?.name).filter(Boolean))];
-      uniqueClasses.forEach(className => {
-        if (!metrics[className]) {
-          metrics[className] = {
-            classId: null,
-            classInfo: {
-              name: className,
-              description: 'Auto-detected from enrollments',
-              capacity: null,
-              academicLevel: '',
-              createdAt: null,
-              updatedAt: null
-            },
-            totalStudents: 0,
-            divisions: {},
-            admissionTypes: { new: 0, transfer: 0, readmission: 0 },
-            modes: { online: 0, offline: 0 },
-            recentAdmissions: [],
-            monthlyAdmissions: {},
-            enrolledStudents: [],
-            isEmpty: true
-          };
-        }
-      });
-    }
+    // Don't create placeholder classes - only use actual classes from backend
 
     // Populate metrics with enrollment data
-    enrollments.forEach((enrollment) => {
+    enrollmentsArray.forEach((enrollment) => {
       // Get class from enrollment - check all possible locations
       const classStd = enrollment.class_standard ||
                       enrollment.class?.classname ||
@@ -169,42 +151,26 @@ export const useClassStore = create((set, get) => ({
       ) || classStd;
 
       if (!metrics[matchingMetricKey]) {
-        metrics[matchingMetricKey] = {
-          classId: enrollment.class?.id || null,
-          classInfo: {
-            name: matchingMetricKey,
-            description: '',
-            capacity: null,
-            academicLevel: '',
-            fees: {
-              yearly: 0,
-              term1: 0,
-              term2: 0
-            },
-            thresholds: [],
-            createdAt: null,
-            updatedAt: null
-          },
-          totalStudents: 0,
-          divisions: {},
-          admissionTypes: { new: 0, transfer: 0, readmission: 0 },
-          modes: { online: 0, offline: 0 },
-          recentAdmissions: [],
-          monthlyAdmissions: {},
-          enrolledStudents: [],
-          isEmpty: false,
-          potentialRevenue: 0
-        };
+        // Skip enrollments for classes that don't exist in the system
+        console.warn(`Enrollment references non-existent class: ${classStd}`);
+        return;
       }
 
       const metric = metrics[matchingMetricKey];
       metric.totalStudents++;
       metric.isEmpty = false;
 
-      // Get enrollment details first
-      const divisionName = enrollment.administration?.division?.name || 'Unassigned';
-      const admissionType = enrollment.administration?.admission_type || 'unknown';
-      const mode = enrollment.administration?.mode || 'unknown';
+      // Get enrollment details - handle both old and new data structures
+      // Check for division in enrollment directly (new structure) or in administration (old structure)
+      const divisionName = enrollment.division?.name ||
+                          enrollment.administration?.division?.name ||
+                          'Unassigned';
+      const admissionType = enrollment.admission_type ||
+                           enrollment.administration?.admission_type ||
+                           'unknown';
+      const mode = enrollment.mode ||
+                  enrollment.administration?.mode ||
+                  'unknown';
 
       // Initialize division if not exists
       if (!metric.divisions[divisionName]) {
@@ -256,8 +222,11 @@ export const useClassStore = create((set, get) => ({
       }
 
       // Recent admissions (last 30 days)
-      if (enrollment.administration?.date_of_admission) {
-        const admissionDate = new Date(enrollment.administration.date_of_admission);
+      const admissionDateValue = enrollment.date_enrolled ||
+                                enrollment.administration?.date_of_admission;
+
+      if (admissionDateValue) {
+        const admissionDate = new Date(admissionDateValue);
         const daysSinceAdmission = Math.floor((new Date() - admissionDate) / (1000 * 60 * 60 * 24));
 
         // Track monthly admissions for trends
@@ -266,10 +235,10 @@ export const useClassStore = create((set, get) => ({
 
         if (daysSinceAdmission <= 30) {
           metric.recentAdmissions.push({
-            studentName: `${enrollment.student?.first_name} ${enrollment.student?.last_name}`,
+            studentName: `${enrollment.student?.first_name || ''} ${enrollment.student?.last_name || ''}`.trim() || 'Unknown',
             grNo: enrollment.gr_no,
             division: divisionName,
-            date: enrollment.administration.date_of_admission,
+            date: admissionDateValue,
             type: admissionType,
             daysSince: daysSinceAdmission
           });

@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import useStudentStore from '../../application/stores/useStudentStore';
-import { AcademicYearRepository } from '../../data/repositories/AcademicYearRepository';
-import { DivisionRepository } from '../../data/repositories/DivisionRepository';
-import { ClassRepository } from '../../data/repositories/ClassRepository';
-import { BusStopRepository } from '../../data/repositories/BusStopRepository';
-import { LocationRepository } from '../../data/repositories/LocationRepository';
+import { useAcademicYearService, useDivisionService, useClassService, useBusStopService, useLocationService } from '../../application/contexts/ServiceContext';
 import { extractGuardianData, extractEnrollmentData, extractExamResultsData } from '../../application/utils/studentFormUtils';
 import { STUDENT_CONFIG, ERROR_MESSAGES } from '../../shared/constants/app';
 
@@ -35,7 +31,7 @@ const formatInitialData = (initialData, mode) => {
         gr_no: '',
         date_enrolled: '',
         admission_type: '',
-        enrollment_status: STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY,
+        enrollment_status: STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY, // Only for new students
         administration: {
           division: '',
           seat_allocations: [{
@@ -51,9 +47,19 @@ const formatInitialData = (initialData, mode) => {
     };
   }
 
+  // Map from domain model properties to form field names
   const formattedData = {
     ...initialData,
-    dob: initialData.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '',
+    // Map firstName/lastName to form field names
+    first_name: initialData.firstName || initialData.first_name || '',
+    last_name: initialData.lastName || initialData.last_name || '',
+    middle_name: initialData.middleName || initialData.middle_name || '',
+    // Construct fullName if not present
+    gr_full_name: initialData.fullName || initialData.gr_full_name ||
+                  `${initialData.firstName || initialData.first_name || ''} ${initialData.middleName || initialData.middle_name || ''} ${initialData.lastName || initialData.last_name || ''}`.trim() || '',
+    gender: initialData.gender || '',
+    dob: initialData.dob ?
+      new Date(initialData.dob).toISOString().split('T')[0] : '',
   };
 
   const rawGuardians = extractGuardianData(initialData.guardians);
@@ -70,6 +76,14 @@ const formatInitialData = (initialData, mode) => {
 
   const enrollmentData = extractEnrollmentData(enrollmentToFormat);
 
+  // CRITICAL: Never allow enrolled status to revert to enquiry
+  let enrollmentStatus = enrollmentData?.enrollment_status || enrollmentToFormat?.enrollment_status || '';
+
+  // Only default to ENQUIRY for brand new students (create mode with no existing data)
+  if (!enrollmentStatus && mode === 'create') {
+    enrollmentStatus = STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY;
+  }
+
   formattedData.enrollments = [{
     id: enrollmentData?.id || '',
     academic_year: enrollmentData?.academic_year || '',
@@ -78,29 +92,41 @@ const formatInitialData = (initialData, mode) => {
     date_enrolled: enrollmentData?.date_enrolled ?
       new Date(enrollmentData.date_enrolled).toISOString().split('T')[0] : '',
     admission_type: enrollmentData?.admission_type || '',
-    enrollment_status: enrollmentData?.enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY,
+    enrollment_status: enrollmentStatus,
     lc_received: enrollmentData?.lc_received || false,
     administration: {
-      division: enrollmentData?.administration?.division || '',
+      // Handle both division as object and as ID
+      division: (typeof enrollmentData?.administration?.division === 'object' && enrollmentData?.administration?.division?.id)
+        ? String(enrollmentData.administration.division.id)
+        : (enrollmentData?.administration?.division ? String(enrollmentData.administration.division) : ''),
       seat_allocations: [{
-        pickup_stop: enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop || '',
-        drop_stop: enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop || '',
+        // Handle pickup_stop as object or ID
+        pickup_stop: (typeof enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop === 'object' &&
+                     enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop?.id)
+          ? String(enrollmentData.administration.seat_allocations[0].pickup_stop.id)
+          : (enrollmentData?.administration?.seat_allocations?.[0]?.pickup_stop ?
+             String(enrollmentData.administration.seat_allocations[0].pickup_stop) : ''),
+        drop_stop: (typeof enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop === 'object' &&
+                   enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop?.id)
+          ? String(enrollmentData.administration.seat_allocations[0].drop_stop.id)
+          : (enrollmentData?.administration?.seat_allocations?.[0]?.drop_stop ?
+             String(enrollmentData.administration.seat_allocations[0].drop_stop) : ''),
       }]
     },
   }];
 
-  const rawExamResults = extractExamResultsData(initialData.exam_results);
+  const rawExamResults = extractExamResultsData(initialData.examResults || initialData.exam_results);
   formattedData.exam_results = rawExamResults.length > 0 ? rawExamResults : [];
 
   formattedData.documents = initialData.documents && Array.isArray(initialData.documents) ?
     initialData.documents.map(doc => ({
       id: doc.id,
-      document_type: doc.document_type || '',
+      document_type: doc.documentType || doc.document_type || '',
       description: doc.description || '',
       file: null,
-      url: doc.url || null,
+      url: doc.url || doc.fileName || null,
     })) : [];
-
+  console.log('Formatted initial form data:', formattedData);
   return formattedData;
 };
 
@@ -109,11 +135,15 @@ const formatInitialData = (initialData, mode) => {
  * Handles form data, validation, submission, and step navigation
  *
  * @param {string} mode - Form mode ('create' or 'edit')
- * @param {object|null} initialData - Initial student data for edit mode
  * @returns {object} - Form methods, state, and handlers
  */
-export const useStudentForm = (mode = 'create', initialData = null) => {
+export const useStudentForm = (mode = 'create') => {
   const { createStudent, updateStudent, loading, setLoading, fetchStudentById, selectedStudent } = useStudentStore();
+  const academicYearService = useAcademicYearService();
+  const divisionService = useDivisionService();
+  const classService = useClassService();
+  const busStopService = useBusStopService();
+  const locationService = useLocationService();
   const [apiError, setApiError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [currentStep, setCurrentStep] = useState(STEPS.COMBINED_INFO);
@@ -138,13 +168,14 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [years, , classesData] = await Promise.all([
-          AcademicYearRepository.findAll(),
-          DivisionRepository.findAll(),
-          ClassRepository.findAll()
+        const [yearsResult, , classesResult] = await Promise.all([
+          academicYearService.getAllAcademicYears(),
+          divisionService.getAllDivisions(),
+          classService.getAllClasses()
         ]);
-        setAcademicYears(years);
-        setClasses(classesData);
+        // Ensure arrays for Strapi 5
+        setAcademicYears(yearsResult.success ? yearsResult.data : []);
+        setClasses(classesResult.success ? classesResult.data : []);
       } catch (err) {
         setApiError(ERROR_MESSAGES.SERVER_ERROR);
       }
@@ -157,8 +188,8 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
     if (currentStep === STEPS.ADMINISTRATION && !isStudentRejected) {
       const fetchLocations = async () => {
         try {
-          const list = await LocationRepository.findAll();
-          setLocations(list || []);
+          const result = await locationService.getAllLocations();
+          setLocations(result.success ? result.data : []);
         } catch (e) {
           console.error('Error loading locations:', e);
           setLocations([]);
@@ -171,14 +202,18 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
   // Load bus stops for selected pickup location; clear selected stop when location changes
   useEffect(() => {
     if ((currentStep === STEPS.ADMINISTRATION || currentStep === STEPS.SUMMARY) && selectedPickupLocationId) {
-      // Clear any previously selected stop when location changes (only on administration step)
-      if (currentStep === STEPS.ADMINISTRATION) {
+      // Only clear the pickup stop if it's not already set (for new selections)
+      // Don't clear when loading existing data
+      const currentPickupStop = getValues('enrollments.0.administration.seat_allocations.0.pickup_stop');
+      if (currentStep === STEPS.ADMINISTRATION && !currentPickupStop) {
         setValue('enrollments.0.administration.seat_allocations.0.pickup_stop', '');
       }
       const fetchStops = async () => {
         try {
-          const list = await BusStopRepository.findByLocation(selectedPickupLocationId);
-          setBusStops(list || []);
+          const stopsResult = await busStopService.getAllBusStops();
+          const filtered = stopsResult.success ?
+            stopsResult.data.filter(stop => stop.location?.id === selectedPickupLocationId || stop.location === selectedPickupLocationId) : [];
+          setBusStops(filtered);
         } catch (e) {
           console.error('Error loading bus stops for location:', e);
           setBusStops([]);
@@ -198,8 +233,8 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
         const classId = value.enrollments[0].class;
         const fetchDivisions = async () => {
           try {
-            const divisionsData = await DivisionRepository.findByClass(classId);
-            setDivisions(divisionsData || []);
+            const divResult = await divisionService.getDivisionsByClass(classId);
+            setDivisions(divResult.success ? divResult.data : []);
           } catch (error) {
             console.error('Error fetching divisions:', error);
             setDivisions([]);
@@ -223,10 +258,8 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
     if (classId && mode === 'edit' && academicYears.length > 0 && classes.length > 0) {
       const fetchDivisions = async () => {
         try {
-          console.log('Loading divisions for existing student, classId:', classId);
-          const divisionsData = await DivisionRepository.findByClass(classId);
-          console.log('Divisions loaded:', divisionsData);
-          setDivisions(divisionsData || []);
+          const divResult = await divisionService.getDivisionsByClass(classId);
+          setDivisions(divResult.success ? divResult.data : []);
         } catch (error) {
           console.error('Error fetching divisions for existing student:', error);
           setDivisions([]);
@@ -243,9 +276,24 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
         const populateForm = async () => {
           if (mode === 'edit' && id) {
             const studentData = await fetchStudentById(id);
+            console.log('useStudentForm - Fetched student data for form population:', studentData);
             if (studentData) {
               const formattedData = formatInitialData(studentData, mode);
               reset(formattedData);
+
+              // Extract and set the pickup location if it exists
+              const administration = studentData.enrollments?.[0]?.administration;
+              if (administration?.seat_allocations?.[0]?.pickup_stop) {
+                const pickupStop = administration.seat_allocations[0].pickup_stop;
+                // Handle pickup_stop as either object or ID
+                if (typeof pickupStop === 'object' && pickupStop.location) {
+                  const locationId = typeof pickupStop.location === 'object' ?
+                    pickupStop.location.id : pickupStop.location;
+                  if (locationId) {
+                    setSelectedPickupLocationId(String(locationId));
+                  }
+                }
+              }
 
               if (studentData.enrollments?.[0]?.enrollment_status === 'Rejected') {
                 setIsStudentRejected(true);
@@ -282,6 +330,7 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
 
       try {
         const formData = getValues();
+        console.log('Current form data:', formData);  
 
         // Prepare the student data for creation/update
         const studentData = {
@@ -306,6 +355,7 @@ export const useStudentForm = (mode = 'create', initialData = null) => {
           setIsSuccess(true);
 
           // Save the student ID for subsequent steps
+          // Strapi 5: Direct id access from result
           if (!localStudentId && result.data?.id) {
             setLocalStudentId(result.data.id);
             // Also update the form with the new student ID

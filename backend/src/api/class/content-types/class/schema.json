@@ -4,7 +4,8 @@
   "info": {
     "singularName": "class",
     "pluralName": "classes",
-    "displayName": "Class"
+    "displayName": "Class",
+    "description": "Class can have multiple divisions"
   },
   "options": {
     "draftAndPublish": false
@@ -15,17 +16,16 @@
       "required": true,
       "unique": true
     },
-    
+    "divisions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::division.division",
+      "mappedBy": "class"
+    },
     "enrollments": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::enrollment.enrollment",
-      "mappedBy": "class"
-    },
-    "class_thresholds": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::class-threshold.class-threshold",
       "mappedBy": "class"
     },
     "fee_assignments": {

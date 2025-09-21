@@ -36,21 +36,25 @@
     "occupation": {
       "type": "string"
     },
-    "mobile": {
-      "type": "string",
-      "required": true
-    },
-    "alt_mobile": {
-      "type": "string"
-    },
-    "whatsapp_number": {
-      "type": "string"
-    },
     "documents": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::student-document.student-document",
       "mappedBy": "guardian"
+    },
+    "contact_numbers": {
+      "type": "component",
+      "repeatable": true,
+      "component": "common.contact",
+      "max": 4,
+      "description": "Guardian contact numbers (mobile, whatsapp, emergency, etc.)"
+    },
+    "addresses": {
+      "type": "component",
+      "repeatable": true,
+      "component": "common.address",
+      "max": 2,
+      "description": "Guardian addresses"
     }
   }
 }

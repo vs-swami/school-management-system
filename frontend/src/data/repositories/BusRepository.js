@@ -1,32 +1,5 @@
 import { apiClient } from '../api/config';
 
-const transformBusResponse = (busData) => {
-  if (!busData) return null;
-
-  if (Array.isArray(busData)) {
-    return busData.map(item => transformBusResponse(item));
-  }
-
-  const transformed = {
-    id: busData.id,
-    documentId: busData.documentId,
-    ...busData,
-  };
-
-  // Normalize relations if they exist
-  const normalizeRelation = (relation) => {
-    if (!relation) return null;
-    if (Array.isArray(relation)) return relation;
-    if (relation.data) return relation.data;
-    return relation;
-  };
-
-  transformed.bus_routes = normalizeRelation(transformed.bus_routes);
-  transformed.seat_allocations = normalizeRelation(transformed.seat_allocations);
-
-  return transformed;
-};
-
 export class BusRepository {
   static async findAll() {
     try {
@@ -45,7 +18,7 @@ export class BusRepository {
         }
       };
       const response = await apiClient.get('/buses', { params });
-      return transformBusResponse(response.data.data);
+      return response.data;
     } catch (error) {
       console.error('BusRepository Error in findAll:', error);
       throw error;
@@ -70,7 +43,7 @@ export class BusRepository {
         }
       };
       const response = await apiClient.get(`/buses/${id}`, { params });
-      return transformBusResponse(response.data.data);
+      return response.data;
     } catch (error) {
       console.error('BusRepository Error in findById:', error);
       throw error;
@@ -80,7 +53,7 @@ export class BusRepository {
   static async create(busData) {
     try {
       const response = await apiClient.post('/buses', { data: busData });
-      return transformBusResponse(response.data.data);
+      return response.data;
     } catch (error) {
       console.error('BusRepository Error in create:', error);
       throw error;
@@ -90,7 +63,7 @@ export class BusRepository {
   static async update(id, busData) {
     try {
       const response = await apiClient.put(`/buses/${id}`, { data: busData });
-      return transformBusResponse(response.data.data);
+      return response.data;
     } catch (error) {
       console.error('BusRepository Error in update:', error);
       throw error;
@@ -133,7 +106,7 @@ export class BusRepository {
       const response = await apiClient.put(`/buses/${id}`, {
         data: { status }
       });
-      return transformBusResponse(response.data.data);
+      return response.data;
     } catch (error) {
       console.error('BusRepository Error in updateStatus:', error);
       throw error;

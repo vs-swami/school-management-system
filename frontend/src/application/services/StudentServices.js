@@ -1,4 +1,4 @@
-import { StudentRepository } from '../../data/repositories/StudentRepository';
+import { StudentRepositoryAdapter } from '../../data/adapters/StudentRepositoryAdapter';
 import { ValidationStrategy } from '../strategies/ValidationStrategy';
 import { StudentDocumentRepository } from '../../data/repositories/StudentDocumentRepository'; // Import the new repository
 import { EnrollmentService } from './EnrollmentService'; // NEW: Import EnrollmentService
@@ -6,6 +6,7 @@ import { EnrollmentService } from './EnrollmentService'; // NEW: Import Enrollme
 
 export class StudentService {
   constructor() {
+    this.repository = new StudentRepositoryAdapter();
     this.validationStrategy = new ValidationStrategy();
     this.enrollmentService = new EnrollmentService(); // NEW: Initialize EnrollmentService
     //this.auditService = new AuditService();
@@ -13,13 +14,13 @@ export class StudentService {
 
   async getAllStudents(filters = {}) {
     try {
-      const students = await StudentRepository.findAll(filters);
+      const students = await this.repository.findAll(filters);
       return {
         success: true,
         data: students,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.getAllStudents:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';
@@ -32,13 +33,13 @@ export class StudentService {
 
   async getStudentById(id) {
     try {
-      const student = await StudentRepository.findById(id);
+      const student = await this.repository.findById(id);
       return {
         success: true,
         data: student,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.getStudentById:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';
@@ -61,9 +62,34 @@ export class StudentService {
           details: validation.errors,
         };
       }
-      console.log('Creating student with data:', data);  
-      const student = await StudentRepository.create(data); // Removed files parameter
-      
+
+      console.log('Creating student with data:', data);
+
+      // Extract enrollment data before creating student
+      const enrollmentData = data.enrollments && data.enrollments.length > 0 ? data.enrollments[0] : null;
+
+      // Create student without enrollment data
+      const studentData = { ...data };
+      delete studentData.enrollments; // Remove enrollments from student creation
+
+      const student = await this.repository.create(studentData);
+
+      // If enrollment data exists, create enrollment separately
+      if (enrollmentData && student?.id) {
+        try {
+          const enrichedEnrollmentData = {
+            ...enrollmentData,
+            student: student.id // Connect to the created student
+          };
+
+          console.log('Creating enrollment with data:', enrichedEnrollmentData);
+          await this.enrollmentService.createEnrollment(enrichedEnrollmentData);
+        } catch (enrollmentError) {
+          console.warn('Student created but enrollment failed:', enrollmentError);
+          // Student is still created successfully, enrollment can be added later
+        }
+      }
+
       // Audit log
       //await this.auditService.log('STUDENT_CREATED', {
       //  studentId: student.id,
@@ -75,7 +101,7 @@ export class StudentService {
         data: student,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.createStudent:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';
@@ -98,7 +124,7 @@ export class StudentService {
         };
       }
 
-      const student = await StudentRepository.update(id, data); // Removed files parameter
+      const student = await this.repository.update(id, data); // Using adapter instead of repository directly
       
       //await this.auditService.log('STUDENT_UPDATED', {
       //  studentId: id,
@@ -110,7 +136,7 @@ export class StudentService {
         data: student,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.updateStudent:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';
@@ -179,13 +205,13 @@ export class StudentService {
 
   async searchStudents(query) {
     try {
-      const students = await StudentRepository.search(query);
+      const students = await this.repository.searchStudents(query);
       return {
         success: true,
         data: students,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.searchStudents:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';
@@ -198,13 +224,13 @@ export class StudentService {
 
   async getStatistics() {
     try {
-      const stats = await StudentRepository.getStatistics();
+      const stats = await this.repository.getStatistics();
       return {
         success: true,
         data: stats,
       };
     } catch (error) {
-      console.error('Error in StudentService:', error);
+      console.error('Error in StudentService.getStatistics:', error);
       const errorMessage = error?.response?.data?.error?.message ||
                           error?.message ||
                           'An error occurred while processing your request';

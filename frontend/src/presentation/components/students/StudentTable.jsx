@@ -18,8 +18,8 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
     let aValue, bValue;
     
     if (sortField === 'name') {
-      aValue = a.gr_full_name ? a.gr_full_name.toLowerCase() : '';
-      bValue = b.gr_full_name ? b.gr_full_name.toLowerCase() : '';
+      aValue = a.fullName ? a.fullName.toLowerCase() : '';
+      bValue = b.fullName ? b.fullName.toLowerCase() : '';
     } else if (sortField === 'studentId') {
       aValue = a.ssa_uid || a.apaar_id || '';
       bValue = b.ssa_uid || b.apaar_id || '';
@@ -278,7 +278,7 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-bold text-gray-900">
-                        {student.gr_full_name}
+                        {student.fullName || `${student.first_name || ''} ${student.last_name || ''}`.trim() || 'N/A'}
                       </div>
                       <div className="text-xs text-gray-500">
                         {student.gender ? `${student.gender.charAt(0).toUpperCase() + student.gender.slice(1)}` : ''}
@@ -292,27 +292,27 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span className="inline-flex px-3 py-1 text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-800 rounded-full shadow-sm">
-                    Grade {student.enrollments?.[0]?.class?.classname || 'N/A'}
+                    {student.enrollments?.[0]?.class?.className || student.currentEnrollment?.class?.className || 'N/A'}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {student.enrollments?.[0]?.administration?.division?.name || 'Not Assigned'}
+                  {student.enrollments?.[0]?.division?.divisionName || student.currentEnrollment?.division?.divisionName || 'Not Assigned'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(student.enrollments?.[0]?.enrollment_status)}
+                  {getStatusBadge(student.enrollments?.[0]?.status || student.currentEnrollment?.status)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm">
                     <div className="font-medium text-gray-900">
-                      {student.guardians?.[0]?.full_name || 'N/A'}
+                      {student.guardians?.[0]?.fullName || student.guardians?.[0]?.firstName + ' ' + student.guardians?.[0]?.lastName || 'N/A'}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {student.guardians?.[0]?.mobile || 'No contact'}
+                      {student.guardians?.[0]?.phone || 'No contact'}
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {formatDate(student.enrollments?.[0]?.administration?.date_of_admission || student.createdAt)}
+                  {formatDate(student.enrollments?.[0]?.enrollmentDate || student.currentEnrollment?.enrollmentDate || student.admissionDate || student.createdAt)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-center">
                   <div className={`flex justify-center gap-1 transition-all duration-200 ${hoveredRow === student.id ? 'scale-110' : ''}`}>

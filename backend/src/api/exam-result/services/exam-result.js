@@ -36,13 +36,15 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
         if (existingResult) {
           // Update existing record
           result = await strapi.entityService.update('api::exam-result.exam-result', existingResult.id, {
-            data: processedData
+            data: processedData,
+            populate: ['subject_scores', 'academic_year', 'class', 'student']
           });
           result.action = 'updated';
         } else {
           // Create new record
           result = await strapi.entityService.create('api::exam-result.exam-result', {
-            data: processedData
+            data: processedData,
+            populate: ['subject_scores', 'academic_year', 'class', 'student']
           });
           result.action = 'created';
         }
@@ -58,24 +60,70 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
   },
 
   /**
-   * Validate exam data
+   * Validate exam data - handles both old and new structure
    */
   validateExamData(examData) {
-    const requiredFields = ['exam_type', 'subject', 'marks_obtained', 'total_marks'];
-    const missingFields = requiredFields.filter(field => 
-      examData[field] === undefined || examData[field] === null
-    );
-    
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    // Required for all exam results
+    if (!examData.exam_type) {
+      throw new Error('exam_type is required');
     }
 
-    if (examData.marks_obtained < 0 || examData.total_marks <= 0) {
-      throw new Error('Invalid marks: marks_obtained cannot be negative and total_marks must be positive');
-    }
+    // Check if using new component structure
+    if (examData.subject_scores && Array.isArray(examData.subject_scores)) {
+      // Validate subject scores component
+      if (examData.subject_scores.length === 0) {
+        throw new Error('At least one subject score is required');
+      }
 
-    if (examData.marks_obtained > examData.total_marks) {
-      throw new Error('marks_obtained cannot be greater than total_marks');
+      examData.subject_scores.forEach((score, index) => {
+        if (!score.subject) {
+          throw new Error(`Subject is required for score at index ${index}`);
+        }
+        if (score.marks_obtained === undefined || score.marks_obtained === null) {
+          throw new Error(`marks_obtained is required for subject ${score.subject}`);
+        }
+        if (score.total_marks === undefined || score.total_marks === null || score.total_marks <= 0) {
+          throw new Error(`total_marks must be positive for subject ${score.subject}`);
+        }
+        if (score.marks_obtained < 0) {
+          throw new Error(`marks_obtained cannot be negative for subject ${score.subject}`);
+        }
+        if (score.marks_obtained > score.total_marks) {
+          throw new Error(`marks_obtained cannot exceed total_marks for subject ${score.subject}`);
+        }
+      });
+    } else if (examData.subject && examData.marks_obtained !== undefined && examData.total_marks !== undefined) {
+      // Convert old single-subject structure to new format automatically
+      strapi.log.info('Converting old single-subject format to new subject_scores component format');
+
+      // Validate old format
+      if (examData.marks_obtained < 0 || examData.total_marks <= 0) {
+        throw new Error('Invalid marks: marks_obtained cannot be negative and total_marks must be positive');
+      }
+
+      if (examData.marks_obtained > examData.total_marks) {
+        throw new Error('marks_obtained cannot be greater than total_marks');
+      }
+
+      // Convert to new format
+      examData.subject_scores = [{
+        subject: examData.subject,
+        marks_obtained: examData.marks_obtained,
+        total_marks: examData.total_marks,
+        grade: examData.grade || null,
+        pass_status: examData.pass_fail !== undefined ?
+          (examData.pass_fail ? 'pass' : 'fail') : 'pending',
+        remarks: ''
+      }];
+
+      // Remove old fields to prevent Strapi validation errors
+      delete examData.subject;
+      delete examData.marks_obtained;
+      delete examData.total_marks;
+      delete examData.grade;
+      delete examData.pass_fail;
+    } else {
+      throw new Error('Either subject_scores array or subject/marks_obtained/total_marks fields are required');
     }
   },
 
@@ -83,32 +131,52 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
    * Process and calculate derived fields for exam data
    */
   processExamData(studentId, examData) {
-    const percentage = (examData.marks_obtained / examData.total_marks) * 100;
-    const passingPercentage = 40; // Default passing percentage
-    
-    // Calculate grade if not provided
-    let grade = examData.grade;
-    if (!grade) {
-      grade = this.calculateGrade(percentage);
-    }
+    // Note: At this point, validateExamData has already converted old format to new format
+    // so examData.subject_scores should always exist
 
-    // Calculate pass/fail if not provided
-    let passFail = examData.pass_fail;
-    if (passFail === undefined) {
-      passFail = percentage >= passingPercentage;
-    }
-
-    return {
+    const processedData = {
       student: studentId,
       exam_type: examData.exam_type,
-      subject: examData.subject,
-      marks_obtained: examData.marks_obtained,
-      total_marks: examData.total_marks,
-      grade,
-      pass_fail: passFail,
+      exam_name: examData.exam_name || null,
+      exam_date: examData.exam_date || null,
       academic_year: examData.academic_year || null,
-      class: examData.class || null
+      class: examData.class || null,
+      remarks: examData.remarks || null
     };
+
+    // Process subject scores component (should always exist after validation)
+    if (examData.subject_scores && Array.isArray(examData.subject_scores)) {
+      processedData.subject_scores = examData.subject_scores.map(score => {
+        const percentage = (score.marks_obtained / score.total_marks) * 100;
+        const passingPercentage = 40;
+
+        return {
+          subject: score.subject,
+          marks_obtained: score.marks_obtained,
+          total_marks: score.total_marks,
+          percentage: percentage,
+          grade: score.grade || this.calculateGrade(percentage),
+          pass_status: score.pass_status || (percentage >= passingPercentage ? 'pass' : 'fail'),
+          remarks: score.remarks || ''
+        };
+      });
+
+      // Calculate overall statistics
+      const totalObtained = processedData.subject_scores.reduce((sum, s) => sum + s.marks_obtained, 0);
+      const totalMaximum = processedData.subject_scores.reduce((sum, s) => sum + s.total_marks, 0);
+      const overallPercentage = totalMaximum > 0 ? (totalObtained / totalMaximum * 100) : 0;
+
+      processedData.total_obtained = totalObtained;
+      processedData.total_maximum = totalMaximum;
+      processedData.overall_percentage = overallPercentage;
+      processedData.overall_grade = this.calculateGrade(overallPercentage);
+      processedData.rank = examData.rank || null;
+    } else {
+      // This should not happen if validateExamData was called first
+      throw new Error('subject_scores array is missing after validation');
+    }
+
+    return processedData;
   },
 
   /**
@@ -124,14 +192,20 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
   },
 
   /**
-   * Find existing exam result for the same student, exam type, and subject
+   * Find existing exam result for the same student, exam type, and exam name/date
    */
   async findExistingResult(studentId, examData) {
     const filters = {
       student: studentId,
-      exam_type: examData.exam_type,
-      subject: examData.subject
+      exam_type: examData.exam_type
     };
+
+    // For new structure, match by exam_name or exam_date if provided
+    if (examData.exam_name) {
+      filters.exam_name = examData.exam_name;
+    } else if (examData.exam_date) {
+      filters.exam_date = examData.exam_date;
+    }
 
     // Add optional filters if provided
     if (examData.academic_year) {
@@ -159,7 +233,7 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
           student: studentId,
           ...filters
         },
-        populate: ['academic_year', 'class'],
+        populate: ['academic_year', 'class', 'subject_scores'],
         sort: { createdAt: 'desc' }
       });
 

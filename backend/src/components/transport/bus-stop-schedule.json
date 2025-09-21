@@ -1,0 +1,43 @@
+{
+  "collectionName": "components_transport_bus_stop_schedules",
+  "info": {
+    "displayName": "Bus Stop Schedule",
+    "icon": "bus",
+    "description": "Schedule information for each bus stop in a route"
+  },
+  "attributes": {
+    "bus_stop": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::bus-stop.bus-stop",
+      "required": true
+    },
+    "stop_order": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "pickup_time": {
+      "type": "time",
+      "required": false
+    },
+    "drop_time": {
+      "type": "time",
+      "required": false
+    },
+    "waiting_time": {
+      "type": "integer",
+      "description": "Waiting time in minutes at this stop",
+      "default": 2,
+      "min": 0
+    },
+    "distance_from_previous": {
+      "type": "decimal",
+      "description": "Distance in kilometers from previous stop"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

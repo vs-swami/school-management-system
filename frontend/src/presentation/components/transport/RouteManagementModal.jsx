@@ -12,18 +12,20 @@ import {
   ChevronDown,
   AlertCircle
 } from 'lucide-react';
-import { BusRouteRepository } from '../../../data/repositories/BusRouteRepository';
-import { BusStopRepository } from '../../../data/repositories/BusStopRepository';
-import { BusRepository } from '../../../data/repositories/BusRepository';
+import { useBusRouteService, useBusStopService, useBusService } from '../../../application/contexts/ServiceContext';
 
 const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
+  const busRouteService = useBusRouteService();
+  const busStopService = useBusStopService();
+  const busService = useBusService();
   const [formData, setFormData] = useState({
     route_name: '',
-    route_number: '',
+    route_code: '',
     bus: null,
-    bus_stops: [],
-    start_time: '',
-    end_time: '',
+    stop_schedules: [],
+    departure_time: '',
+    arrival_time: '',
+    route_type: 'both',
     total_distance: '',
     estimated_duration: '',
     is_active: true
@@ -41,15 +43,20 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
         // Populate form with existing route data
         setFormData({
           route_name: route.route_name || '',
-          route_number: route.route_number || '',
+          route_code: route.route_code || '',
           bus: route.bus?.id || route.bus || null,
-          bus_stops: route.bus_stops?.map(stop => ({
-            id: stop.id || stop,
-            order: stop.order || 0,
-            arrival_time: stop.arrival_time || ''
+          stop_schedules: route.stop_schedules?.map((schedule, index) => ({
+            bus_stop: schedule.bus_stop?.id || schedule.bus_stop || '',
+            stop_order: schedule.stop_order || index + 1,
+            pickup_time: schedule.pickup_time || '',
+            drop_time: schedule.drop_time || '',
+            waiting_time: schedule.waiting_time || 2,
+            distance_from_previous: schedule.distance_from_previous || '',
+            is_active: schedule.is_active !== undefined ? schedule.is_active : true
           })) || [],
-          start_time: route.start_time || '',
-          end_time: route.end_time || '',
+          departure_time: route.departure_time || '',
+          arrival_time: route.arrival_time || '',
+          route_type: route.route_type || 'both',
           total_distance: route.total_distance || '',
           estimated_duration: route.estimated_duration || '',
           is_active: route.is_active !== undefined ? route.is_active : true
@@ -60,12 +67,12 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
 
   const loadInitialData = async () => {
     try {
-      const [buses, stops] = await Promise.all([
-        BusRepository.findAll(),
-        BusStopRepository.findAll()
+      const [busesResult, stopsResult] = await Promise.all([
+        busService.getAllBuses(),
+        busStopService.getAllBusStops()
       ]);
-      setAvailableBuses(buses || []);
-      setAvailableStops(stops || []);
+      setAvailableBuses(busesResult.success ? busesResult.data : []);
+      setAvailableStops(stopsResult.success ? stopsResult.data : []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -83,9 +90,17 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
   const addBusStop = () => {
     setFormData(prev => ({
       ...prev,
-      bus_stops: [
-        ...prev.bus_stops,
-        { id: '', order: prev.bus_stops.length, arrival_time: '' }
+      stop_schedules: [
+        ...prev.stop_schedules,
+        {
+          bus_stop: '',
+          stop_order: prev.stop_schedules.length + 1,
+          pickup_time: '',
+          drop_time: '',
+          waiting_time: 2,
+          distance_from_previous: '',
+          is_active: true
+        }
       ]
     }));
   };
@@ -93,8 +108,8 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
   const updateBusStop = (index, field, value) => {
     setFormData(prev => ({
       ...prev,
-      bus_stops: prev.bus_stops.map((stop, i) =>
-        i === index ? { ...stop, [field]: value } : stop
+      stop_schedules: prev.stop_schedules.map((schedule, i) =>
+        i === index ? { ...schedule, [field]: value } : schedule
       )
     }));
   };
@@ -102,19 +117,19 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
   const removeBusStop = (index) => {
     setFormData(prev => ({
       ...prev,
-      bus_stops: prev.bus_stops.filter((_, i) => i !== index)
-        .map((stop, i) => ({ ...stop, order: i }))
+      stop_schedules: prev.stop_schedules.filter((_, i) => i !== index)
+        .map((schedule, i) => ({ ...schedule, stop_order: i + 1 }))
     }));
   };
 
   const moveStop = (index, direction) => {
-    const newStops = [...formData.bus_stops];
+    const newSchedules = [...formData.stop_schedules];
     const newIndex = direction === 'up' ? index - 1 : index + 1;
 
-    if (newIndex >= 0 && newIndex < newStops.length) {
-      [newStops[index], newStops[newIndex]] = [newStops[newIndex], newStops[index]];
-      newStops.forEach((stop, i) => { stop.order = i; });
-      setFormData(prev => ({ ...prev, bus_stops: newStops }));
+    if (newIndex >= 0 && newIndex < newSchedules.length) {
+      [newSchedules[index], newSchedules[newIndex]] = [newSchedules[newIndex], newSchedules[index]];
+      newSchedules.forEach((schedule, i) => { schedule.stop_order = i + 1; });
+      setFormData(prev => ({ ...prev, stop_schedules: newSchedules }));
     }
   };
 
@@ -122,11 +137,12 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
     const newErrors = {};
 
     if (!formData.route_name) newErrors.route_name = 'Route name is required';
-    if (!formData.route_number) newErrors.route_number = 'Route number is required';
-    if (formData.bus_stops.length < 2) newErrors.bus_stops = 'At least 2 stops are required';
+    if (!formData.route_code) newErrors.route_code = 'Route number is required';
+    if (!formData.departure_time) newErrors.departure_time = 'Departure time is required';
+    if (formData.stop_schedules.length < 2) newErrors.stop_schedules = 'At least 2 stops are required';
 
-    formData.bus_stops.forEach((stop, index) => {
-      if (!stop.id) newErrors[`stop_${index}`] = 'Stop is required';
+    formData.stop_schedules.forEach((schedule, index) => {
+      if (!schedule.bus_stop) newErrors[`stop_${index}`] = 'Stop is required';
     });
 
     setErrors(newErrors);
@@ -140,18 +156,52 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
 
     setLoading(true);
     try {
+      // Helper function to format time for Strapi
+      const formatTimeForStrapi = (time) => {
+        if (!time) return null;
+        // If time is already in HH:mm:ss format, return as is
+        if (time.includes(':') && time.split(':').length === 3) {
+          return time;
+        }
+        // Convert HH:mm to HH:mm:ss.SSS
+        return `${time}:00.000`;
+      };
+
       // Prepare data for submission
       const submitData = {
-        ...formData,
+        route_name: formData.route_name,
+        route_code: formData.route_code,
         bus: formData.bus ? Number(formData.bus) : null,
-        bus_stops: formData.bus_stops.map(stop => Number(stop.id)).filter(id => id)
+        stop_schedules: formData.stop_schedules.map(schedule => ({
+          bus_stop: Number(schedule.bus_stop),
+          stop_order: schedule.stop_order,
+          pickup_time: formatTimeForStrapi(schedule.pickup_time),
+          drop_time: formatTimeForStrapi(schedule.drop_time),
+          waiting_time: schedule.waiting_time || 2,
+          distance_from_previous: schedule.distance_from_previous ? parseFloat(schedule.distance_from_previous) : null,
+          is_active: schedule.is_active
+        })),
+        departure_time: formatTimeForStrapi(formData.departure_time),
+        arrival_time: formatTimeForStrapi(formData.arrival_time),
+        route_type: formData.route_type,
+        total_distance: formData.total_distance ? parseFloat(formData.total_distance) : null,
+        estimated_duration: formData.estimated_duration ? parseInt(formData.estimated_duration) : null,
+        is_active: formData.is_active
       };
 
       let result;
       if (route?.id) {
-        result = await BusRouteRepository.update(route.id, submitData);
+        const updateResult = await busRouteService.updateRoute(route.id, submitData);
+        if (!updateResult.success) {
+          throw new Error(updateResult.error || 'Failed to update route');
+        }
+        result = updateResult.data;
       } else {
-        result = await BusRouteRepository.create(submitData);
+        const createResult = await busRouteService.createRoute(submitData);
+        if (!createResult.success) {
+          throw new Error(createResult.error || 'Failed to create route');
+        }
+        result = createResult.data;
       }
 
       onSave(result);
@@ -168,11 +218,12 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
   const resetForm = () => {
     setFormData({
       route_name: '',
-      route_number: '',
+      route_code: '',
       bus: null,
-      bus_stops: [],
-      start_time: '',
-      end_time: '',
+      stop_schedules: [],
+      departure_time: '',
+      arrival_time: '',
+      route_type: 'both',
       total_distance: '',
       estimated_duration: '',
       is_active: true
@@ -244,16 +295,16 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
                 </label>
                 <input
                   type="text"
-                  name="route_number"
-                  value={formData.route_number}
+                  name="route_code"
+                  value={formData.route_code}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                    errors.route_number ? 'border-red-500' : 'border-gray-300'
+                    errors.route_code ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="e.g., R101"
                 />
-                {errors.route_number && (
-                  <span className="text-red-500 text-xs mt-1">{errors.route_number}</span>
+                {errors.route_code && (
+                  <span className="text-red-500 text-xs mt-1">{errors.route_code}</span>
                 )}
               </div>
 
@@ -278,6 +329,53 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Route Type
+                </label>
+                <select
+                  name="route_type"
+                  value={formData.route_type}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="morning">Morning</option>
+                  <option value="evening">Evening</option>
+                  <option value="both">Both</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Departure Time *
+                </label>
+                <input
+                  type="time"
+                  name="departure_time"
+                  value={formData.departure_time}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                    errors.departure_time ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.departure_time && (
+                  <span className="text-red-500 text-xs mt-1">{errors.departure_time}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Arrival Time
+                </label>
+                <input
+                  type="time"
+                  name="arrival_time"
+                  value={formData.arrival_time}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Total Distance (km)
                 </label>
                 <input
@@ -287,32 +385,21 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="e.g., 25"
+                  step="0.1"
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Time
+                  Estimated Duration (minutes)
                 </label>
                 <input
-                  type="time"
-                  name="start_time"
-                  value={formData.start_time}
+                  type="number"
+                  name="estimated_duration"
+                  value={formData.estimated_duration}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Time
-                </label>
-                <input
-                  type="time"
-                  name="end_time"
-                  value={formData.end_time}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="e.g., 45"
                 />
               </div>
             </div>
@@ -336,7 +423,7 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-indigo-600" />
-                Bus Stops
+                Route Stops Schedule
               </h3>
               <button
                 type="button"
@@ -348,77 +435,231 @@ const RouteManagementModal = ({ isOpen, onClose, route = null, onSave }) => {
               </button>
             </div>
 
-            {errors.bus_stops && (
-              <div className="mb-2 text-red-500 text-sm">{errors.bus_stops}</div>
+            {errors.stop_schedules && (
+              <div className="mb-2 text-red-500 text-sm">{errors.stop_schedules}</div>
             )}
 
-            <div className="space-y-3">
-              {formData.bus_stops.map((stop, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => moveStop(index, 'up')}
-                      disabled={index === 0}
-                      className="p-1 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => moveStop(index, 'down')}
-                      disabled={index === formData.bus_stops.length - 1}
-                      className="p-1 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
+            {/* Header row for stop schedules */}
+            {formData.stop_schedules.length > 0 && (
+              <div className="hidden lg:grid lg:grid-cols-12 gap-2 px-3 py-2 bg-gray-100 rounded-t-lg text-xs font-semibold text-gray-600">
+                <div className="col-span-1 text-center">Order</div>
+                <div className="col-span-3">Bus Stop</div>
+                <div className="col-span-2 text-center">Pickup Time</div>
+                <div className="col-span-2 text-center">Drop Time</div>
+                <div className="col-span-1 text-center">Distance</div>
+                <div className="col-span-1 text-center">Wait</div>
+                <div className="col-span-1 text-center">Active</div>
+                <div className="col-span-1 text-center">Actions</div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {formData.stop_schedules.map((schedule, index) => (
+                <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  {/* Mobile/Tablet View */}
+                  <div className="lg:hidden space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-gray-600">Stop #{index + 1}</span>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => moveStop(index, 'up')}
+                            disabled={index === 0}
+                            className="p-1 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveStop(index, 'down')}
+                            disabled={index === formData.stop_schedules.length - 1}
+                            className="p-1 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeBusStop(index)}
+                        className="p-1 text-red-600 hover:bg-red-100 rounded"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs text-gray-600 mb-1">Bus Stop</label>
+                        <select
+                          value={schedule.bus_stop}
+                          onChange={(e) => updateBusStop(index, 'bus_stop', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                            errors[`stop_${index}`] ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">Select Stop</option>
+                          {availableStops.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.stop_name}
+                            </option>
+                          ))}
+                        </select>
+                        {errors[`stop_${index}`] && (
+                          <span className="text-red-500 text-xs">{errors[`stop_${index}`]}</span>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Pickup Time</label>
+                        <input
+                          type="time"
+                          value={schedule.pickup_time}
+                          onChange={(e) => updateBusStop(index, 'pickup_time', e.target.value)}
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Drop Time</label>
+                        <input
+                          type="time"
+                          value={schedule.drop_time}
+                          onChange={(e) => updateBusStop(index, 'drop_time', e.target.value)}
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Distance (km)</label>
+                        <input
+                          type="number"
+                          value={schedule.distance_from_previous}
+                          onChange={(e) => updateBusStop(index, 'distance_from_previous', e.target.value)}
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm"
+                          placeholder="0.0"
+                          step="0.1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Wait Time (min)</label>
+                        <input
+                          type="number"
+                          value={schedule.waiting_time}
+                          onChange={(e) => updateBusStop(index, 'waiting_time', e.target.value)}
+                          className="w-full px-2 py-2 border border-gray-300 rounded-lg text-sm"
+                          placeholder="2"
+                          min="0"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={schedule.is_active}
+                            onChange={(e) => updateBusStop(index, 'is_active', e.target.checked)}
+                            className="h-4 w-4 text-indigo-600"
+                          />
+                          <span className="text-sm">Stop is Active</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-600">
-                    #{index + 1}
+                  {/* Desktop View - Grid Layout */}
+                  <div className="hidden lg:grid lg:grid-cols-12 gap-2 items-center">
+                    <div className="col-span-1 flex items-center justify-center gap-1">
+                      <div className="flex flex-col gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveStop(index, 'up')}
+                          disabled={index === 0}
+                          className="p-0.5 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
+                        >
+                          <ChevronUp className="h-3 w-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveStop(index, 'down')}
+                          disabled={index === formData.stop_schedules.length - 1}
+                          className="p-0.5 text-gray-500 hover:text-indigo-600 disabled:opacity-30"
+                        >
+                          <ChevronDown className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <span className="text-sm font-semibold text-gray-600">#{index + 1}</span>
+                    </div>
+                    <div className="col-span-3">
+                      <select
+                        value={schedule.bus_stop}
+                        onChange={(e) => updateBusStop(index, 'bus_stop', e.target.value)}
+                        className={`w-full px-2 py-1.5 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          errors[`stop_${index}`] ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select Stop</option>
+                        {availableStops.map(s => (
+                          <option key={s.id} value={s.id}>
+                            {s.stop_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="time"
+                        value={schedule.pickup_time}
+                        onChange={(e) => updateBusStop(index, 'pickup_time', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <input
+                        type="time"
+                        value={schedule.drop_time}
+                        onChange={(e) => updateBusStop(index, 'drop_time', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <input
+                        type="number"
+                        value={schedule.distance_from_previous}
+                        onChange={(e) => updateBusStop(index, 'distance_from_previous', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                        placeholder="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <input
+                        type="number"
+                        value={schedule.waiting_time}
+                        onChange={(e) => updateBusStop(index, 'waiting_time', e.target.value)}
+                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                        placeholder="2"
+                        min="0"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      <input
+                        type="checkbox"
+                        checked={schedule.is_active}
+                        onChange={(e) => updateBusStop(index, 'is_active', e.target.checked)}
+                        className="h-4 w-4 text-indigo-600"
+                      />
+                    </div>
+                    <div className="col-span-1 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => removeBusStop(index)}
+                        className="p-1 text-red-600 hover:bg-red-100 rounded"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="flex-1">
-                    <select
-                      value={stop.id}
-                      onChange={(e) => updateBusStop(index, 'id', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-                        errors[`stop_${index}`] ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select Stop</option>
-                      {availableStops.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.stop_name} - {s.location?.name || 'Location'}
-                        </option>
-                      ))}
-                    </select>
-                    {errors[`stop_${index}`] && (
-                      <span className="text-red-500 text-xs">{errors[`stop_${index}`]}</span>
-                    )}
-                  </div>
-
-                  <div className="w-32">
-                    <input
-                      type="time"
-                      value={stop.arrival_time}
-                      onChange={(e) => updateBusStop(index, 'arrival_time', e.target.value)}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                      placeholder="Arrival"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeBusStop(index)}
-                    className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
               ))}
 
-              {formData.bus_stops.length === 0 && (
+              {formData.stop_schedules.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   No stops added yet. Click "Add Stop" to begin.
                 </div>

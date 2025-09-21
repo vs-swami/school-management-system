@@ -1,0 +1,10 @@
+export { StudentMapper } from './StudentMapper';
+export { ClassMapper } from './ClassMapper';
+export { BusStopMapper } from './BusStopMapper';
+export { BusRouteMapper } from './BusRouteMapper';
+export { FeeMapper } from './FeeMapper';
+export { EnrollmentMapper } from './EnrollmentMapper';
+export { GuardianMapper } from './GuardianMapper';
+export { DivisionMapper } from './DivisionMapper';
+export { ExamResultMapper } from './ExamResultMapper';
+export { LocationMapper } from './LocationMapper';

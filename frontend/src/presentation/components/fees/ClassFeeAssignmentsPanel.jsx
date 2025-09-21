@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FeeAssignmentRepository } from '../../../data/repositories/FeeAssignmentRepository';
-import { FeeDefinitionRepository } from '../../../data/repositories/FeeDefinitionRepository';
+import { useFeeService } from '../../../application/hooks/useServices';
 import FeeDefinitionForm from './FeeDefinitionForm';
 
 export default function ClassFeeAssignmentsPanel({ classId }) {
+  const feeService = useFeeService();
   const [assignments, setAssignments] = useState([]);
   const [definitions, setDefinitions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +30,12 @@ export default function ClassFeeAssignmentsPanel({ classId }) {
     setLoading(true);
     setError(null);
     try {
-      const [as, defs] = await Promise.all([
-        FeeAssignmentRepository.findByClass(classId),
-        FeeDefinitionRepository.findAll(),
+      const [asResult, defsResult] = await Promise.all([
+        feeService.findAssignmentsByClass(classId),
+        feeService.findAllDefinitions(),
       ]);
-      setAssignments(as || []);
-      setDefinitions(defs || []);
+      setAssignments(asResult.data || []);
+      setDefinitions(defsResult.data || []);
     } catch (e) {
       setError(e?.message || 'Failed to load');
     } finally {
@@ -54,7 +54,7 @@ export default function ClassFeeAssignmentsPanel({ classId }) {
         end_date: newAssignment.end_date || null,
         priority: Number(newAssignment.priority || 10),
       };
-      await FeeAssignmentRepository.create(payload);
+      await feeService.createAssignment(payload);
       setNewAssignment({ fee: '', start_date: '', end_date: '', priority: 10 });
       await refresh();
     } catch (e) {
@@ -64,7 +64,7 @@ export default function ClassFeeAssignmentsPanel({ classId }) {
 
   const handleDeleteAssignment = async (id) => {
     if (!window.confirm('Remove this fee assignment from class?')) return;
-    await FeeAssignmentRepository.delete(id);
+    await feeService.deleteAssignment(id);
     await refresh();
   };
 

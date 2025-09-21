@@ -25,7 +25,7 @@ import { STUDENT_CONFIG } from '../../../shared/constants/app';
 
 
 
-const StudentPage = ({ mode = 'create', initialData = null }) => {
+const StudentPage = ({ mode = 'create' }) => {
   const { fetchClassCapacity, selectedStudent } = useStudentStore();
 
   // Custom hooks
@@ -60,7 +60,7 @@ const StudentPage = ({ mode = 'create', initialData = null }) => {
     resetForm,
     STEPS,
     TOTAL_STEPS,
-  } = useStudentForm(mode, initialData);
+  } = useStudentForm(mode);
 
   const {
     pickupStopRoutes,

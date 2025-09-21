@@ -11,13 +11,14 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
   // Override default find to include custom population
   async find(ctx) {
     const { query } = ctx;
-    
+
     const entity = await strapi.entityService.findMany('api::exam-result.exam-result', {
       ...query,
       populate: {
         student: true,
         academic_year: true,
-        class: true
+        class: true,
+        subject_scores: true // Add component population
       }
     });
 
@@ -35,7 +36,8 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
       populate: {
         student: true,
         academic_year: true,
-        class: true
+        class: true,
+        subject_scores: true // Add component population
       }
     });
 
@@ -72,7 +74,8 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
       populate: {
         student: true,
         academic_year: true,
-        class: true
+        class: true,
+        subject_scores: true // Add component population
       }
     });
 
@@ -118,7 +121,8 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
       populate: {
         student: true,
         academic_year: true,
-        class: true
+        class: true,
+        subject_scores: true // Add component population
       }
     });
 
@@ -179,7 +183,7 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
       // If no specific exam result, check all recent exam results (original logic remains similar)
       const studentExamResults = await strapi.entityService.findMany('api::exam-result.exam-result', {
         filters: { student: studentId },
-        populate: ['academic_year', 'class'],
+        populate: ['academic_year', 'class', 'subject_scores'],
         sort: { createdAt: 'desc' }
       });
 

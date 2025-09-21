@@ -14,16 +14,7 @@ import './styles/globals.css';
 import { StudentPage } from './presentation/pages/students/StudentPage';
 
 // Fee Management Pages
-import FeeDashboard from './presentation/pages/fees/FeeDashboard';
-import FeeStructure from './presentation/pages/fees/FeeStructure';
-import PaymentProcessing from './presentation/pages/fees/PaymentProcessing';
-import PaymentHistory from './presentation/pages/fees/PaymentHistory';
-import FeeDemo from './presentation/pages/fees/FeeDemo';
 import FeeManagement from './presentation/pages/fees/FeeManagement';
-import ClassFeeManagementPage from './presentation/pages/fees/ClassFeeManagementPage';
-import ClassManagement from './presentation/pages/classes/ClassManagement';
-import EnhancedClassManagement from './presentation/pages/classes/EnhancedClassManagement';
-import DivisionManagementDashboard from './presentation/pages/classes/DivisionManagementDashboard';
 import ClassDivisionDashboard from './presentation/pages/classes/ClassDivisionDashboard';
 import BusManagementDashboard from './presentation/pages/transport/BusManagementDashboard';
 
@@ -32,6 +23,8 @@ import ErrorBoundary from './presentation/components/common/ErrorBoundary';
 import { initializeEnvironment } from './shared/utils/envValidation';
 import { API_CONFIG, ENV_CONFIG } from './shared/constants/app';
 import { GlobalLoadingOverlay } from './presentation/components/common/GlobalLoadingOverlay';
+import { LoadingProvider } from './application/contexts/LoadingContext';
+import { ServiceProvider } from './application/contexts/ServiceContext';
 
 // Initialize environment validation
 let envConfig;
@@ -70,11 +63,13 @@ function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Router>
-          <div className="App">
-            <ErrorBoundary>
-              <GlobalLoadingOverlay />
-              <Routes>
+        <ServiceProvider>
+          <LoadingProvider>
+            <Router>
+              <div className="App">
+                <ErrorBoundary>
+                  <GlobalLoadingOverlay />
+                  <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route
                   path="/*"
@@ -93,7 +88,6 @@ function App() {
 
                             {/* Class Management Routes */}
                             <Route path="/classes" element={<ClassDivisionDashboard />} />
-                            <Route path="/classes/:classId/fees" element={<ClassFeeManagementPage />} />
 
                             {/* Transport Management Routes */}
                             <Route path="/transport" element={<BusManagementDashboard />} />
@@ -101,11 +95,6 @@ function App() {
                             {/* Fee Management Routes */}
                             <Route path="/fees" element={<FeeManagement />} />
                             <Route path="/fees/manage" element={<FeeManagement />} />
-                            <Route path="/fees/demo" element={<FeeDemo />} />
-                            <Route path="/fees/dashboard" element={<FeeDashboard />} />
-                            <Route path="/fees/structure" element={<FeeStructure />} />
-                            <Route path="/fees/payments" element={<PaymentProcessing />} />
-                            <Route path="/fees/history" element={<PaymentHistory />} />
                           </Routes>
                         </ErrorBoundary>
                       </MainLayout>
@@ -121,6 +110,8 @@ function App() {
         {ENV_CONFIG.IS_DEVELOPMENT && (
           <ReactQueryDevtools initialIsOpen={false} />
         )}
+          </LoadingProvider>
+        </ServiceProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

@@ -5,15 +5,23 @@ export class LocationRepository {
     try {
       const defaultParams = {
         params: {
+          populate: '*',
           filters: { is_active: true },
-          fields: ['id', 'name'],
           sort: ['name:asc']
         }
       };
       const response = await apiClient.get('/locations', { ...defaultParams, ...params });
-      // Strapi v4: data is in response.data.data
-      const items = response.data?.data || [];
-      return items.map(item => ({ id: item.id, ...(item.attributes || item) }));
+      // Strapi 5: Handle response structure { data: [...], meta: {} }
+      let locations = response.data;
+
+      // If response has nested data array, extract it
+      if (locations && typeof locations === 'object' && locations.data) {
+        locations = locations.data;
+      }
+
+      // Ensure we have an array
+      const items = Array.isArray(locations) ? locations : [];
+      return items.map(item => ({ id: item.id, documentId: item.documentId, ...item }));
     } catch (error) {
       console.error('LocationRepository Error in findAll:', error);
       throw error;

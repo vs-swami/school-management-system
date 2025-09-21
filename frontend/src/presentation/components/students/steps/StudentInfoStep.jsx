@@ -68,7 +68,9 @@ const StudentInfoStep = ({ register, errors, academicYears, classes, getValues, 
           type="select"
           register={register('enrollments.0.academic_year', { required: 'Academic year is required' })}
           errors={errors.enrollments?.[0]?.academic_year}
-          options={academicYears.map(year => ({ value: String(year.id), label: year.code }))}
+          options={Array.isArray(academicYears) ?
+                   academicYears.map(year => ({ value: String(year.id), label: year.year })) :
+                   []}
           placeholder="Select Academic Year"
           required
           icon={BookOpen}
@@ -78,7 +80,9 @@ const StudentInfoStep = ({ register, errors, academicYears, classes, getValues, 
           type="select"
           register={register('enrollments.0.class', { required: 'Class is required' })}
           errors={errors.enrollments?.[0]?.class}
-          options={classes.map(cls => ({ value: String(cls.id), label: cls.classname }))}
+          options={Array.isArray(classes) ?
+                   classes.map(cls => ({ value: String(cls.id), label: cls.className })) :
+                   []}
           placeholder="Select Class"
           required
           icon={Tag}

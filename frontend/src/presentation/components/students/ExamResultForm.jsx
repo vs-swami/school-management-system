@@ -14,11 +14,14 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
       academic_year: '',
       class: '',
       exam_type: '',
+      exam_name: '',
+      exam_date: '',
       subject: '',
-      marks_obtained: '',
-      total_marks: '',
-      grade: '',
+      total_obtained: '',
+      total_maximum: '',
+      overall_grade: '',
       pass_fail: false,
+      remarks: '',
     },
   });
 
@@ -29,17 +32,24 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
         ...initialExamResult,
         academic_year: String(initialExamResult.academic_year?.id || initialExamResult.academic_year || ''),
         class: String(initialExamResult.class?.id || initialExamResult.class || ''),
+        // Map old field names to new ones if present
+        total_obtained: initialExamResult.total_obtained || initialExamResult.marks_obtained || '',
+        total_maximum: initialExamResult.total_maximum || initialExamResult.total_marks || '',
+        overall_grade: initialExamResult.overall_grade || initialExamResult.grade || '',
       });
     } else {
       reset({
         academic_year: '',
         class: '',
         exam_type: '',
+        exam_name: '',
+        exam_date: '',
         subject: '',
-        marks_obtained: '',
-        total_marks: '',
-        grade: '',
+        total_obtained: '',
+        total_maximum: '',
+        overall_grade: '',
         pass_fail: false,
+        remarks: '',
       });
     }
   }, [initialExamResult, reset]);
@@ -54,23 +64,43 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
     setLoading(true);
     setError(null);
 
-    // Ensure academic_year and class are numbers for backend
+    // Convert old format to new subject_scores component format
     const submissionData = {
-      ...data,
-      ...(initialExamResult && { id: initialExamResult.id }), // Include ID if editing existing result
+      exam_type: data.exam_type,
+      exam_name: data.exam_name,
+      exam_date: data.exam_date,
       academic_year: data.academic_year ? parseInt(data.academic_year) : undefined,
       class: data.class ? parseInt(data.class) : undefined,
       student: studentId, // Link exam result to the student
+      remarks: data.remarks,
+      // Convert single subject to subject_scores array
+      subject_scores: data.subject ? [{
+        subject: data.subject,
+        marks_obtained: parseFloat(data.total_obtained) || 0,
+        total_marks: parseFloat(data.total_maximum) || 0,
+        grade: data.overall_grade || '',
+        pass_status: data.pass_fail ? 'pass' : 'fail'
+      }] : [],
+      ...(initialExamResult && { id: initialExamResult.id }), // Include ID if editing existing result
     };
 
     try {
+      console.log('ExamResultForm: Submitting data:', submissionData);
       // saveExamResults expects an array, so wrap the single result
       const result = await saveExamResults(studentId, [submissionData]);
       if (result.success) {
         console.log('ExamResultForm: Save successful, calling onSaveSuccess.'); // NEW: Debug log
-        onSaveSuccess(); // Close modal and refresh list in parent
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          onSaveSuccess(); // Close modal and refresh list in parent
+        }, 1000);
       } else {
-        setError(result.error || 'Failed to save exam result.');
+        console.error('ExamResultForm: Save failed:', result.error);
+        const errorMessage = result.details
+          ? `Failed to save exam result: ${JSON.stringify(result.details)}`
+          : result.error || 'Failed to save exam result.';
+        setError(errorMessage);
       }
     } catch (err) {
       console.error('Error saving exam result:', err);
@@ -81,12 +111,12 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
   };
 
   // Watch marks to calculate percentage and grade automatically
-  const marksObtained = watch('marks_obtained');
-  const totalMarks = watch('total_marks');
+  const totalObtained = watch('total_obtained');
+  const totalMaximum = watch('total_maximum');
 
   useEffect(() => {
-    if (marksObtained && totalMarks && totalMarks > 0) {
-      const calcPercentage = ((marksObtained / totalMarks) * 100).toFixed(2);
+    if (totalObtained && totalMaximum && totalMaximum > 0) {
+      const calcPercentage = ((totalObtained / totalMaximum) * 100).toFixed(2);
       setPercentage(calcPercentage);
 
       // Auto-calculate grade based on percentage
@@ -100,10 +130,11 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
       else calcGrade = 'F';
 
       setGrade(calcGrade);
-      setValue('grade', calcGrade);
+      setValue('overall_grade', calcGrade);
+      setValue('overall_percentage', parseFloat(calcPercentage));
       setValue('pass_fail', calcPercentage >= 40);
     }
-  }, [marksObtained, totalMarks, setValue]);
+  }, [totalObtained, totalMaximum, setValue]);
 
   const getGradeColor = (grade) => {
     switch(grade) {
@@ -176,7 +207,7 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
             >
               <option value="">Select Academic Year</option>
               {academicYears.map(year => (
-                <option key={year.id} value={year.id}>{year.code}</option>
+                <option key={year.id} value={year.id}>{year.year}</option>
               ))}
             </select>
             {errors.academic_year && (
@@ -201,7 +232,7 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
             >
               <option value="">Select Class</option>
               {classes.map(cls => (
-                <option key={cls.id} value={cls.id}>Class {cls.classname}</option>
+                <option key={cls.id} value={cls.id}>{cls.classname || cls.className}</option>
               ))}
             </select>
             {errors.class && (
@@ -239,6 +270,33 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
                 {errors.exam_type.message}
               </p>
             )}
+          </div>
+
+          {/* Exam Name */}
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Award className="h-4 w-4 text-indigo-600" />
+              Exam Name
+            </label>
+            <input
+              type="text"
+              {...register('exam_name')}
+              className="w-full px-4 py-3 border-2 border-gray-300 hover:border-indigo-400 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="e.g., Unit Test 1 - 2024"
+            />
+          </div>
+
+          {/* Exam Date */}
+          <div className="group">
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Award className="h-4 w-4 text-indigo-600" />
+              Exam Date
+            </label>
+            <input
+              type="date"
+              {...register('exam_date')}
+              className="w-full px-4 py-3 border-2 border-gray-300 hover:border-indigo-400 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
           </div>
 
           {/* Subject */}
@@ -291,18 +349,18 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
                 <label className="block text-xs font-medium text-gray-600 mb-1">Marks Obtained</label>
                 <input
                   type="number"
-                  {...register('marks_obtained', {
+                  {...register('total_obtained', {
                     required: 'Required',
                     min: { value: 0, message: 'Min 0' },
                     valueAsNumber: true
                   })}
                   className={`w-full px-3 py-2 border-2 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                    errors.marks_obtained ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    errors.total_obtained ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   placeholder="85"
                 />
-                {errors.marks_obtained && (
-                  <p className="mt-1 text-xs text-red-600">{errors.marks_obtained.message}</p>
+                {errors.total_obtained && (
+                  <p className="mt-1 text-xs text-red-600">{errors.total_obtained.message}</p>
                 )}
               </div>
 
@@ -311,18 +369,18 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
                 <label className="block text-xs font-medium text-gray-600 mb-1">Total Marks</label>
                 <input
                   type="number"
-                  {...register('total_marks', {
+                  {...register('total_maximum', {
                     required: 'Required',
                     min: { value: 1, message: 'Min 1' },
                     valueAsNumber: true
                   })}
                   className={`w-full px-3 py-2 border-2 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                    errors.total_marks ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    errors.total_maximum ? 'border-red-300 bg-red-50' : 'border-gray-300'
                   }`}
                   placeholder="100"
                 />
-                {errors.total_marks && (
-                  <p className="mt-1 text-xs text-red-600">{errors.total_marks.message}</p>
+                {errors.total_maximum && (
+                  <p className="mt-1 text-xs text-red-600">{errors.total_maximum.message}</p>
                 )}
               </div>
             </div>
@@ -362,7 +420,7 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
                 <div className={`px-4 py-3 rounded-lg text-center font-bold text-lg ${getGradeColor(grade || 'N/A')}`}>
                   {grade || 'N/A'}
                 </div>
-                <input type="hidden" {...register('grade')} />
+                <input type="hidden" {...register('overall_grade')} />
               </div>
 
               {/* Pass/Fail Status */}
@@ -408,6 +466,20 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Remarks */}
+      <div className="group">
+        <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <BookOpen className="h-4 w-4 text-indigo-600" />
+          Remarks (Optional)
+        </label>
+        <textarea
+          {...register('remarks')}
+          rows={3}
+          className="w-full px-4 py-3 border-2 border-gray-300 hover:border-indigo-400 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          placeholder="Any additional comments or observations about the student's performance..."
+        />
       </div>
 
       {/* Action Buttons */}

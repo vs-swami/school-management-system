@@ -5,7 +5,7 @@
     "singularName": "exam-result",
     "pluralName": "exam-results",
     "displayName": "Exam Result",
-    "description": "Stores individual exam results for students"
+    "description": "Stores exam results with multiple subject scores"
   },
   "options": {
     "draftAndPublish": false
@@ -20,25 +20,45 @@
     },
     "exam_type": {
       "type": "string",
-      "required": true
+      "required": true,
+      "description": "Type of exam (e.g., Unit Test, Midterm, Final)"
     },
-    "subject": {
+    "exam_name": {
       "type": "string",
-      "required": true
+      "description": "Specific exam name or identifier"
     },
-    "marks_obtained": {
+    "exam_date": {
+      "type": "date"
+    },
+    "subject_scores": {
+      "type": "component",
+      "repeatable": true,
+      "component": "academic.subject-score",
+      "description": "Detailed scores for multiple subjects"
+    },
+    "total_obtained": {
+      "type": "decimal",
+      "description": "Total marks obtained across all subjects"
+    },
+    "total_maximum": {
+      "type": "decimal",
+      "description": "Total maximum marks across all subjects"
+    },
+    "overall_percentage": {
+      "type": "decimal",
+      "description": "Overall percentage across all subjects"
+    },
+    "overall_grade": {
+      "type": "string",
+      "description": "Overall grade for the exam"
+    },
+    "rank": {
       "type": "integer",
-      "required": true
+      "description": "Student's rank in class for this exam"
     },
-    "total_marks": {
-      "type": "integer",
-      "required": true
-    },
-    "grade": {
-      "type": "string"
-    },
-    "pass_fail": {
-      "type": "boolean"
+    "remarks": {
+      "type": "text",
+      "description": "Teacher's remarks or comments"
     },
     "academic_year": {
       "type": "relation",

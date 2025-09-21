@@ -21,17 +21,24 @@ import {
   ChevronRight,
   Eye,
   RefreshCw,
-  Compass
+  Compass,
+  DollarSign
 } from 'lucide-react';
-import RouteVisualization from '../../components/students/RouteVisualization';
+import RouteVisualization from '../../components/transport/RouteVisualization';
 import Modal from '../../components/common/Modal';
 import RouteManagementModal from '../../components/transport/RouteManagementModal';
 import BusStopManagementModal from '../../components/transport/BusStopManagementModal';
-import { BusRouteRepository } from '../../../data/repositories/BusRouteRepository';
-import { BusStopRepository } from '../../../data/repositories/BusStopRepository';
-import { BusRepository } from '../../../data/repositories/BusRepository';
+import UnifiedFeeManager from '../../components/fees/UnifiedFeeManager';
+import FinanceSummary from '../../components/fees/FinanceSummary';
+import { useBusRouteService, useBusStopService, useBusService } from '../../../application/contexts/ServiceContext';
+import { useComponentLoading } from '../../../application/contexts/LoadingContext';
 
 const BusManagementDashboard = () => {
+  const setLoading = useComponentLoading('BusManagementDashboard');
+  const busRouteService = useBusRouteService();
+  const busStopService = useBusStopService();
+  const busService = useBusService();
+
   // State Management
   const [activeTab, setActiveTab] = useState('overview');
   const [buses, setBuses] = useState([]);
@@ -39,7 +46,6 @@ const BusManagementDashboard = () => {
   const [busStops, setBusStops] = useState([]);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [selectedBus, setSelectedBus] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddBusModal, setShowAddBusModal] = useState(false);
@@ -48,6 +54,9 @@ const BusManagementDashboard = () => {
   const [editingRoute, setEditingRoute] = useState(null);
   const [showAddStopModal, setShowAddStopModal] = useState(false);
   const [editingStop, setEditingStop] = useState(null);
+  const [showStopFeeModal, setShowStopFeeModal] = useState(false);
+  const [selectedStopForFees, setSelectedStopForFees] = useState(null);
+  const [selectedStopForDetails, setSelectedStopForDetails] = useState(null);
 
   // Load initial data
   useEffect(() => {
@@ -55,18 +64,19 @@ const BusManagementDashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    setLoading(true);
+    setLoading(true, 'Loading transport dashboard data');
     try {
       // Fetch all data in parallel
-      const [busesData, routesData, stopsData] = await Promise.all([
-        BusRepository.findAll().catch(() => []),
-        BusRouteRepository.findAll().catch(() => []),
-        BusStopRepository.findAll().catch(() => [])
+      const [busesResult, routesResult, stopsResult] = await Promise.all([
+        busService.getAllBuses(),
+        busRouteService.getAllRoutes(),
+        busStopService.getAllBusStops()
       ]);
 
-      setBuses(busesData || []);
-      setRoutes(routesData || []);
-      setBusStops(stopsData || []);
+      // Ensure data is always an array for Strapi 5
+      setBuses(busesResult.success ? busesResult.data : []);
+      setRoutes(routesResult.success ? routesResult.data : []);
+      setBusStops(stopsResult.success ? stopsResult.data : []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -84,9 +94,13 @@ const BusManagementDashboard = () => {
   const handleDeleteRoute = async (routeId) => {
     if (window.confirm('Are you sure you want to delete this route? This action cannot be undone.')) {
       try {
-        await BusRouteRepository.delete(routeId);
-        await fetchDashboardData(); // Refresh data after delete
-        alert('Route deleted successfully!');
+        const result = await busRouteService.deleteRoute(routeId);
+        if (result.success) {
+          await fetchDashboardData(); // Refresh data after delete
+          alert('Route deleted successfully!');
+        } else {
+          alert(result.error || 'Failed to delete route. Please try again.');
+        }
       } catch (error) {
         console.error('Error deleting route:', error);
         alert('Failed to delete route. Please try again.');
@@ -104,9 +118,13 @@ const BusManagementDashboard = () => {
   const handleDeleteStop = async (stopId) => {
     if (window.confirm('Are you sure you want to delete this stop? This will affect all routes using this stop.')) {
       try {
-        await BusStopRepository.delete(stopId);
-        await fetchDashboardData(); // Refresh data after delete
-        alert('Stop deleted successfully!');
+        const result = await busStopService.deleteBusStop(stopId);
+        if (result.success) {
+          await fetchDashboardData(); // Refresh data after delete
+          alert('Stop deleted successfully!');
+        } else {
+          alert(result.error || 'Failed to delete stop. Please try again.');
+        }
       } catch (error) {
         console.error('Error deleting stop:', error);
         alert('Failed to delete stop. Please try again.');
@@ -497,7 +515,7 @@ const BusManagementDashboard = () => {
                 <RouteVisualization
                   route={selectedRoute}
                   routeType="pickup"
-                  onSelectStop={(stop) => console.log('Selected stop:', stop)}
+                  // No onSelectStop prop - stops will be non-interactive
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-64 text-gray-400">
@@ -518,7 +536,9 @@ const BusManagementDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-800">Bus Stops Management</h3>
-                <p className="text-sm text-gray-600 mt-1">Manage pickup and drop-off points</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Manage pickup and drop-off points • Click on a stop to view financial details
+                </p>
               </div>
               <button
                 onClick={() => {
@@ -533,16 +553,37 @@ const BusManagementDashboard = () => {
             </div>
           </div>
 
+          {/* Finance Summary for Selected Stop */}
+          {selectedStopForDetails && (
+            <FinanceSummary
+              entityType="busStop"
+              entityId={selectedStopForDetails.id}
+              entityName={selectedStopForDetails.stop_name}
+              studentCount={selectedStopForDetails.pickup_allocations?.length || 0}
+              onConfigureFees={() => {
+                setSelectedStopForFees(selectedStopForDetails);
+                setShowStopFeeModal(true);
+              }}
+            />
+          )}
+
           {/* Stops Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {busStops.map((stop) => (
-              <div key={stop.id} className="bg-white p-5 rounded-lg border border-gray-200 hover:border-green-300 hover:shadow-lg transition-all">
+            {busStops.map((stop) => {
+              const isSelected = selectedStopForDetails?.id === stop.id;
+              return (
+              <div
+                key={stop.id}
+                className={`bg-white p-5 rounded-lg border-2 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-green-500 shadow-xl ring-2 ring-green-200'
+                    : 'border-gray-200 hover:border-green-300 hover:shadow-lg'
+                }`}
+                onClick={() => setSelectedStopForDetails(isSelected ? null : stop)}
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h4 className="font-semibold text-gray-800 text-lg">{stop.stop_name}</h4>
-                    {stop.landmark && (
-                      <p className="text-xs text-gray-500 mt-1">Near {stop.landmark}</p>
-                    )}
                   </div>
                   <div className={`p-2 rounded-full ${
                     stop.is_active !== false ? 'bg-green-100' : 'bg-gray-100'
@@ -575,19 +616,18 @@ const BusManagementDashboard = () => {
                     </div>
                   )}
 
-                  {stop.estimated_students > 0 && (
+                  {stop.drop_time && (
                     <div className="flex items-center gap-2 text-gray-600">
-                      <Users className="h-4 w-4" />
-                      <span>~{stop.estimated_students} students</span>
+                      <Clock className="h-4 w-4" />
+                      <span>Drop: {stop.drop_time}</span>
                     </div>
                   )}
 
-                  {stop.distance_from_school && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Route className="h-4 w-4" />
-                      <span>{stop.distance_from_school} km from school</span>
-                    </div>
-                  )}
+                  {/* Student Count */}
+                  <div className="flex items-center gap-2 text-gray-700 font-medium">
+                    <Users className="h-4 w-4" />
+                    <span>{stop.pickup_allocations?.length || 0} students</span>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 mt-4 pt-4 border-t">
@@ -602,6 +642,16 @@ const BusManagementDashboard = () => {
                     Edit
                   </button>
                   <button
+                    onClick={() => {
+                      setSelectedStopForFees(stop);
+                      setShowStopFeeModal(true);
+                    }}
+                    className="flex-1 py-2 text-sm bg-green-100 text-green-600 rounded-lg hover:bg-green-200 font-medium flex items-center justify-center gap-1"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                    Fees
+                  </button>
+                  <button
                     onClick={() => handleDeleteStop(stop.id)}
                     className="flex-1 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-200 font-medium flex items-center justify-center gap-1"
                   >
@@ -610,7 +660,8 @@ const BusManagementDashboard = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {busStops.length === 0 && (
               <div className="col-span-full text-center py-12 text-gray-500">
@@ -644,6 +695,19 @@ const BusManagementDashboard = () => {
         stop={editingStop}
         onSave={handleSaveStop}
       />
+
+      {/* Bus Stop Fee Manager Modal */}
+      {showStopFeeModal && selectedStopForFees && (
+        <UnifiedFeeManager
+          entityType="busStop"
+          entityId={selectedStopForFees.id}
+          entityName={selectedStopForFees.stop_name}
+          onClose={() => {
+            setShowStopFeeModal(false);
+            setSelectedStopForFees(null);
+          }}
+        />
+      )}
     </div>
   );
 };

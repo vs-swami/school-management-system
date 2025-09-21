@@ -123,22 +123,24 @@ const StepTimeline = ({
 
             return (
               <div key={index} className="flex flex-col items-center flex-1 relative">
-                {/* Step Circle */}
-                <button
-                  onClick={() => isClickable && onStepClick?.(index)}
-                  disabled={!isClickable}
-                  className={`
-                    relative flex items-center justify-center w-12 h-12 rounded-full border-2
-                    transition-all duration-300 ease-out z-10 bg-white
-                    ${colors.circle}
-                    ${isClickable ? 'cursor-pointer hover:scale-105' : 'cursor-default'}
-                    ${status === 'current' ? 'animate-pulse' : ''}
-                  `}
-                  title={isClickable ? `Go to ${name}` : name}
-                >
-                  {getStepIcon(index, status)}
+                {/* Step Circle Container */}
+                <div className="relative">
+                  <button
+                    onClick={() => isClickable && onStepClick?.(index)}
+                    disabled={!isClickable}
+                    className={`
+                      relative flex items-center justify-center w-12 h-12 rounded-full border-2
+                      transition-all duration-300 ease-out z-10 bg-white
+                      ${colors.circle}
+                      ${isClickable ? 'cursor-pointer hover:scale-105' : 'cursor-default'}
+                      ${status === 'current' ? 'animate-pulse' : ''}
+                    `}
+                    title={isClickable ? `Go to ${name}` : name}
+                  >
+                    {getStepIcon(index, status)}
+                  </button>
 
-                  {/* Navigation arrows for current step */}
+                  {/* Navigation arrows for current step - Outside main button */}
                   {status === 'current' && allowNavigation && (
                     <>
                       {index > 0 && canNavigateToStep(index - 1) && (
@@ -167,7 +169,7 @@ const StepTimeline = ({
                       )}
                     </>
                   )}
-                </button>
+                </div>
 
                 {/* Connector to next step */}
                 {index < stepNames.length - 1 && (

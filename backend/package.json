@@ -9,6 +9,7 @@
     "strapi": "strapi"
   },
   "dependencies": {
+    "@strapi/plugin-documentation": "^5.23.6",
     "@strapi/plugin-users-permissions": "5.0.6",
     "@strapi/strapi": "5.0.6",
     "ajv": "^8.12.0",

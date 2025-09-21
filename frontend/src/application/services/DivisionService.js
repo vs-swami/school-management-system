@@ -1,8 +1,8 @@
-import { DivisionRepository } from '../../data/repositories/DivisionRepository';
+import { DivisionRepositoryAdapter } from '../../data/adapters/DivisionRepositoryAdapter';
 
 export class DivisionService {
   constructor() {
-    this.repository = DivisionRepository;
+    this.repository = new DivisionRepositoryAdapter();
   }
 
   async getAllDivisions() {
@@ -142,6 +142,22 @@ export class DivisionService {
       return {
         success: false,
         error: error.message || 'Failed to fetch divisions with metrics'
+      };
+    }
+  }
+
+  async getDivisionsByClass(classId) {
+    try {
+      const divisions = await this.repository.getDivisionsByClass(classId);
+      return {
+        success: true,
+        data: divisions
+      };
+    } catch (error) {
+      console.error('Error in DivisionService.getDivisionsByClass:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to fetch divisions by class'
       };
     }
   }

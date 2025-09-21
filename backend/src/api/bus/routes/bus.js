@@ -2,6 +2,18 @@
 
 module.exports = {
   routes: [
+    // Custom routes (must come before :id routes)
+    {
+      method: 'GET',
+      path: '/buses/utilization',
+      handler: 'bus.getBusUtilization',
+    },
+    {
+      method: 'GET',
+      path: '/buses/by-stop/:stopId',
+      handler: 'bus.findByStop',
+    },
+
     // Default CRUD routes
     {
       method: 'GET',
@@ -12,6 +24,11 @@ module.exports = {
       method: 'GET',
       path: '/buses/:id',
       handler: 'bus.findOne',
+    },
+    {
+      method: 'GET',
+      path: '/buses/:id/available-seats',
+      handler: 'bus.getAvailableSeats',
     },
     {
       method: 'POST',
@@ -27,23 +44,6 @@ module.exports = {
       method: 'DELETE',
       path: '/buses/:id',
       handler: 'bus.delete',
-    },
-    
-    // Custom routes
-    {
-      method: 'GET',
-      path: '/buses/:id/available-seats',
-      handler: 'bus.getAvailableSeats',
-    },
-    {
-      method: 'GET',
-      path: '/buses/utilization',
-      handler: 'bus.getBusUtilization',
-    },
-    {
-      method: 'GET',
-      path: '/buses/by-stop/:stopId',
-      handler: 'bus.findByStop',
     }
   ],
 };

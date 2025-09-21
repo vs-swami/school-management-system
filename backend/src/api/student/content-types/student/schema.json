@@ -108,6 +108,20 @@
       "relation": "oneToMany",
       "target": "api::exam-result.exam-result",
       "mappedBy": "student"
+    },
+    "addresses": {
+      "type": "component",
+      "repeatable": true,
+      "component": "common.address",
+      "max": 3,
+      "description": "Student addresses (current, permanent, etc.)"
+    },
+    "contacts": {
+      "type": "component",
+      "repeatable": true,
+      "component": "common.contact",
+      "max": 5,
+      "description": "Student contact numbers"
     }
   }
 }

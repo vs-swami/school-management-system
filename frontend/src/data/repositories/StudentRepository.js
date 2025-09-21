@@ -1,312 +1,286 @@
 import { apiClient } from '../api/config';
 
-// Optimized helper function for Strapi 5 response structure
-const transformStudentResponse = (studentData) => {
-  if (!studentData) return null;
+// Strapi 5: Return raw API data - all transformations handled by mappers
+export const StudentRepository = {
+  async findAll(filters = {}) {
+    try {
+      const params = {
+        populate: '*',
+        ...filters
+      };
 
-  // If it's a list of students, recursively transform each item
-  if (Array.isArray(studentData)) {
-    return studentData.map(item => transformStudentResponse(item));
-  }
-
-  // Helper function to normalize relations for Strapi 5
-  const normalizeRelation = (relation) => {
-    if (!relation) return null;
-    
-    // Strapi 5: relations can be direct objects or arrays
-    if (Array.isArray(relation)) {
-      return relation;
+      const response = await apiClient.get('/students', { params });
+      console.log('StudentRepository findAll - raw response:', response.data);
+      // Strapi v5 returns { data: [...], meta: {...} }
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      throw error;
     }
-    
-    // If it has .data, extract it (legacy support)
-    if (relation.data) {
-      return relation.data;
+  },
+
+  async findById(id) {
+    try {
+      const params = {
+        populate: '*'
+      };
+
+      const response = await apiClient.get(`/students/${id}`, { params });
+      console.log("Student Repository - DATA - ", response)
+      // Return the full response for the mapper to handle
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching student by ID:', error);
+      throw error;
     }
-    
-    // Already normalized (direct object)
-    return relation;
-  };
+  },
 
-  // Start with the student data (attributes are flattened in Strapi 5)
-  const transformed = {
-    id: studentData.id,
-    documentId: studentData.documentId, // Strapi 5 uses documentId
-    ...studentData,
-  };
+  async findWithDetails(id) {
+    return this.findById(id);
+  },
 
-  // Handle enrollments - in Strapi 5, this should be a direct array or object
-  if (transformed.enrollments) {
-    const enrollmentsData = normalizeRelation(transformed.enrollments);
-    
-    if (Array.isArray(enrollmentsData)) {
-      transformed.enrollments = enrollmentsData.map(enrollment => ({
-        id: enrollment.id,
-        documentId: enrollment.documentId,
-        ...enrollment,
-        class: normalizeRelation(enrollment.class),
-        academic_year: normalizeRelation(enrollment.academic_year),
-        administration: normalizeRelation(enrollment.administration),
-      }));
-    } else if (enrollmentsData) {
-      // Single enrollment object
-      const enrollment = enrollmentsData;
-      transformed.enrollments = [{
-        id: enrollment.id,
-        documentId: enrollment.documentId,
-        ...enrollment,
-        class: normalizeRelation(enrollment.class),
-        academic_year: normalizeRelation(enrollment.academic_year),
-        administration: normalizeRelation(enrollment.administration),
-      }];
-    } else {
-      transformed.enrollments = [];
+  async findByGrNo(grNo) {
+    try {
+      const params = {
+        filters: {
+          gr_no: {
+            $eq: grNo
+          }
+        },
+        populate: '*'
+      };
+
+      const response = await apiClient.get('/students', { params });
+      // Return the full response for mapper to handle
+      const students = response.data?.data || [];
+      return students[0] || null;
+    } catch (error) {
+      console.error('Error fetching student by GR number:', error);
+      throw error;
     }
+  },
 
-    // Further normalize administration.division if it exists
-    transformed.enrollments.forEach(enrollment => {
-      if (enrollment.administration?.division) {
-        enrollment.administration.division = normalizeRelation(
-          enrollment.administration.division
-        );
+  async create(studentData) {
+    try {
+      // Check if studentData has a 'data' wrapper
+      const data = studentData.data || studentData;
+
+      console.log('StudentRepository.create - Data being sent:', data);
+
+      // Process files if they exist
+      let files = null;
+      if (data.files) {
+        files = data.files;
+        delete data.files;
       }
-    });
-  } else {
-    transformed.enrollments = [];
-  }
 
-  // Process documents - Strapi 5 structure
-  if (transformed.documents) {
-    const documentsData = normalizeRelation(transformed.documents);
-    
-    if (Array.isArray(documentsData)) {
-      transformed.documents = documentsData.map(doc => {
-        // In Strapi 5, file relations are flatter
-        const fileUrl = doc.file?.url || doc.file?.data?.url || null;
-        return {
-          id: doc.id,
-          documentId: doc.documentId,
-          document_type: doc.document_type,
-          description: doc.description || null,
-          url: fileUrl,
-          file: doc.file
+      // If there are files, use FormData; otherwise, send JSON directly
+      if (files && Object.keys(files).length > 0) {
+        const formData = new FormData();
+
+        // Log the data being sent
+        console.log('StudentRepository.create - JSON data being appended to FormData:', JSON.stringify(data, null, 2));
+
+        // Append student data
+        formData.append('data', JSON.stringify(data));
+
+        // Append files
+        Object.keys(files).forEach(key => {
+          if (files[key]) {
+            formData.append(`files.${key}`, files[key]);
+          }
+        });
+
+        const config = {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
         };
-      });
-    } else {
-      transformed.documents = [];
-    }
-  } else {
-    transformed.documents = [];
-  }
 
-  // Process guardians
-  if (transformed.guardians) {
-    const guardiansData = normalizeRelation(transformed.guardians);
-    
-    if (Array.isArray(guardiansData)) {
-      transformed.guardians = guardiansData.map(guardian => ({
-        id: guardian.id,
-        documentId: guardian.documentId,
-        ...guardian
-      }));
-    } else {
-      transformed.guardians = [];
-    }
-  } else {
-    transformed.guardians = [];
-  }
+        const response = await apiClient.post('/students', formData, config);
+        return response.data;
+      } else {
+        // No files, send as JSON
+        console.log('StudentRepository.create - Sending as JSON:', JSON.stringify({ data }, null, 2));
 
-  // Process exam_results
-  if (transformed.exam_results) {
-    const examResultsData = normalizeRelation(transformed.exam_results);
-    
-    if (Array.isArray(examResultsData)) {
-      transformed.exam_results = examResultsData.map(result => ({
-        id: result.id,
-        documentId: result.documentId,
-        ...result
-      }));
-    } else {
-      transformed.exam_results = [];
-    }
-  } else {
-    transformed.exam_results = [];
-  }
-
-  // Process single relations (place, caste, house)
-  transformed.place = normalizeRelation(transformed.place);
-  transformed.caste = normalizeRelation(transformed.caste);
-  transformed.house = normalizeRelation(transformed.house);
-  
-  // Clean up legacy fields
-  delete transformed.student_photo;
-  delete transformed.student_photo_id;
-  delete transformed.guardian_photo;
-  delete transformed.guardian_photo_id;
-
-  return transformed;
-};
-
-// Updated Repository for Strapi 5
-export class StudentRepository {
-  static async findAll(params = {}) {
-    try {
-      // Reverting to string-based populate for findAll
-      const populateParams = {
-        populate: [
-          'guardians',
-          // 'place',
-          // 'caste',
-          // 'house',
-          // 'enrollments.academic_year',
-          // 'enrollments.class',
-          // 'enrollments.admission_type',
-          // 'enrollments.administration.division',
-          // 'documents.file',
-          // 'exam_results'
-        ].join(',')
-      };
-      
-      const response = await apiClient.get('/students', {
-        params: { ...params, ...populateParams }
-      });
-      
-      return transformStudentResponse(response.data.data);
+        const response = await apiClient.post('/students', { data });
+        return response.data;
+      }
     } catch (error) {
-      console.error('StudentRepository Error in findAll:', error);
+      console.error('Error creating student:', error);
+      console.error('Error response:', error.response?.data);
       throw error;
     }
-  }
+  },
 
-  static async findById(id) {
+  async update(id, studentData) {
     try {
-      const populateParams = {
-        populate: {
-          guardians: true,
-          place: true,
-          caste: true,
-          house: true,
-          enrollments: {
-            populate: {
-              academic_year: true,
-              class: true,
-              admission_type: true,
-              administration: {
-                populate: {
-                  division: true,
-                  seat_allocations: {
-                    populate: {
-                      bus: true,
-                      pickup_stop: {
-                        populate: {
-                          location: true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          documents: {
-            populate: {
-              file: true
-            }
-          },
-          exam_results: true
-        }
-      };
-      
-      const response = await apiClient.get(`/students/${id}`, { params: populateParams });
-      return transformStudentResponse(response.data.data);
-    } catch (error) {
-      console.error('StudentRepository Error in findById:', error);
-      throw error;
-    }
-  }
+      const formData = new FormData();
 
-  static async create(data) {
-    try {
-      const response = await apiClient.post('/students', { data }, {
+      // Check if studentData has a 'data' wrapper
+      const data = studentData.data || studentData;
+
+      // Process files if they exist
+      let files = null;
+      if (data.files) {
+        files = data.files;
+        delete data.files;
+      }
+
+      // Append student data
+      formData.append('data', JSON.stringify(data));
+
+      // Append files if they exist
+      if (files) {
+        Object.keys(files).forEach(key => {
+          if (files[key]) {
+            formData.append(`files.${key}`, files[key]);
+          }
+        });
+      }
+
+      const config = {
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'multipart/form-data',
         },
-      });
-      
-      return transformStudentResponse(response.data.data);
+      };
+
+      const response = await apiClient.put(`/students/${id}`, formData, config);
+      return response.data;
     } catch (error) {
-      console.error('StudentRepository Error in create:', error);
+      console.error('Error updating student:', error);
       throw error;
     }
-  }
+  },
 
-  static async update(id, data) {
-    try {
-      const response = await apiClient.put(`/students/${id}`, { data }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      return transformStudentResponse(response.data.data);
-    } catch (error) {
-      console.error('StudentRepository Error in update:', error);
-      throw error;
-    }
-  }
-
-  static async delete(id) {
+  async delete(id) {
     try {
       const response = await apiClient.delete(`/students/${id}`);
       return response.data;
     } catch (error) {
-      console.error('StudentRepository Error in delete:', error);
+      console.error('Error deleting student:', error);
       throw error;
     }
-  }
+  },
 
-  static async getStatistics() {
+  async findByClass(classId) {
     try {
-      const response = await apiClient.get('/students/statistics');
+      const params = {
+        filters: {
+          enrollments: {
+            class: {
+              id: { $eq: classId }
+            }
+          }
+        },
+        populate: '*'
+      };
+
+      const response = await apiClient.get('/students', { params });
       return response.data;
     } catch (error) {
-      console.error('StudentRepository Error in getStatistics:', error);
+      console.error('Error fetching students by class:', error);
       throw error;
     }
-  }
+  },
 
-  static async search(query) {
+  async findByDivision(divisionId) {
     try {
-      // Reverting to string-based populate for search
-      const searchParams = {
-        populate: [
-          'guardians',
-          'place',
-          'caste',
-          'house',
-          'enrollments.academic_year',
-          'enrollments.class',
-          'enrollments.admission_type',
-          'enrollments.administration.division',
-          'documents.file',
-          'exam_results'
-        ].join(','),
+      const params = {
+        filters: {
+          enrollments: {
+            administration: {
+              division: {
+                id: { $eq: divisionId }
+              }
+            }
+          }
+        },
+        populate: '*'
+      };
+
+      const response = await apiClient.get('/students', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching students by division:', error);
+      throw error;
+    }
+  },
+
+  async findByEnrollmentStatus(status) {
+    try {
+      const params = {
+        filters: {
+          enrollments: {
+            enrollment_status: { $eq: status }
+          }
+        },
+        populate: '*'
+      };
+
+      const response = await apiClient.get('/students', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching students by enrollment status:', error);
+      throw error;
+    }
+  },
+
+  async search(query) {
+    try {
+      const params = {
         filters: {
           $or: [
             { gr_full_name: { $containsi: query } },
+            { aadhaar_full_name: { $containsi: query } },
             { first_name: { $containsi: query } },
             { last_name: { $containsi: query } }
           ]
-        }
+        },
+        populate: '*'
       };
-      
-      const response = await apiClient.get('/students', {
-        params: searchParams
-      });
-      
-      return transformStudentResponse(response.data.data);
+
+      const response = await apiClient.get('/students', { params });
+      return response.data;
     } catch (error) {
-      console.error('StudentRepository Error in search:', error);
+      console.error('Error searching students:', error);
+      throw error;
+    }
+  },
+
+  async getStatistics() {
+    try {
+      // Get total students count
+      const totalResponse = await apiClient.get('/students', {
+        params: {
+          pagination: {
+            pageSize: 1
+          }
+        }
+      });
+
+      // Get active students
+      const activeResponse = await apiClient.get('/students', {
+        params: {
+          filters: {
+            enrollments: {
+              enrollment_status: { $eq: 'Enrolled' }
+            }
+          },
+          pagination: {
+            pageSize: 1
+          }
+        }
+      });
+
+      return {
+        total: totalResponse.data.meta?.pagination?.total || 0,
+        active: activeResponse.data.meta?.pagination?.total || 0,
+        inactive: 0
+      };
+    } catch (error) {
+      console.error('Error fetching student statistics:', error);
       throw error;
     }
   }
-}
+};

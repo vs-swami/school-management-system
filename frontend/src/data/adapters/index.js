@@ -1,0 +1,10 @@
+export { StudentRepositoryAdapter } from './StudentRepositoryAdapter';
+export { ClassRepositoryAdapter } from './ClassRepositoryAdapter';
+export { BusStopRepositoryAdapter } from './BusStopRepositoryAdapter';
+export { BusRouteRepositoryAdapter } from './BusRouteRepositoryAdapter';
+export { FeeRepositoryAdapter } from './FeeRepositoryAdapter';
+export { EnrollmentRepositoryAdapter } from './EnrollmentRepositoryAdapter';
+export { GuardianRepositoryAdapter } from './GuardianRepositoryAdapter';
+export { DivisionRepositoryAdapter } from './DivisionRepositoryAdapter';
+export { ExamResultRepositoryAdapter } from './ExamResultRepositoryAdapter';
+export { LocationRepositoryAdapter } from './LocationRepositoryAdapter';

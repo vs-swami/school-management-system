@@ -45,16 +45,16 @@ export const StudentList = () => {
 
     const total = students.length;
     const enrolled = students.filter(s =>
-      s.enrollments?.[0]?.enrollment_status === 'Enrolled'
+      s.enrollments?.[0]?.status === 'Enrolled' || s.currentEnrollment?.status === 'Enrolled'
     ).length;
     const pending = students.filter(s =>
-      s.enrollments?.[0]?.enrollment_status === 'Pending'
+      s.enrollments?.[0]?.status === 'Pending' || s.currentEnrollment?.status === 'Pending'
     ).length;
     const waiting = students.filter(s =>
-      s.enrollments?.[0]?.enrollment_status === 'Waiting'
+      s.enrollments?.[0]?.status === 'Waiting' || s.currentEnrollment?.status === 'Waiting'
     ).length;
     const rejected = students.filter(s =>
-      s.enrollments?.[0]?.enrollment_status === 'Rejected'
+      s.enrollments?.[0]?.status === 'Rejected' || s.currentEnrollment?.status === 'Rejected'
     ).length;
 
     // Calculate growth rate (mock data for demo)
@@ -98,7 +98,7 @@ export const StudentList = () => {
   };
 
   const handleDeleteStudent = async (student) => {
-    if (window.confirm(`Are you sure you want to delete ${student.gr_full_name}?`)) {
+    if (window.confirm(`Are you sure you want to delete ${student.fullName || student.first_name + ' ' + student.last_name}?`)) {
       const result = await deleteStudent(student.id);
       if (result.success) {
         fetchStudents(filters); // Refresh list after deletion

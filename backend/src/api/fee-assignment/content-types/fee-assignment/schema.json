@@ -26,6 +26,12 @@
       "relation": "manyToOne",
       "target": "api::bus-route.bus-route"
     },
+    "bus_stop": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus-stop.bus-stop",
+      "inversedBy": "fee_assignments"
+    },
     "student": {
       "type": "relation",
       "relation": "manyToOne",

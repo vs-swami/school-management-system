@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { StudentService } from '../services/StudentServices';
 import { ExamResultService } from '../services/ExamResultService';
-import { ClassThresholdService } from '../services/ClassThresholdService';
 
 const studentService = new StudentService();
 const examResultService = new ExamResultService();
@@ -25,15 +24,22 @@ export default create((set, get) => ({
   
   setFilters: (filters) => set({ filters }),
 
-  // Helper function to extract data correctly
+  // Helper function to extract data correctly for Strapi 5
   extractData: (result) => {
     // Handle different response formats
     if (result.data) {
-      // If data has a nested data property (Strapi paginated format)
-      if (result.data.data) {
+      // Strapi 5: Check for nested data structure { data: [...], meta: {} }
+      if (result.data.data && Array.isArray(result.data.data)) {
         return result.data.data;
       }
-      // If data is directly the array/object
+      // Direct data array
+      if (Array.isArray(result.data)) {
+        return result.data;
+      }
+      // If data is an object with data property
+      if (result.data && typeof result.data === 'object' && result.data.data) {
+        return result.data.data;
+      }
       return result.data;
     }
     // Fallback to result itself
@@ -43,12 +49,14 @@ export default create((set, get) => ({
   // Async Actions
   fetchStudents: async (filters = {}) => {
     set({ loading: true, error: null });
-    
+
     const result = await studentService.getAllStudents(filters);
-    
+
     if (result.success) {
-      const students = get().extractData(result);
-      
+      // The StudentService already returns the data in the correct format
+      const students = result.data;
+      console.log('useStudentStore.fetchStudents - Setting students:', students);
+
       set({
         students: Array.isArray(students) ? students : [],
         loading: false
@@ -63,11 +71,11 @@ export default create((set, get) => ({
 
   fetchStudentById: async (id) => {
     set({ loading: true, error: null });
-    
+
     const result = await studentService.getStudentById(id);
-    
+
     if (result.success) {
-      const student = get().extractData(result);
+      const student = result.data;
       set({
         selectedStudent: student,
         loading: false
@@ -260,10 +268,10 @@ export default create((set, get) => ({
   saveExamResults: async (studentId, examResultsData) => {
     set({ loading: true, error: null });
     try {
-      const result = await examResultService.createOrUpdateExamResults(studentId, examResultsData);
+      const result = await examResultService.bulkCreateOrUpdateExamResults(studentId, examResultsData);
       if (result.success) {
         // No longer refetch entire student, as this store action focuses only on exam results
-        // get().fetchStudentById(studentId); 
+        // get().fetchStudentById(studentId);
         set({ loading: false });
         return { success: true, data: result.data };
       } else {

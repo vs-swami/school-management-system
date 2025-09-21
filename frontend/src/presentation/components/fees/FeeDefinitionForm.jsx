@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import FeeInstallmentsEditor from './FeeInstallmentsEditor';
-import { FeeTypeRepository } from '../../../data/repositories/FeeTypeRepository';
-import { FeeDefinitionRepository } from '../../../data/repositories/FeeDefinitionRepository';
+import { useFeeTypeService, useFeeService } from '../../../application/hooks/useServices';
 
 export default function FeeDefinitionForm({ initial = null, onSaved, onCancel }) {
+  const feeTypeService = useFeeTypeService();
+  const feeService = useFeeService();
   const [types, setTypes] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -18,7 +19,9 @@ export default function FeeDefinitionForm({ initial = null, onSaved, onCancel })
   });
 
   useEffect(() => {
-    FeeTypeRepository.findAll({ sort: ['name:asc'] }).then(setTypes).catch(() => setTypes([]));
+    feeTypeService.findAll({ sort: ['name:asc'] }).then(result => {
+      if (result.success) setTypes(result.data);
+    }).catch(() => setTypes([]));
   }, []);
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }));
@@ -40,10 +43,12 @@ export default function FeeDefinitionForm({ initial = null, onSaved, onCancel })
           index: i.index || idx + 1,
         })),
       };
-      const saved = initial?.id
-        ? await FeeDefinitionRepository.update(initial.id, payload)
-        : await FeeDefinitionRepository.create(payload);
-      onSaved?.(saved);
+      const result = initial?.id
+        ? await feeService.updateDefinition(initial.id, payload)
+        : await feeService.createDefinition(payload);
+      if (result.success) {
+        onSaved?.(result.data);
+      }
     } catch (e) {
       console.error('FeeDefinition save error', e);
     } finally {

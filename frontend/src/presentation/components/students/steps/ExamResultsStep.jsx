@@ -36,16 +36,39 @@ const ExamResultsStep = ({
     }
 
     const totalExams = watchedExamResults.length;
-    const passed = watchedExamResults.filter(r => r.pass_fail).length;
+
+    // Use the correct field names from Strapi 5
+    const percentages = watchedExamResults.map(r => {
+      // Check for overall_percentage first (direct from API)
+      if (r.overall_percentage !== undefined && r.overall_percentage !== null) {
+        return parseFloat(r.overall_percentage);
+      }
+      // Fallback to calculating from total_obtained and total_maximum
+      if (r.total_maximum > 0) {
+        return ((r.total_obtained || 0) / r.total_maximum) * 100;
+      }
+      // Old field names fallback
+      if (r.total_marks > 0) {
+        return ((r.marks_obtained || 0) / r.total_marks) * 100;
+      }
+      return 0;
+    });
+
+    // Count passed exams based on grade or percentage
+    const passed = watchedExamResults.filter(r => {
+      const percentage = r.overall_percentage ||
+                        (r.total_maximum > 0 ? (r.total_obtained / r.total_maximum) * 100 : 0) ||
+                        (r.total_marks > 0 ? (r.marks_obtained / r.total_marks) * 100 : 0);
+      return percentage >= 40 || r.pass_fail === true || ['A', 'B', 'C'].includes(r.overall_grade);
+    }).length;
     const failed = totalExams - passed;
 
-    const percentages = watchedExamResults.map(r =>
-      r.total_marks > 0 ? (r.marks_obtained / r.total_marks) * 100 : 0
-    );
-
-    const averagePercentage = percentages.reduce((a, b) => a + b, 0) / totalExams;
-    const highestScore = Math.max(...percentages);
-    const lowestScore = Math.min(...percentages);
+    const validPercentages = percentages.filter(p => p > 0);
+    const averagePercentage = validPercentages.length > 0
+      ? validPercentages.reduce((a, b) => a + b, 0) / validPercentages.length
+      : 0;
+    const highestScore = validPercentages.length > 0 ? Math.max(...validPercentages) : 0;
+    const lowestScore = validPercentages.length > 0 ? Math.min(...validPercentages) : 0;
     const passRate = totalExams > 0 ? (passed / totalExams) * 100 : 0;
 
     return {

@@ -1,0 +1,43 @@
+{
+  "collectionName": "components_academic_subject_scores",
+  "info": {
+    "displayName": "Subject Score",
+    "icon": "graduation-cap",
+    "description": "Individual subject scores for exam results"
+  },
+  "attributes": {
+    "subject": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "marks_obtained": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "total_marks": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "grade": {
+      "type": "string",
+      "maxLength": 5
+    },
+    "pass_status": {
+      "type": "enumeration",
+      "enum": ["pass", "fail", "absent", "pending"],
+      "default": "pending"
+    },
+    "percentage": {
+      "type": "decimal",
+      "min": 0,
+      "max": 100
+    },
+    "remarks": {
+      "type": "text",
+      "maxLength": 500
+    }
+  }
+}
