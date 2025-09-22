@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route, Clock } from 'lucide-react';
+import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route, Clock, Shield, Eye } from 'lucide-react';
 import Alert from '../Alert';
 import FormField from '../FormField';
 import BusAllocationDebug from '../BusAllocationDebug';
 import RouteVisualization from '../../transport/RouteVisualization';
-import RoleBasedActions from './RoleBasedActions';
 import { useBusRouteService } from '../../../../application/hooks/useServices';
+import { useAuthStore } from '../../../../application/stores/useAuthStore';
 
 const AdministrationStep = ({
   isStudentRejected,
@@ -22,10 +22,21 @@ const AdministrationStep = ({
   selectedStudent,
   watch,
   setValue,
-  onEnrollStudent,
-  onUpdateToWaiting,
   loading = false
 }) => {
+  // Get user role from auth store
+  const { user } = useAuthStore();
+  const userRole = user?.role?.type || user?.role?.name || user?.role || 'public';
+  const userEmail = user?.email || '';
+  const username = user?.username || '';
+
+  // Define roles
+  const isPrincipal = ['principal', 'administrator', 'admin'].includes(userRole.toLowerCase()) ||
+                      userEmail.includes('principal') || username.includes('principal');
+  const isClerk = ['admission-clerk', 'admission_clerk', 'clerk', 'admissions'].includes(userRole.toLowerCase()) ||
+                   userEmail.includes('clerk') || username.includes('clerk');
+  const isReadOnly = !isPrincipal && !isClerk;
+
   // Derive current administration info from selectedStudent if available (must be first)
   const currentAdmin = selectedStudent?.enrollments?.[0]?.administration;
   const currentDivisionName = typeof currentAdmin?.division === 'object' && (currentAdmin?.division?.divisionName || currentAdmin?.division?.name)
@@ -167,11 +178,23 @@ const AdministrationStep = ({
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-2xl font-bold flex items-center gap-2">
-              <Activity className="h-7 w-7" />
+              {isPrincipal ? (
+                <Shield className="h-7 w-7" />
+              ) : isClerk ? (
+                <Activity className="h-7 w-7" />
+              ) : (
+                <Eye className="h-7 w-7" />
+              )}
               Administration & Enrollment
             </h4>
             <p className="text-indigo-100 mt-2">
-              Configure division assignment and bus allocation for the student
+              {isPrincipal ? (
+                'Review and approve division assignments and bus allocations'
+              ) : isClerk ? (
+                'Configure division assignment and bus allocation for the student'
+              ) : (
+                'View student administration details (read-only)'
+              )}
             </p>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
@@ -183,24 +206,7 @@ const AdministrationStep = ({
         </div>
       </div>
 
-      {/* Role-based Actions for Approval Workflow */}
-      <RoleBasedActions
-        student={selectedStudent}
-        currentStatus={selectedStudent?.enrollments?.[0]?.enrollmentStatus}
-        onStatusChange={(newStatus) => {
-          if (setValue) {
-            setValue('enrollments.0.enrollment_status', newStatus);
-            // Handle form submission after status change
-            if (newStatus === 'Rejected') {
-              // You might want to handle rejection differently
-              console.log('Student rejected by Principal');
-            }
-          }
-        }}
-        onEnrollStudent={onEnrollStudent}
-        onUpdateToWaiting={onUpdateToWaiting}
-        loading={loading}
-      />
+      {/* Note: Enrollment actions are handled in the Exam Results step for better UX flow */}
 
       {(currentDivisionName || currentSeatInfo) && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -877,60 +883,20 @@ const AdministrationStep = ({
               const hasDivisionsAvailable = classCapacityData?.divisions && classCapacityData.divisions.length > 0;
 
               if (hasSelectedDivision && hasSelectedStop) {
-                // Both division and stop selected - show enroll button
+                // Both division and stop selected - show ready status
                 return (
-                  <button
-                    type="button"
-                    className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
-                    onClick={async () => {
-                      if (onEnrollStudent) {
-                        await onEnrollStudent({
-                          divisionId: selectedDivisionId,
-                          pickupStopId: pickupStopId || formPickupStop || currentSeatInfo?.pickup_stop_id
-                        });
-                      }
-                    }}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span className="flex items-center space-x-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                        </svg>
-                        <span>Enrolling Student...</span>
-                      </span>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-5 w-5" />
-                        <span>Confirm Enrollment</span>
-                        <ChevronRight className="h-5 w-5" />
-                      </>
-                    )}
-                  </button>
+                  <div className="w-full bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 py-4 px-6 rounded-xl flex items-center justify-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="text-green-800 font-medium">Division and bus allocation configured</span>
+                  </div>
                 );
               } else if (!hasDivisionsAvailable && classCapacityData?.summary) {
-                // No divisions available - show waiting status button
+                // No divisions available - show waiting status message
                 return (
-                  <button
-                    type="button"
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
-                    onClick={async () => {
-                      if (onUpdateToWaiting) {
-                        await onUpdateToWaiting();
-                      }
-                    }}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <span>🔄 Updating...</span>
-                    ) : (
-                      <>
-                        <Clock className="h-5 w-5" />
-                        <span>Add to Waiting List</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="w-full bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 py-4 px-6 rounded-xl flex items-center justify-center gap-3">
+                    <Clock className="h-5 w-5 text-yellow-600" />
+                    <span className="text-yellow-800 font-medium">No divisions available - Class is at full capacity</span>
+                  </div>
                 );
               } else {
                 // Incomplete selection - show what's missing

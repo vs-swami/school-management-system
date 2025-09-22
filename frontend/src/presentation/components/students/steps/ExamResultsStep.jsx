@@ -13,6 +13,7 @@ const ExamResultsStep = ({
   onApproveNextStage,
   onRejectStudent,
   localStudentId,
+  enrollmentStatus,
   isExamResultFormModalOpen,
   onCloseExamResultModal,
   editingExamResult,
@@ -255,33 +256,59 @@ const ExamResultsStep = ({
             <Shield className="h-5 w-5 text-purple-600" />
             <h4 className="font-semibold text-purple-900">Principal Review</h4>
           </div>
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-center sm:text-left">
-              <p className="text-sm font-medium text-purple-800">Review Decision</p>
-              <p className="text-xs text-purple-600 mt-1">Based on the exam results, make your decision</p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onRejectStudent}
-                className="px-6 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg border-2 border-red-300 transition-all duration-200 flex items-center gap-2 hover:scale-105"
-              >
-                <XCircle className="h-5 w-5" />
-                Reject Student
-              </button>
-              <button
-                type="button"
-                onClick={() => onApproveNextStage(localStudentId)}
-                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-              >
+
+          {/* Show appropriate content based on enrollment status */}
+          {enrollmentStatus === 'Enrolled' ? (
+            <div className="text-center py-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full text-green-700 font-medium">
                 <CheckCircle className="h-5 w-5" />
-                Approve for Next Stage
-              </button>
+                Student Already Enrolled
+              </div>
+              <p className="text-sm text-purple-700 mt-3">
+                This student has been successfully enrolled. You can review their exam results above.
+              </p>
             </div>
-          </div>
-          <p className="text-xs text-purple-600 mt-3">
-            Your decision will determine the student's admission status
-          </p>
+          ) : enrollmentStatus === 'Rejected' ? (
+            <div className="text-center py-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 rounded-full text-red-700 font-medium">
+                <XCircle className="h-5 w-5" />
+                Application Rejected
+              </div>
+              <p className="text-sm text-purple-700 mt-3">
+                This application has been rejected. Contact admissions to reconsider if needed.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="text-center sm:text-left">
+                  <p className="text-sm font-medium text-purple-800">Review Decision</p>
+                  <p className="text-xs text-purple-600 mt-1">Based on the exam results, make your decision</p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={onRejectStudent}
+                    className="px-6 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg border-2 border-red-300 transition-all duration-200 flex items-center gap-2 hover:scale-105"
+                  >
+                    <XCircle className="h-5 w-5" />
+                    Reject Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onApproveNextStage(localStudentId)}
+                    className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                  >
+                    <CheckCircle className="h-5 w-5" />
+                    Approve Student Enrollment
+                  </button>
+                </div>
+              </div>
+              <p className="text-xs text-purple-600 mt-3">
+                Your decision will determine the student's admission status
+              </p>
+            </>
+          )}
         </div>
       )}
 

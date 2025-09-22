@@ -119,6 +119,7 @@ const StudentPage = ({ mode = 'create' }) => {
 
   const watchedExamResults = watch('exam_results', []);
   const pickupStopId = watch('enrollments.0.administration.seat_allocations.0.pickup_stop');
+  const enrollmentStatus = watch('enrollments.0.enrollment_status');
 
   // Step validation and completion tracking
   const getCompletedSteps = () => {
@@ -381,6 +382,7 @@ const StudentPage = ({ mode = 'create' }) => {
           <ExamResultsStep
             watchedExamResults={watchedExamResults}
             localStudentId={localStudentId}
+            enrollmentStatus={enrollmentStatus}
             academicYears={academicYears}
             classes={classes}
             control={control}
@@ -475,9 +477,9 @@ const StudentPage = ({ mode = 'create' }) => {
     }
 
     if (currentStep === STEPS.SUMMARY) {
-      if (loading) return mode === 'edit' ? 'Updating...' : 'Creating...';
-      if (isSuccess) return mode === 'edit' ? 'Updated!' : 'Created!';
-      return mode === 'edit' ? 'Update Student' : 'Create Student';
+      if (loading) return 'Submitting...';
+      if (isSuccess) return 'Submitted!';
+      return 'Submit';
     }
 
     if (currentStep === STEPS.EXAM_RESULTS) return 'Continue to Administration';
@@ -521,46 +523,61 @@ const StudentPage = ({ mode = 'create' }) => {
             {renderStepContent()}
           </ErrorBoundary>
 
-          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-            {currentStep > 0 && (
-              <button type="button" onClick={handlePreviousStep} className="btn btn-secondary" disabled={loading || isSuccess}>
-                Previous
+          {/* Hide navigation buttons for principal on Exam Results step when student is not yet enrolled/rejected */}
+          {!(isPrincipal && currentStep === STEPS.EXAM_RESULTS && enrollmentStatus !== 'Enrolled' && enrollmentStatus !== 'Rejected') && (
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              {currentStep > 0 && (
+                <button type="button" onClick={handlePreviousStep} className="btn btn-secondary" disabled={loading || isSuccess}>
+                  Previous
+                </button>
+              )}
+              <button type="button" onClick={resetForm} className="btn btn-secondary" disabled={loading || isSuccess}>
+                Cancel
               </button>
-            )}
-            <button type="button" onClick={resetForm} className="btn btn-secondary" disabled={loading || isSuccess}>
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                // For clerks, save at Exam Results step and don't proceed further
-                if (isClerk && currentStep === STEPS.EXAM_RESULTS) {
-                  handleSubmit();
-                } else if (currentStep === STEPS.SUMMARY) {
-                  handleSubmit();
-                } else {
-                  // Check if the next step is accessible before proceeding
-                  const nextStep = currentStep + 1;
-                  if (!isStepAccessible(nextStep)) {
-                    // If next step is not accessible, save current progress
+              <button
+                type="button"
+                onClick={() => {
+                  // For clerks, save at Exam Results step and don't proceed further
+                  if (isClerk && currentStep === STEPS.EXAM_RESULTS) {
+                    handleSubmit();
+                  } else if (currentStep === STEPS.SUMMARY) {
                     handleSubmit();
                   } else {
-                    handleNextStep();
+                    // Check if the next step is accessible before proceeding
+                    const nextStep = currentStep + 1;
+                    if (!isStepAccessible(nextStep)) {
+                      // If next step is not accessible, save current progress
+                      handleSubmit();
+                    } else {
+                      handleNextStep();
+                    }
                   }
-                }
-              }}
-              className={`btn btn-primary flex items-center gap-2 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-              disabled={loading}
-            >
-              {loading && (
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                </svg>
-              )}
-              {getButtonText()}
-            </button>
-          </div>
+                }}
+                className={`btn btn-primary flex items-center gap-2 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                disabled={loading}
+              >
+                {loading && (
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                  </svg>
+                )}
+                {getButtonText()}
+              </button>
+            </div>
+          )}
+
+          {/* For principal on Exam Results step with pending enrollment, show helpful message */}
+          {isPrincipal && currentStep === STEPS.EXAM_RESULTS && enrollmentStatus !== 'Enrolled' && enrollmentStatus !== 'Rejected' && (
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button type="button" onClick={resetForm} className="btn btn-secondary" disabled={loading || isSuccess}>
+                Cancel
+              </button>
+              <div className="text-sm text-gray-600 py-2 px-4 bg-purple-50 rounded-lg">
+                Use the enrollment action buttons above to approve or reject the student
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>
