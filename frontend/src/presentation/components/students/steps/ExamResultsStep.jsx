@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { PlusCircle, Trophy, TrendingUp, Award, BookOpen, CheckCircle, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { PlusCircle, Trophy, TrendingUp, Award, BookOpen, CheckCircle, XCircle, AlertCircle, BarChart3, Shield, UserCheck } from 'lucide-react';
 import ExamResultForm from '../ExamResultForm';
 import ExamResultList from '../ExamResultList';
 import Modal from '../../common/Modal';
+import { useAuthStore } from '../../../../application/stores/useAuthStore';
 
 const ExamResultsStep = ({
   watchedExamResults,
@@ -21,6 +22,19 @@ const ExamResultsStep = ({
   register,
   errors
 }) => {
+  // Get user role from auth store
+  const { user } = useAuthStore();
+  const userRole = user?.role?.type || user?.role?.name || user?.role || 'public';
+  const username = user?.username || user?.email || 'User';
+  const userEmail = user?.email || '';
+
+  // Define roles - check role object first, then fallback to email/username patterns
+  const isPrincipal = ['principal', 'administrator', 'admin'].includes(userRole.toLowerCase()) ||
+                      userEmail.includes('principal') || username.includes('principal');
+  const isClerk = ['admission-clerk', 'admission_clerk', 'clerk', 'admissions'].includes(userRole.toLowerCase()) ||
+                   userEmail.includes('clerk') || username.includes('clerk');
+  const isReadOnly = !isPrincipal && !isClerk;
+
   // Calculate statistics from exam results
   const stats = useMemo(() => {
     if (!watchedExamResults || watchedExamResults.length === 0) {
@@ -192,18 +206,28 @@ const ExamResultsStep = ({
       {/* Add Button */}
       <div className="flex items-center justify-between">
         <h5 className="text-lg font-bold text-gray-800">Exam Results</h5>
-        <button
-          type="button"
-          onClick={onAddExamResult}
-          className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-        >
-          <PlusCircle className="h-5 w-5" />
-          Add Exam Result
-        </button>
+        {(isPrincipal || isClerk) && (
+          <button
+            type="button"
+            onClick={onAddExamResult}
+            className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            <PlusCircle className="h-5 w-5" />
+            Add Exam Result
+          </button>
+        )}
+        {isReadOnly && (
+          <span className="text-sm text-gray-500 italic">View-only mode</span>
+        )}
       </div>
 
       {/* Exam Results List */}
-      <ExamResultList examResults={watchedExamResults} onEdit={onEditExamResult} onDelete={onDeleteExamResult} />
+      <ExamResultList
+        examResults={watchedExamResults}
+        onEdit={isReadOnly ? null : onEditExamResult}
+        onDelete={isReadOnly ? null : onDeleteExamResult}
+        isReadOnly={isReadOnly}
+      />
 
     <Modal
       isOpen={isExamResultFormModalOpen}
@@ -224,33 +248,83 @@ const ExamResultsStep = ({
       />
     </Modal>
 
-      {/* Action Buttons Section */}
-      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-center sm:text-left">
-            <p className="text-sm font-medium text-gray-600">Review Decision</p>
-            <p className="text-xs text-gray-500 mt-1">Based on the exam results, make your decision</p>
+      {/* Role-Based Action Section */}
+      {isPrincipal && (
+        <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 border-2 border-purple-200">
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="h-5 w-5 text-purple-600" />
+            <h4 className="font-semibold text-purple-900">Principal Review</h4>
           </div>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onRejectStudent}
-              className="px-6 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg border-2 border-red-300 transition-all duration-200 flex items-center gap-2 hover:scale-105"
-            >
-              <XCircle className="h-5 w-5" />
-              Reject Student
-            </button>
-            <button
-              type="button"
-              onClick={() => onApproveNextStage(localStudentId)}
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-            >
-              <CheckCircle className="h-5 w-5" />
-              Approve for Next Stage
-            </button>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-center sm:text-left">
+              <p className="text-sm font-medium text-purple-800">Review Decision</p>
+              <p className="text-xs text-purple-600 mt-1">Based on the exam results, make your decision</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onRejectStudent}
+                className="px-6 py-3 bg-red-100 hover:bg-red-200 text-red-700 font-semibold rounded-lg border-2 border-red-300 transition-all duration-200 flex items-center gap-2 hover:scale-105"
+              >
+                <XCircle className="h-5 w-5" />
+                Reject Student
+              </button>
+              <button
+                type="button"
+                onClick={() => onApproveNextStage(localStudentId)}
+                className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+              >
+                <CheckCircle className="h-5 w-5" />
+                Approve for Next Stage
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-purple-600 mt-3">
+            Your decision will determine the student's admission status
+          </p>
+        </div>
+      )}
+
+      {isClerk && (
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
+          <div className="flex items-center gap-2 mb-3">
+            <UserCheck className="h-5 w-5 text-blue-600" />
+            <h4 className="font-semibold text-blue-900">Clerk Review</h4>
+          </div>
+          <div className="text-center sm:text-left">
+            <p className="text-sm font-medium text-blue-800">Exam Results Recorded</p>
+            <p className="text-xs text-blue-600 mt-1">
+              {watchedExamResults && watchedExamResults.length > 0
+                ? `${watchedExamResults.length} exam result(s) have been recorded. The application is ready for principal review.`
+                : 'Please add exam results before proceeding to the next step.'}
+            </p>
+            {stats.averagePercentage > 0 && (
+              <div className="mt-3 p-3 bg-white/50 rounded-lg">
+                <p className="text-xs font-medium text-blue-700">
+                  Average Score: {stats.averagePercentage}% | Pass Rate: {stats.passRate}%
+                </p>
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-blue-500 mt-3">
+            Only principals can make final admission decisions
+          </p>
+        </div>
+      )}
+
+      {isReadOnly && (
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border-2 border-gray-200">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="text-sm font-medium text-gray-700">View-Only Access</p>
+              <p className="text-xs text-gray-500 mt-1">
+                You can view exam results but cannot make changes. Contact an authorized user for modifications.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

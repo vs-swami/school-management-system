@@ -37,12 +37,24 @@ export const useAuthStore = create(
           if (token && userData) {
             // Verify token is still valid with Strapi
             const isValid = await get().verifyToken(token);
-            
+
             if (isValid) {
+              // Try to fetch user with role if not present
+              const parsedUser = JSON.parse(userData);
+              let finalUser = parsedUser;
+
+              if (!parsedUser.role) {
+                const userWithRole = await get().fetchUserWithRole(token);
+                if (userWithRole) {
+                  finalUser = userWithRole;
+                  localStorage.setItem('userData', JSON.stringify(finalUser));
+                }
+              }
+
               set({
                 isAuthenticated: true,
                 token: token,
-                user: JSON.parse(userData)
+                user: finalUser
               });
               console.log('Auth initialized successfully with stored token');
             } else {
@@ -117,13 +129,17 @@ export const useAuthStore = create(
             userEmail: data.user?.email
           });
 
+          // Fetch user data with role populated
+          const userWithRole = await get().fetchUserWithRole(data.jwt);
+          const finalUser = userWithRole || data.user;
+
           // Store auth data
           localStorage.setItem('authToken', data.jwt);
-          localStorage.setItem('userData', JSON.stringify(data.user));
+          localStorage.setItem('userData', JSON.stringify(finalUser));
 
           set({
             isAuthenticated: true,
-            user: data.user,
+            user: finalUser,
             token: data.jwt,
             error: null
           });
@@ -163,12 +179,36 @@ export const useAuthStore = create(
         });
       },
 
+      // Fetch user with role populated
+      fetchUserWithRole: async (token) => {
+        try {
+          const apiUrl = process.env.REACT_APP_STRAPI_URL || 'http://localhost:1337';
+          console.log('Fetching user with role:', `${apiUrl}/api/users/me?populate=role`);
+
+          const response = await fetch(`${apiUrl}/api/users/me?populate=role`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const userData = await response.json();
+            console.log('Fetched user with role:', userData);
+            return userData;
+          }
+          return null;
+        } catch (error) {
+          console.error('Failed to fetch user with role:', error);
+          return null;
+        }
+      },
+
       // Verify token with Strapi
       verifyToken: async (token) => {
         try {
           const apiUrl = process.env.REACT_APP_STRAPI_URL || 'http://localhost:1337';
           console.log('Verifying token with:', `${apiUrl}/api/users/me`);
-          
+
           const response = await fetch(`${apiUrl}/api/users/me`, {
             headers: {
               'Authorization': `Bearer ${token}`

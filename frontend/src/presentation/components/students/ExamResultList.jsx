@@ -1,7 +1,7 @@
 import React from 'react';
 import { Edit, Trash2, Award, Calendar, BookOpen, Trophy, CheckCircle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
-const ExamResultList = ({ examResults, onEdit, onDelete }) => {
+const ExamResultList = ({ examResults, onEdit, onDelete, isReadOnly = false }) => {
   const [expandedResults, setExpandedResults] = React.useState({});
 
   console.log('ExamResultList - Rendering exam results:', examResults);
@@ -170,7 +170,7 @@ const ExamResultList = ({ examResults, onEdit, onDelete }) => {
                       }
                     </button>
                   )}
-                  {onEdit && (
+                  {!isReadOnly && onEdit && (
                     <button
                       type="button"
                       onClick={() => onEdit(result)}
@@ -180,7 +180,7 @@ const ExamResultList = ({ examResults, onEdit, onDelete }) => {
                       <Edit className="h-4 w-4" />
                     </button>
                   )}
-                  {onDelete && (
+                  {!isReadOnly && onDelete && (
                     <button
                       type="button"
                       onClick={() => onDelete(result.id)}

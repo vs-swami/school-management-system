@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 import useStudentStore from '../../application/stores/useStudentStore';
+import { useAuthStore } from '../../application/stores/useAuthStore';
 import { useAcademicYearService, useDivisionService, useClassService, useBusStopService, useLocationService } from '../../application/contexts/ServiceContext';
 import { extractGuardianData, extractEnrollmentData, extractExamResultsData } from '../../application/utils/studentFormUtils';
 import { STUDENT_CONFIG, ERROR_MESSAGES } from '../../shared/constants/app';
@@ -134,6 +135,7 @@ const formatInitialData = (initialData, mode) => {
  */
 export const useStudentForm = (mode = 'create') => {
   const { createStudent, updateStudent, loading, setLoading, fetchStudentById, selectedStudent } = useStudentStore();
+  const { user } = useAuthStore();
   const academicYearService = useAcademicYearService();
   const divisionService = useDivisionService();
   const classService = useClassService();
@@ -152,6 +154,10 @@ export const useStudentForm = (mode = 'create') => {
   const [selectedPickupLocationId, setSelectedPickupLocationId] = useState('');
   const { id } = useParams();
   const [localStudentId, setLocalStudentId] = useState(id);
+
+  // Determine if user is a clerk
+  const userRole = user?.role?.type || user?.role?.name || user?.role || 'public';
+  const isClerk = userRole === 'clerk' || user?.email?.includes('clerk') || user?.username?.includes('clerk');
 
   const formMethods = useForm({
     defaultValues: formatInitialData(null, 'create'),
@@ -274,7 +280,26 @@ export const useStudentForm = (mode = 'create') => {
             console.log('useStudentForm - Fetched student data for form population:', studentData);
             if (studentData) {
               const formattedData = formatInitialData(studentData, mode);
+              console.log('🔍 Formatted data before reset:', formattedData);
+              console.log('🔍 Guardian contact_numbers:', formattedData.guardians?.[0]?.contact_numbers);
               reset(formattedData);
+
+              // Manually set nested array fields for guardians' contact_numbers
+              // React Hook Form's reset doesn't properly handle nested arrays with useFieldArray
+              if (formattedData.guardians && formattedData.guardians.length > 0) {
+                formattedData.guardians.forEach((guardian, guardianIndex) => {
+                  if (guardian.contact_numbers && guardian.contact_numbers.length > 0) {
+                    guardian.contact_numbers.forEach((contact, contactIndex) => {
+                      setValue(`guardians.${guardianIndex}.contact_numbers.${contactIndex}`, contact);
+                    });
+                  }
+                  if (guardian.addresses && guardian.addresses.length > 0) {
+                    guardian.addresses.forEach((address, addressIndex) => {
+                      setValue(`guardians.${guardianIndex}.addresses.${addressIndex}`, address);
+                    });
+                  }
+                });
+              }
 
               // Extract and set the pickup location if it exists
               const administration = studentData.enrollments?.[0]?.administration;
@@ -338,13 +363,22 @@ export const useStudentForm = (mode = 'create') => {
           ? formData.enrollments[0]
           : formData.enrollments;
 
+        // Prepare enrollment data, excluding administration if user is a clerk
+        let processedEnrollmentData = enrollmentData ? {
+          ...enrollmentData,
+          enrollment_status: enrollmentData.enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY
+        } : null;
+
+        // Remove administration data if user is a clerk
+        if (isClerk && processedEnrollmentData) {
+          delete processedEnrollmentData.administration;
+          console.log('Clerk user detected - removing administration data from submission');
+        }
+
         const studentData = {
           ...formData,
-          // Ensure enrollment status is set and enrollments is always an array
-          enrollments: enrollmentData ? [{
-            ...enrollmentData,
-            enrollment_status: enrollmentData.enrollment_status || STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY
-          }] : []
+          // Ensure enrollments is always an array
+          enrollments: processedEnrollmentData ? [processedEnrollmentData] : []
         };
 
         let result;
@@ -374,10 +408,17 @@ export const useStudentForm = (mode = 'create') => {
             setLoading(false);
           }, 500);
         } else {
-          // Handle error object properly
-          const errorMessage = typeof result.error === 'string'
+          // Handle validation errors with details
+          let errorMessage = typeof result.error === 'string'
             ? result.error
             : result.error?.message || 'Failed to save student information';
+
+          if (result.details && Array.isArray(result.details) && result.details.length > 0) {
+            // Format validation errors for display
+            const errorList = result.details.map(err => err.message || err).join(', ');
+            errorMessage = `Validation failed: ${errorList}`;
+          }
+
           setApiError(errorMessage);
           setLoading(false);
         }
@@ -424,7 +465,17 @@ export const useStudentForm = (mode = 'create') => {
         return;
       }
 
-      const result = await updateStudent(localStudentId, allFormData);
+      // Process form data to remove administration if user is a clerk
+      let processedFormData = { ...allFormData };
+      if (isClerk && processedFormData.enrollments && processedFormData.enrollments.length > 0) {
+        processedFormData.enrollments = processedFormData.enrollments.map(enrollment => {
+          const { administration, ...enrollmentWithoutAdmin } = enrollment;
+          console.log('Clerk user detected - removing administration data from final submission');
+          return enrollmentWithoutAdmin;
+        });
+      }
+
+      const result = await updateStudent(localStudentId, processedFormData);
 
       if (result.success) {
         setIsSuccess(true);
@@ -434,10 +485,17 @@ export const useStudentForm = (mode = 'create') => {
           // For now, just showing success message
         }, 2000);
       } else {
-        // Handle error object properly
-        const errorMessage = typeof result.error === 'string'
+        // Handle validation errors with details
+        let errorMessage = typeof result.error === 'string'
           ? result.error
           : result.error?.message || 'An error occurred';
+
+        if (result.details && Array.isArray(result.details) && result.details.length > 0) {
+          // Format validation errors for display
+          const errorList = result.details.map(err => err.message || err).join(', ');
+          errorMessage = `Validation failed: ${errorList}`;
+        }
+
         setApiError(errorMessage);
       }
     } catch (error) {

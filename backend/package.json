@@ -6,7 +6,9 @@
     "develop": "strapi develop",
     "start": "strapi start",
     "build": "strapi build",
-    "strapi": "strapi"
+    "strapi": "strapi",
+    "seed:users": "node seed-users.js",
+    "setup:permissions": "node setup-permissions.js"
   },
   "dependencies": {
     "@strapi/plugin-documentation": "^5.23.6",

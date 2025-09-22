@@ -99,7 +99,7 @@ export class StudentService {
           details: validation.errors,
         };
       }
-
+      console.log('Updating student with data:', data);
       const student = await this.repository.update(id, data); // Using adapter instead of repository directly
       
       //await this.auditService.log('STUDENT_UPDATED', {

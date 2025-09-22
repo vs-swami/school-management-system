@@ -142,10 +142,10 @@ const GuardianItem = ({ guardianIndex, control, register, errors, onRemove, show
                   <button
                     type="button"
                     onClick={() => appendContact({
-                      contact_type: 'mobile',
+                      type: 'mobile',
                       number: '',
                       is_primary: false,
-                      is_whatsapp_enabled: false,
+                      is_whatsapp: false,
                       label: ''
                     })}
                     className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
@@ -163,10 +163,10 @@ const GuardianItem = ({ guardianIndex, control, register, errors, onRemove, show
                   <FormField
                     label="Contact Type"
                     type="select"
-                    register={register(`guardians.${guardianIndex}.contact_numbers.${contactIndex}.contact_type`, {
+                    register={register(`guardians.${guardianIndex}.contact_numbers.${contactIndex}.type`, {
                       required: 'Contact type is required'
                     })}
-                    errors={errors.guardians?.[guardianIndex]?.contact_numbers?.[contactIndex]?.contact_type}
+                    errors={errors.guardians?.[guardianIndex]?.contact_numbers?.[contactIndex]?.type}
                     options={[
                       { value: 'mobile', label: 'Mobile' },
                       { value: 'landline', label: 'Landline' },
@@ -220,7 +220,7 @@ const GuardianItem = ({ guardianIndex, control, register, errors, onRemove, show
                     <div className="flex items-center">
                       <input
                         type="checkbox"
-                        {...register(`guardians.${guardianIndex}.contact_numbers.${contactIndex}.is_whatsapp_enabled`)}
+                        {...register(`guardians.${guardianIndex}.contact_numbers.${contactIndex}.is_whatsapp`)}
                         id={`contact_whatsapp_${guardianIndex}_${contactIndex}`}
                         className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                       />

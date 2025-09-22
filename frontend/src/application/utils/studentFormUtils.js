@@ -7,16 +7,85 @@ export const extractGuardianData = (guardians) => {
 
   // Strapi 5 returns direct arrays without .data wrapper
   if (Array.isArray(guardians) && guardians.length > 0) {
-    return guardians.map(guardian => ({
-      id: guardian.id,
-      // Handle both domain model (firstName/lastName) and API fields (full_name)
-      full_name: guardian.fullName || guardian.full_name ||
-                 `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || '',
-      relation: guardian.relationship || guardian.relation || '',
-      mobile: guardian.phone || guardian.mobile || '',
-      occupation: guardian.occupation || '',
-      primary_contact: guardian.isPrimary || guardian.primary_contact || false,
-    }));
+    return guardians.map(guardian => {
+      console.log('Extracting guardian data:', guardian);
+      // Extract contact numbers array if it exists
+      let contactNumbers = [];
+
+      if (guardian.contact_numbers && Array.isArray(guardian.contact_numbers)) {
+        contactNumbers = guardian.contact_numbers.map(contact => ({
+          id: contact.id,
+          type: contact.type || 'Mobile',
+          number: contact.number || '',
+          label: contact.label || '',
+          is_primary: contact.is_primary || false,
+          is_whatsapp: contact.is_whatsapp || false
+        }));
+      } else if (guardian.contactNumbers && Array.isArray(guardian.contactNumbers)) {
+        // Handle camelCase version
+        contactNumbers = guardian.contactNumbers.map(contact => ({
+          id: contact.id,
+          type: contact.type || 'Mobile',
+          number: contact.number || '',
+          label: contact.label || '',
+          is_primary: contact.isPrimary || contact.is_primary || false,
+          is_whatsapp: contact.isWhatsapp || contact.is_whatsapp || false
+        }));
+      } else if (guardian.mobile || guardian.phone) {
+        // Fallback: Create a contact number from legacy mobile/phone field
+        contactNumbers = [{
+          type: 'Mobile',
+          number: guardian.mobile || guardian.phone || '',
+          label: 'Primary Mobile',
+          is_primary: true,
+          is_whatsapp: false
+        }];
+      }
+
+      // Extract addresses array if it exists
+      let addresses = [];
+      if (guardian.addresses && Array.isArray(guardian.addresses)) {
+        addresses = guardian.addresses.map(addr => ({
+          id: addr.id,
+          type: addr.type || 'Home',
+          address_line_1: addr.address_line_1 || addr.addressLine1 || '',
+          address_line_2: addr.address_line_2 || addr.addressLine2 || '',
+          city: addr.city || '',
+          state: addr.state || '',
+          postal_code: addr.postal_code || addr.postalCode || '',
+          country: addr.country || 'India',
+          is_primary: addr.is_primary || addr.isPrimary || false
+        }));
+      }
+
+      const guardianData = {
+        id: guardian.id,
+        // Handle both domain model (firstName/lastName) and API fields (full_name)
+        full_name: guardian.fullName || guardian.full_name ||
+                   `${guardian.firstName || ''} ${guardian.lastName || ''}`.trim() || '',
+        relation: guardian.relationship || guardian.relation || '',
+        occupation: guardian.occupation || '',
+        primary_contact: guardian.isPrimary || guardian.primary_contact || false,
+        email: guardian.email || '',
+        // Include the structured contact numbers and addresses
+        contact_numbers: contactNumbers.length > 0 ? contactNumbers : [{
+          type: 'mobile',
+          number: '',
+          label: '',
+          is_primary: false,
+          is_whatsapp: false
+        }],
+        addresses: addresses.length > 0 ? addresses : [],
+        // Keep legacy mobile field for backward compatibility
+        mobile: contactNumbers.length > 0 ? contactNumbers[0].number : ''
+      };
+
+      console.log('Extracted contact numbers for guardian:', contactNumbers);
+      console.log('Final guardian data:', guardianData);
+      console.log('Guardian contact_numbers array:', guardianData.contact_numbers);
+
+      return guardianData;
+    });
   }
 
   return [];

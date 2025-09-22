@@ -266,6 +266,12 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
 
     // 2. Update or create guardians
     for (const guardianData of guardiansData) {
+      // Skip if guardianData is just an ID (number) - this means no update is needed
+      if (typeof guardianData === 'number' || typeof guardianData === 'string') {
+        console.log(`Skipping guardian ${guardianData} - ID only, no update needed`);
+        continue;
+      }
+
       // Filter out empty contact numbers and addresses to avoid validation errors
       const processedGuardianData = { ...guardianData };
 
@@ -446,7 +452,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     };
 
     const divisionId = parseId(adminInput.division);
-    const dateOfAdmission = (enrollmentInput.date_enrolled || new Date().toISOString().split('T')[0]).slice(0, 10);
+    const dateOfAdmission = (adminInput.date_of_admission || enrollmentInput.date_enrolled || new Date().toISOString().split('T')[0]).slice(0, 10);
 
     // Find existing administration for this enrollment
     const existingAdmins = await strapi.entityService.findMany('api::enrollment-administration.enrollment-administration', {
@@ -464,14 +470,29 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
         }
       });
     } else {
-      const createdAdmin = await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
-        data: {
+      try {
+        console.log('🔧 Creating administration with data:', JSON.stringify({
           division: divisionId || undefined,
           date_of_admission: dateOfAdmission,
           enrollment: enrollmentId,
+        }, null, 2));
+
+        const createdAdmin = await strapi.entityService.create('api::enrollment-administration.enrollment-administration', {
+          data: {
+            division: divisionId || undefined,
+            date_of_admission: dateOfAdmission,
+            enrollment: enrollmentId,
+          }
+        });
+        adminId = createdAdmin.id;
+        console.log('✅ Successfully created administration with ID:', adminId);
+      } catch (error) {
+        console.error('❌ Error creating administration:', error);
+        if (error.details && error.details.errors) {
+          console.error('Validation error details:', JSON.stringify(error.details.errors, null, 2));
         }
-      });
-      adminId = createdAdmin.id;
+        throw error;
+      }
     }
 
     // Handle seat allocation if pickup stop present
@@ -534,13 +555,24 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     };
 
     if (existingActive && existingActive.length > 0) {
+      console.log('📝 Updating existing seat allocation:', existingActive[0].id);
       await strapi.entityService.update('api::seat-allocation.seat-allocation', existingActive[0].id, {
         data: allocData,
       });
     } else {
-      await strapi.entityService.create('api::seat-allocation.seat-allocation', {
-        data: allocData,
-      });
+      try {
+        console.log('🔧 Creating seat allocation with data:', JSON.stringify(allocData, null, 2));
+        await strapi.entityService.create('api::seat-allocation.seat-allocation', {
+          data: allocData,
+        });
+        console.log('✅ Successfully created seat allocation');
+      } catch (error) {
+        console.error('❌ Error creating seat allocation:', error);
+        if (error.details && error.details.errors) {
+          console.error('Seat allocation validation error details:', JSON.stringify(error.details.errors, null, 2));
+        }
+        throw error;
+      }
     }
   },
 }));
