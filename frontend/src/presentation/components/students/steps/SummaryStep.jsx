@@ -9,8 +9,6 @@ import {
   Bus,
   CheckCircle,
   AlertCircle,
-  Edit3,
-  Download,
   Eye,
   Users,
   BookOpen,
@@ -22,7 +20,6 @@ import {
 
 const SummaryStep = ({
   formData,
-  onEditStep,
   skipDocuments,
   busStops = [],
   locations = [],
@@ -139,7 +136,7 @@ const SummaryStep = ({
     administration,
   });
 
-  const SectionCard = ({ title, icon: Icon, children, onEdit, stepIndex, gradient = "from-indigo-500 to-indigo-600" }) => (
+  const SectionCard = ({ title, icon: Icon, children, gradient = "from-indigo-500 to-indigo-600" }) => (
     <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden">
       <div className={`bg-gradient-to-r ${gradient} px-6 py-5`}>
         <div className="flex items-center justify-between">
@@ -149,15 +146,6 @@ const SummaryStep = ({
             </div>
             <h3 className="text-xl font-bold text-white">{title}</h3>
           </div>
-          {onEdit && (
-            <button
-              onClick={() => onEdit(stepIndex)}
-              className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-200 text-white text-sm font-medium backdrop-blur-sm hover:scale-105"
-            >
-              <Edit3 className="h-4 w-4" />
-              <span>Edit</span>
-            </button>
-          )}
         </div>
       </div>
       <div className="p-6">
@@ -216,8 +204,6 @@ const SummaryStep = ({
         <SectionCard
           title="Student Information"
           icon={User}
-          onEdit={onEditStep}
-          stepIndex={0}
           gradient="from-blue-500 to-blue-600"
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -245,8 +231,6 @@ const SummaryStep = ({
       <SectionCard
         title="Guardian Information"
         icon={User}
-        onEdit={onEditStep}
-        stepIndex={0}
       >
         {formData.guardians && formData.guardians.length > 0 ? (
           <div className="space-y-4">
@@ -279,8 +263,6 @@ const SummaryStep = ({
       <SectionCard
         title="Documents"
         icon={FileText}
-        onEdit={onEditStep}
-        stepIndex={1}
       >
         {skipDocuments ? (
           <div className="flex items-center space-x-2 text-yellow-700 bg-yellow-50 rounded-lg p-4">
@@ -323,8 +305,6 @@ const SummaryStep = ({
       <SectionCard
         title="Academic History"
         icon={GraduationCap}
-        onEdit={onEditStep}
-        stepIndex={2}
       >
         {formData.exam_results && formData.exam_results.length > 0 ? (
           <div className="space-y-4">
@@ -360,8 +340,6 @@ const SummaryStep = ({
           <SectionCard
             title="Division Assignment"
             icon={GraduationCap}
-            onEdit={onEditStep}
-            stepIndex={3}
             gradient="from-purple-500 to-purple-600"
           >
             <div className="space-y-4">
@@ -406,8 +384,6 @@ const SummaryStep = ({
           <SectionCard
             title="Transport Allocation"
             icon={Bus}
-            onEdit={onEditStep}
-            stepIndex={3}
             gradient="from-green-500 to-green-600"
           >
             <div className="space-y-4">
@@ -478,30 +454,16 @@ const SummaryStep = ({
           </SectionCard>
         </div>
 
-        {/* Action Summary */}
+        {/* Summary Status */}
         <div className="bg-gradient-to-r from-indigo-500 to-blue-600 rounded-2xl p-8 text-white shadow-2xl">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-6 backdrop-blur-sm">
               <CheckCircle className="h-10 w-10 text-white" />
             </div>
-            <h3 className="text-2xl font-bold mb-3">Registration Complete!</h3>
-            <p className="text-blue-100 mb-8 text-lg max-w-2xl mx-auto">
-              All information has been collected successfully. Review the details above and proceed to finalize the registration.
+            <h3 className="text-2xl font-bold mb-3">Registration Summary</h3>
+            <p className="text-blue-100 text-lg max-w-2xl mx-auto">
+              Please review all the information above carefully. Click Submit to save all changes, or use Previous to go back and make adjustments.
             </p>
-
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <button
-                onClick={() => onEditStep && onEditStep(0)}
-                className="flex items-center space-x-2 px-6 py-3 bg-white/20 hover:bg-white/30 rounded-xl transition-all duration-200 text-white font-medium backdrop-blur-sm hover:scale-105 border border-white/30"
-              >
-                <Edit3 className="h-5 w-5" />
-                <span>Make Changes</span>
-              </button>
-              <button className="flex items-center space-x-2 px-8 py-3 bg-white text-indigo-600 rounded-xl hover:bg-gray-50 transition-all duration-200 font-bold shadow-lg hover:scale-105">
-                <Download className="h-5 w-5" />
-                <span>Generate Summary Report</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
