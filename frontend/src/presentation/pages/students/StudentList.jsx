@@ -8,6 +8,7 @@ import { ErrorAlert } from '../../components/common/ErrorAlert';
 import { StudentSummaryReport } from '../../components/reports/StudentSummaryReport';
 import { useNavigate } from 'react-router-dom';
 import { Users, UserPlus, GraduationCap, TrendingUp, AlertCircle, CheckCircle, Clock, Activity, FileText } from 'lucide-react';
+import { useAuthStore } from '../../../application/stores/useAuthStore';
 
 export const StudentList = () => {
   const {
@@ -22,14 +23,44 @@ export const StudentList = () => {
     deleteStudent
   } = useStudentStore();
 
+  // Get user role from auth store
+  const { user } = useAuthStore();
+  const userRole = user?.role?.type || user?.role?.name || user?.role || 'public';
+  const username = user?.username || user?.email || 'User';
+  const userEmail = user?.email || '';
+
+  // Define roles - check role object first, then fallback to email/username patterns
+  const isPrincipal = ['principal', 'administrator', 'admin'].includes(userRole.toLowerCase()) ||
+                      userEmail.includes('principal') || username.includes('principal');
+  const isClerk = ['admission-clerk', 'admission_clerk', 'clerk', 'admissions'].includes(userRole.toLowerCase()) ||
+                   userEmail.includes('clerk') || username.includes('clerk');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetrics, setShowMetrics] = useState(true);
   const [showSummaryReport, setShowSummaryReport] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStudents(filters);
-  }, [fetchStudents, filters]);
+    // Apply enrollment status filter for clerks
+    let appliedFilters = { ...filters };
+
+    if (isClerk) {
+      // Clerks can only see students with "Enquiry" enrollment status
+      appliedFilters = {
+        ...filters,
+        filters: {
+          ...filters.filters,
+          enrollments: {
+            enrollment_status: {
+              $eq: 'Enquiry'
+            }
+          }
+        }
+      };
+    }
+
+    fetchStudents(appliedFilters);
+  }, [fetchStudents, filters, isClerk]);
 
   // Calculate metrics from students data
   const metrics = useMemo(() => {
@@ -80,9 +111,27 @@ export const StudentList = () => {
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.length > 2) {
+      // For search, we need to pass the enrollment filter too
+      // Note: searchStudents might need to be updated to support filters
       searchStudents(query);
     } else if (query.length === 0) {
-      fetchStudents(filters);
+      // Apply enrollment status filter for clerks
+      let appliedFilters = { ...filters };
+
+      if (isClerk) {
+        appliedFilters = {
+          ...filters,
+          filters: {
+            ...filters.filters,
+            enrollments: {
+              enrollment_status: {
+                $eq: 'Enquiry'
+              }
+            }
+          }
+        };
+      }
+      fetchStudents(appliedFilters);
     }
   };
 
@@ -127,7 +176,10 @@ export const StudentList = () => {
                 Student Management
               </h1>
               <p className="text-gray-600 mt-1">
-                Manage and track all student records and enrollments
+                {isClerk
+                  ? 'View and manage student enquiries'
+                  : 'Manage and track all student records and enrollments'
+                }
               </p>
             </div>
             <div className="flex gap-3">
@@ -156,6 +208,21 @@ export const StudentList = () => {
             </div>
           </div>
         </div>
+
+        {/* Filter Badge for Clerks */}
+        {isClerk && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-blue-900">
+                Filtered View: Showing students with "Enquiry" status only
+              </p>
+              <p className="text-xs text-blue-700 mt-1">
+                As a clerk, you can view and process student enquiries. Enrolled students are managed by principals.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Metrics Dashboard */}
         {showMetrics && (

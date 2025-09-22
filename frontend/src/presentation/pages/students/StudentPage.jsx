@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import useStudentStore from '../../../application/stores/useStudentStore';
+import { useAuthStore } from '../../../application/stores/useAuthStore';
 
 // Custom hooks
 import { useStudentForm } from '../../hooks/useStudentForm';
@@ -27,6 +28,39 @@ import { STUDENT_CONFIG } from '../../../shared/constants/app';
 
 const StudentPage = ({ mode = 'create' }) => {
   const { fetchClassCapacity, selectedStudent } = useStudentStore();
+
+  // Get user role from auth store
+  const { user } = useAuthStore();
+  const userRole = user?.role?.type || user?.role?.name || user?.role || 'public';
+  const userEmail = user?.email || '';
+  const username = user?.username || '';
+
+  // Define roles - check role object first, then fallback to email/username patterns
+  const isPrincipal = ['principal', 'administrator', 'admin'].includes(userRole.toLowerCase()) ||
+                      userEmail.includes('principal') || username.includes('principal');
+  const isClerk = ['admission-clerk', 'admission_clerk', 'clerk', 'admissions'].includes(userRole.toLowerCase()) ||
+                   userEmail.includes('clerk') || username.includes('clerk');
+  const isReadOnly = !isPrincipal && !isClerk;
+
+  // Define the maximum step a clerk can access (up to Exam Results)
+  const CLERK_MAX_STEP = STUDENT_CONFIG.STEPS.EXAM_RESULTS;
+
+  // Define which steps are accessible based on role
+  const getAccessibleSteps = () => {
+    if (isPrincipal) {
+      // Principals can access all steps
+      return Object.values(STUDENT_CONFIG.STEPS);
+    } else if (isClerk) {
+      // Clerks can only access up to Exam Results
+      return [STUDENT_CONFIG.STEPS.COMBINED_INFO, STUDENT_CONFIG.STEPS.DOCUMENTS, STUDENT_CONFIG.STEPS.EXAM_RESULTS];
+    } else {
+      // Read-only users can view all but not edit
+      return Object.values(STUDENT_CONFIG.STEPS);
+    }
+  };
+
+  const accessibleSteps = getAccessibleSteps();
+  const isStepAccessible = (step) => accessibleSteps.includes(step);
 
   // Custom hooks
   const {
@@ -297,6 +331,21 @@ const StudentPage = ({ mode = 'create' }) => {
   };
 
   const renderStepContent = () => {
+    // Check if clerk is trying to access restricted steps
+    if (isClerk && currentStep > CLERK_MAX_STEP) {
+      return (
+        <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+          <h4 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h4>
+          <p className="text-sm text-yellow-700">
+            As a clerk, you have completed all accessible steps. The Administration and Summary steps are only available to principals.
+          </p>
+          <p className="text-sm text-yellow-600 mt-2">
+            The student's exam results have been recorded and saved. A principal will need to complete the enrollment process.
+          </p>
+        </div>
+      );
+    }
+
     switch (currentStep) {
       case STEPS.COMBINED_INFO:
         return (
@@ -341,6 +390,17 @@ const StudentPage = ({ mode = 'create' }) => {
           />
         );
       case STEPS.ADMINISTRATION:
+        // Only principals can access this step
+        if (!isPrincipal) {
+          return (
+            <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Principal Access Required</h4>
+              <p className="text-sm text-yellow-700">
+                The Administration step requires principal-level access to assign divisions and configure transport allocation.
+              </p>
+            </div>
+          );
+        }
         return (
           <AdministrationStep
             isStudentRejected={isStudentRejected}
@@ -363,6 +423,17 @@ const StudentPage = ({ mode = 'create' }) => {
           />
         );
       case STEPS.SUMMARY:
+        // Only principals can access this step
+        if (!isPrincipal) {
+          return (
+            <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Principal Access Required</h4>
+              <p className="text-sm text-yellow-700">
+                The Summary step requires principal-level access to finalize the enrollment process.
+              </p>
+            </div>
+          );
+        }
         return (
           <SummaryStep
             formData={watch()}
@@ -389,6 +460,13 @@ const StudentPage = ({ mode = 'create' }) => {
       if (loading) return localStudentId ? 'Updating...' : 'Saving...';
       if (isSuccess) return 'Saved!';
       return 'Save & Continue';
+    }
+
+    // For clerks at Exam Results step - this is their final step
+    if (isClerk && currentStep === STEPS.EXAM_RESULTS) {
+      if (loading) return 'Saving...';
+      if (isSuccess) return 'Saved!';
+      return 'Save Progress';
     }
 
     if (currentStep < TOTAL_STEPS - 1) {
@@ -421,9 +499,14 @@ const StudentPage = ({ mode = 'create' }) => {
         <div className="p-6">
           <StepTimeline
             currentStep={currentStep}
-            stepNames={STUDENT_CONFIG.STEP_NAMES}
+            stepNames={isClerk ? STUDENT_CONFIG.STEP_NAMES.slice(0, CLERK_MAX_STEP + 1) : STUDENT_CONFIG.STEP_NAMES}
             skipDocuments={skipDocuments}
-            onStepClick={handleStepNavigation}
+            onStepClick={(step) => {
+              // Only allow navigation to accessible steps
+              if (isStepAccessible(step)) {
+                handleStepNavigation(step);
+              }
+            }}
             allowNavigation={true}
             completedSteps={completedSteps}
             hasErrors={stepErrors}
@@ -449,7 +532,23 @@ const StudentPage = ({ mode = 'create' }) => {
             </button>
             <button
               type="button"
-              onClick={currentStep === STEPS.SUMMARY ? handleSubmit : handleNextStep}
+              onClick={() => {
+                // For clerks, save at Exam Results step and don't proceed further
+                if (isClerk && currentStep === STEPS.EXAM_RESULTS) {
+                  handleSubmit();
+                } else if (currentStep === STEPS.SUMMARY) {
+                  handleSubmit();
+                } else {
+                  // Check if the next step is accessible before proceeding
+                  const nextStep = currentStep + 1;
+                  if (!isStepAccessible(nextStep)) {
+                    // If next step is not accessible, save current progress
+                    handleSubmit();
+                  } else {
+                    handleNextStep();
+                  }
+                }
+              }}
               className={`btn btn-primary flex items-center gap-2 ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
               disabled={loading}
             >

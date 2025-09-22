@@ -4,6 +4,7 @@ import Alert from '../Alert';
 import FormField from '../FormField';
 import BusAllocationDebug from '../BusAllocationDebug';
 import RouteVisualization from '../../transport/RouteVisualization';
+import RoleBasedActions from './RoleBasedActions';
 import { useBusRouteService } from '../../../../application/hooks/useServices';
 
 const AdministrationStep = ({
@@ -181,6 +182,25 @@ const AdministrationStep = ({
           </div>
         </div>
       </div>
+
+      {/* Role-based Actions for Approval Workflow */}
+      <RoleBasedActions
+        student={selectedStudent}
+        currentStatus={selectedStudent?.enrollments?.[0]?.enrollmentStatus}
+        onStatusChange={(newStatus) => {
+          if (setValue) {
+            setValue('enrollments.0.enrollment_status', newStatus);
+            // Handle form submission after status change
+            if (newStatus === 'Rejected') {
+              // You might want to handle rejection differently
+              console.log('Student rejected by Principal');
+            }
+          }
+        }}
+        onEnrollStudent={onEnrollStudent}
+        onUpdateToWaiting={onUpdateToWaiting}
+        loading={loading}
+      />
 
       {(currentDivisionName || currentSeatInfo) && (
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">

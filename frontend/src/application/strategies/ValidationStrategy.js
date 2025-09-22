@@ -23,7 +23,6 @@ export class ValidationStrategy {
       'first_name',
       'last_name',
       'dob',
-      'guardians',
       // Enrollment fields
       'enrollments.0.academic_year',
       'enrollments.0.class',
@@ -35,9 +34,7 @@ export class ValidationStrategy {
       // 'emergency_contact_name',
       // 'emergency_contact_phone',
       // 'emergency_contact_relationship',
-      //'Guardians.0.full_name',
-      //'Guardians.0.relation',
-      //'Guardians.0.mobile'
+      // Guardian validation will be handled separately
     ];
   }
 
@@ -56,6 +53,7 @@ export class ValidationStrategy {
     this.validatePersonalInfo(studentData, errors);
     this.validateContactInfo(studentData, errors);
     this.validateAcademicInfo(studentData, errors);
+    this.validateGuardians(studentData, errors); // Add guardian validation
     this.validateEmergencyContact(studentData, errors);
     this.validateMedicalInfo(studentData, errors);
     this.validateAddress(studentData, errors);
@@ -243,6 +241,96 @@ export class ValidationStrategy {
         });
       }
     }
+  }
+
+  /**
+   * Validate guardian information
+   */
+  validateGuardians(data, errors) {
+    // Check if at least one guardian is provided
+    if (!data.guardians || !Array.isArray(data.guardians) || data.guardians.length === 0) {
+      errors.push({
+        field: 'guardians',
+        message: 'At least one guardian is required',
+        code: 'NO_GUARDIAN_PROVIDED'
+      });
+      return;
+    }
+
+    // Validate each guardian
+    data.guardians.forEach((guardian, index) => {
+      // Validate guardian full name (required)
+      if (!guardian.full_name || guardian.full_name.trim() === '') {
+        errors.push({
+          field: `guardians.${index}.full_name`,
+          message: `Guardian ${index + 1} full name is required`,
+          code: 'GUARDIAN_NAME_REQUIRED'
+        });
+      } else if (guardian.full_name.length < 2 || guardian.full_name.length > 100) {
+        errors.push({
+          field: `guardians.${index}.full_name`,
+          message: `Guardian ${index + 1} full name must be between 2 and 100 characters`,
+          code: 'GUARDIAN_NAME_LENGTH'
+        });
+      }
+
+      // Validate guardian relation (required)
+      if (!guardian.relation || guardian.relation.trim() === '') {
+        errors.push({
+          field: `guardians.${index}.relation`,
+          message: `Guardian ${index + 1} relation is required`,
+          code: 'GUARDIAN_RELATION_REQUIRED'
+        });
+      }
+
+      // Validate guardian contact numbers
+      if (guardian.contact_numbers && Array.isArray(guardian.contact_numbers)) {
+        // Check if at least one contact number is provided
+        const validNumbers = guardian.contact_numbers.filter(contact =>
+          contact && contact.number && contact.number.trim() !== ''
+        );
+
+        if (validNumbers.length === 0) {
+          errors.push({
+            field: `guardians.${index}.contact_numbers`,
+            message: `Guardian ${index + 1} must have at least one contact number`,
+            code: 'GUARDIAN_CONTACT_REQUIRED'
+          });
+        } else {
+          // Validate each contact number
+          guardian.contact_numbers.forEach((contact, contactIndex) => {
+            if (contact && contact.number && contact.number.trim() !== '') {
+              const cleanPhone = contact.number.replace(/[\s\-\(\)]/g, '');
+              if (!this.patterns.phone.test(cleanPhone)) {
+                errors.push({
+                  field: `guardians.${index}.contact_numbers.${contactIndex}.number`,
+                  message: `Guardian ${index + 1} contact ${contactIndex + 1} has invalid phone number format`,
+                  code: 'GUARDIAN_PHONE_INVALID'
+                });
+              }
+            }
+          });
+        }
+      } else {
+        // No contact_numbers array provided
+        errors.push({
+          field: `guardians.${index}.contact_numbers`,
+          message: `Guardian ${index + 1} must have contact information`,
+          code: 'GUARDIAN_CONTACT_MISSING'
+        });
+      }
+
+      // Validate guardian email (optional)
+      if (guardian.email && guardian.email.trim() !== '') {
+        if (!this.patterns.email.test(guardian.email)) {
+          errors.push({
+            field: `guardians.${index}.email`,
+            message: `Guardian ${index + 1} has invalid email format`,
+            code: 'GUARDIAN_EMAIL_INVALID'
+          });
+        }
+      }
+    });
   }
 
   /**

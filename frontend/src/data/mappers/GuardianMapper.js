@@ -112,7 +112,7 @@ export class GuardianMapper {
 
       return {
         type: contact.contact_type || contact.type,
-        value: contact.number || contact.value,
+        number: contact.number || contact.value,
         isPrimary: contact.is_primary || contact.isPrimary || false,
         isWhatsappEnabled: contact.is_whatsapp_enabled || false,
         label: contact.label
