@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import useStudentStore from '../../../application/stores/useStudentStore';
 import { StudentTable } from '../../components/students/StudentTable';
+import { StudentGrid } from '../../components/students/StudentGrid';
 import { StudentFilters } from '../../components/students/StudentFilters';
 import { Button } from '../../components/common/Button';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorAlert } from '../../components/common/ErrorAlert';
 import { StudentSummaryReport } from '../../components/reports/StudentSummaryReport';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, GraduationCap, TrendingUp, AlertCircle, CheckCircle, Clock, Activity, FileText } from 'lucide-react';
+import { Users, UserPlus, GraduationCap, TrendingUp, AlertCircle, CheckCircle, Clock, Activity, FileText, Grid, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '../../../application/stores/useAuthStore';
 
 export const StudentList = () => {
@@ -38,6 +39,9 @@ export const StudentList = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMetrics, setShowMetrics] = useState(true);
   const [showSummaryReport, setShowSummaryReport] = useState(false);
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -61,6 +65,15 @@ export const StudentList = () => {
 
     fetchStudents(appliedFilters);
   }, [fetchStudents, filters, isClerk]);
+
+  // Paginated students
+  const paginatedStudents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return students.slice(startIndex, endIndex);
+  }, [students, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(students.length / itemsPerPage);
 
   // Calculate metrics from students data
   const metrics = useMemo(() => {
@@ -161,7 +174,81 @@ export const StudentList = () => {
   };
 
   if (loading && students.length === 0) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+          {/* Header Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="h-8 w-64 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-10 w-24 bg-gray-200 rounded-lg"></div>
+                  <div className="h-10 w-32 bg-gray-200 rounded-lg"></div>
+                  <div className="h-10 w-36 bg-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Metrics Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="animate-pulse">
+                  <div className="flex justify-between">
+                    <div className="flex-1">
+                      <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 w-32 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Filters Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse">
+              <div className="flex gap-4">
+                <div className="flex-1 h-10 bg-gray-200 rounded-md"></div>
+                <div className="h-10 w-24 bg-gray-200 rounded-md"></div>
+                <div className="h-10 w-24 bg-gray-200 rounded-md"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Skeleton */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="animate-pulse space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex space-x-4">
+                  <div className="w-4 h-4 bg-gray-200 rounded"></div>
+                  <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/6"></div>
+                  </div>
+                  <div className="h-4 bg-gray-200 rounded w-16"></div>
+                  <div className="h-4 bg-gray-200 rounded w-20"></div>
+                  <div className="h-4 bg-gray-200 rounded w-24"></div>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                    <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                    <div className="h-8 w-8 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -182,28 +269,57 @@ export const StudentList = () => {
                 }
               </p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3 flex-wrap">
+              {/* View Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-md transition-all ${
+                    viewMode === 'table'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Table View"
+                >
+                  <List className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded-md transition-all ${
+                    viewMode === 'grid'
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                  title="Grid View"
+                >
+                  <Grid className="h-4 w-4" />
+                </button>
+              </div>
+
               <button
                 onClick={() => setShowMetrics(!showMetrics)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-3 sm:px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                {showMetrics ? 'Hide' : 'Show'} Metrics
+                <span className="hidden sm:inline">{showMetrics ? 'Hide' : 'Show'} Metrics</span>
+                <span className="sm:hidden">Metrics</span>
               </button>
               <Button
                 onClick={() => setShowSummaryReport(true)}
                 variant="outline"
-                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50 px-3 sm:px-4 py-2 rounded-lg font-medium flex items-center gap-2"
               >
-                <FileText className="h-5 w-5" />
-                Generate Summary
+                <FileText className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden sm:inline">Generate Summary</span>
+                <span className="sm:hidden">Summary</span>
               </Button>
               <Button
                 onClick={handleAddStudent}
                 variant="primary"
-                className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
               >
-                <UserPlus className="h-5 w-5" />
-                Add New Student
+                <UserPlus className="h-4 sm:h-5 w-4 sm:w-5" />
+                <span className="hidden sm:inline">Add New Student</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </div>
           </div>
@@ -312,15 +428,103 @@ export const StudentList = () => {
           />
         </div>
 
-        {/* Student Table */}
+        {/* Student Table/Grid */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <StudentTable
-            students={students}
-            loading={loading}
-            onEdit={handleEditStudent}
-            onDelete={handleDeleteStudent}
-            onView={(student) => navigate(`/students/view/${student.id}`)}
-          />
+          {viewMode === 'table' ? (
+            <StudentTable
+              students={paginatedStudents}
+              loading={loading}
+              onEdit={handleEditStudent}
+              onDelete={handleDeleteStudent}
+              onView={(student) => navigate(`/students/view/${student.id}`)}
+            />
+          ) : (
+            <StudentGrid
+              students={paginatedStudents}
+              loading={loading}
+              onEdit={handleEditStudent}
+              onDelete={handleDeleteStudent}
+              onView={(student) => navigate(`/students/view/${student.id}`)}
+            />
+          )}
+
+          {/* Pagination Controls */}
+          {students.length > itemsPerPage && (
+            <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+                  <span className="font-medium">
+                    {Math.min(currentPage * itemsPerPage, students.length)}
+                  </span>{' '}
+                  of <span className="font-medium">{students.length}</span> students
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value={5}>5 per page</option>
+                    <option value={10}>10 per page</option>
+                    <option value={20}>20 per page</option>
+                    <option value={50}>50 per page</option>
+                  </select>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {[...Array(Math.min(5, totalPages))].map((_, idx) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = idx + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = idx + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + idx;
+                        } else {
+                          pageNum = currentPage - 2 + idx;
+                        }
+
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+                              currentPage === pageNum
+                                ? 'bg-indigo-600 text-white'
+                                : 'border border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1 rounded-md border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

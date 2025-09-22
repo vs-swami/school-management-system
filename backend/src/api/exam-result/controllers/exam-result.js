@@ -130,7 +130,7 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
     return this.transformResponse(sanitizedEntity);
   },
 
-  // Custom action: Approve student for next stage
+  // Custom action: Approve student for next stage (Principal's discretion)
   async approveStudentForNextStage(ctx) {
     const { studentId, examResultId } = ctx.request.body;
 
@@ -181,78 +181,24 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
         return ctx.badRequest('Student has no enrollment records.');
       }
 
-      if (!currentEnrollment.class) {
-        console.log('Approve Student: Enrollment found but class is missing:', currentEnrollment);
-        return ctx.badRequest('Student enrollment has no associated class information.');
-      }
-
-      const currentClass = currentEnrollment.class.classname;
-      const earlyYearsClasses = ['Nursery', 'LKG', 'UKG'];
-
-      if (earlyYearsClasses.includes(currentClass)) {
-        // Update enrollment status to 'Enrolled' for early years classes
-        await strapi.entityService.update('api::enrollment.enrollment', currentEnrollment.id, {
-          data: { enrollment_status: 'Enrolled' },
-        });
-        console.log(`Student in ${currentClass} enrollment status updated to Enrolled (automatically approved).`);
-        
-        // Skip approval for early years classes
-        return ctx.send({
-          message: `Student in ${currentClass} is automatically approved for the next stage (skip).`,
-          studentId,
-          skipped: true,
-          enrollmentStatusUpdated: true,
-        });
-      }
-
-      // If no specific exam result, check all recent exam results (original logic remains similar)
-      const studentExamResults = await strapi.entityService.findMany('api::exam-result.exam-result', {
-        filters: { student: studentId },
-        populate: ['academic_year', 'class', 'subject_scores'],
-        sort: { createdAt: 'desc' }
+      // Simply update enrollment status to 'Enrolled' - Principal has full discretion
+      await strapi.entityService.update('api::enrollment.enrollment', currentEnrollment.id, {
+        data: { enrollment_status: 'Enrolled' },
       });
 
-      if (!studentExamResults || studentExamResults.length === 0) {
-        return ctx.badRequest('No exam results found for this student.');
-      }
-
-      // Comprehensive approval logic
-      const passingResults = studentExamResults.filter(result => 
-        result.pass_fail === true || (result.marks_obtained / result.total_marks) * 100 >= 40
-      );
-      
-      const totalSubjects = studentExamResults.length;
-      const passedSubjects = passingResults.length;
-      const overallApproval = passedSubjects === totalSubjects; // All subjects must pass
-
-      // Calculate overall percentage
-      const totalMarksObtained = studentExamResults.reduce((sum, result) => sum + result.marks_obtained, 0);
-      const totalMaxMarks = studentExamResults.reduce((sum, result) => sum + result.total_marks, 0);
-      const overallPercentage = totalMaxMarks > 0 ? (totalMarksObtained / totalMaxMarks) * 100 : 0;
-
-      if (overallApproval) {
-        // Update enrollment status to 'Enrolled'
-        await strapi.entityService.update('api::enrollment.enrollment', currentEnrollment.id, {
-          data: { enrollment_status: 'Enrolled' },
-        });
-        console.log(`Student ${student.gr_full_name} enrollment status updated to Enrolled.`);
-      }
+      console.log(`Student ${student.gr_full_name || student.name} enrollment status updated to Enrolled by principal's approval.`);
 
       return ctx.send({
-        message: `Student ${student.gr_full_name || student.name} ${overallApproval ? 'approved' : 'not approved'} for next stage based on exam results.`,
+        message: `Student ${student.gr_full_name || student.name} has been approved and enrolled successfully.`,
         studentId,
-        approved: overallApproval,
-        examResultsCount: totalSubjects,
-        passedSubjects,
-        failedSubjects: totalSubjects - passedSubjects,
-        overallPercentage: Math.round(overallPercentage * 100) / 100,
-        enrollmentStatusUpdated: overallApproval, // Indicate if status was updated
+        approved: true,
+        enrollmentStatusUpdated: true,
       });
 
     } catch (error) {
       strapi.log.error(`Error in approveStudentForNextStage: ${error.message}`);
-      return ctx.internalServerError('An error occurred during student stage approval.', { 
-        error: error.message 
+      return ctx.internalServerError('An error occurred during student approval.', {
+        error: error.message
       });
     }
   },

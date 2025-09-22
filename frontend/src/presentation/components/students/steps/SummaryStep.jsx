@@ -417,11 +417,6 @@ const SummaryStep = ({
                       }
                       icon={Bus}
                     />
-                    <InfoRow
-                      label="Seat Number"
-                      value={seatAllocation.seatNumber || seatAllocation.seat_number || 'Seat not assigned'}
-                      icon={Award}
-                    />
                     {pickupStop.location && (
                       <InfoRow
                         label="Area"

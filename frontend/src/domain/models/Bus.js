@@ -12,6 +12,7 @@ export class Bus {
     this.fuelLevel = data.fuel_level || data.fuelLevel || 0;
     this.nextMaintenance = data.next_maintenance || data.nextMaintenance || null;
     this.registrationNumber = data.registration_number || data.registrationNumber || '';
+    this.licensePlate = data.license_plate || data.licensePlate || '';
     this.insuranceExpiry = data.insurance_expiry || data.insuranceExpiry || null;
     this.busRoutes = this.normalizeRelation(data.bus_routes || data.busRoutes);
     this.seatAllocations = this.normalizeRelation(data.seat_allocations || data.seatAllocations);
@@ -86,6 +87,7 @@ export class Bus {
       fuelLevel: this.fuelLevel,
       nextMaintenance: this.nextMaintenance,
       registrationNumber: this.registrationNumber,
+      licensePlate: this.licensePlate,
       insuranceExpiry: this.insuranceExpiry,
       busRoutes: this.busRoutes,
       seatAllocations: this.seatAllocations,
@@ -123,6 +125,7 @@ export class Bus {
       fuel_level: this.fuelLevel,
       next_maintenance: this.nextMaintenance,
       registration_number: this.registrationNumber,
+      license_plate: this.licensePlate,
       insurance_expiry: this.insuranceExpiry
     };
   }

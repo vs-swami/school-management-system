@@ -518,25 +518,6 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       // ignore; seat allocation can be created without bus
     }
 
-    // Determine seat number if bus is known
-    let seatNumber = 1;
-    if (busId) {
-      try {
-        const bus = await strapi.entityService.findOne('api::bus.bus', busId, {
-          populate: {
-            seat_allocations: {
-              filters: { is_active: true },
-            }
-          }
-        });
-        const allocated = (bus.seat_allocations || []).map(a => a.seat_number);
-        for (let i = 1; i <= (bus.total_seats || 60); i++) {
-          if (!allocated.includes(i)) { seatNumber = i; break; }
-        }
-      } catch (e) {
-        // fallback seat number 1
-      }
-    }
 
     // Upsert active seat allocation for this admin
     const existingActive = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
@@ -547,7 +528,6 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
       enrollment_administration: adminId,
       pickup_stop: pickupStopId,
       bus: busId || undefined,
-      seat_number: seatNumber,
       allocation_date: new Date().toISOString().slice(0,10),
       valid_from: new Date().toISOString().slice(0,10),
       is_active: true,

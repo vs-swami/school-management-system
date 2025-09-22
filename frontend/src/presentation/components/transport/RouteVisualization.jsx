@@ -73,13 +73,11 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
     // show that this would be the first seat assignment
     const allocatedSeats = 0; // No seats allocated yet
     const availableSeats = totalSeats;
-    const nextSeatNumber = 1; // This student would get seat #1
 
     return {
       totalSeats,
       allocatedSeats,
       availableSeats: availableSeats - 1, // Minus 1 for this student
-      nextSeatNumber,
       utilization: Math.round((1 / totalSeats) * 100) // Just this student = ~2-4% depending on bus size
     };
   };
@@ -145,16 +143,16 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
                 <Users className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="font-semibold text-gray-800">Bus #{route.bus.bus_number}</p>
-                <p className="text-sm text-gray-600">{route.bus.license_plate}</p>
+                <p className="font-semibold text-gray-800">Bus #{route.bus.busNumber}</p>
+                <p className="text-sm text-gray-600">License Plate: {route.bus.licensePlate}</p>
               </div>
             </div>
             <div className="text-right">
               <div className="flex items-center space-x-1 text-sm text-gray-600">
                 <Users className="h-4 w-4" />
-                <span>{route.bus.total_seats} seats</span>
+                <span>{route.bus.totalSeats} seats</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">Driver: {route.bus.driver_name}</p>
+              <p className="text-xs text-gray-500 mt-1">Driver: {route.bus.driverName}</p>
             </div>
           </div>
 
@@ -173,11 +171,7 @@ const RouteVisualization = ({ route, selectedStopId, routeType = "pickup", onSel
                     </h5>
                     <span className="text-xs text-blue-600 font-medium bg-blue-100 px-2 py-1 rounded">Estimated</span>
                   </div>
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div className="text-center">
-                      <p className="text-blue-600 font-semibold text-lg">#{seatInfo.nextSeatNumber}</p>
-                      <p className="text-gray-600">Your Seat</p>
-                    </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="text-center">
                       <p className="text-green-600 font-semibold">{seatInfo.availableSeats - 1}</p>
                       <p className="text-gray-600">Remaining</p>

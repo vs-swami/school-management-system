@@ -22,11 +22,6 @@
       "target": "api::enrollment-administration.enrollment-administration",
       "inversedBy": "seat_allocations"
     },
-    "seat_number": {
-      "type": "integer",
-      "required": true,
-      "min": 1
-    },
     "pickup_stop": {
       "type": "relation",
       "relation": "manyToOne",

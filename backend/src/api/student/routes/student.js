@@ -26,16 +26,4 @@ module.exports = createCoreRouter('api::student.student', {
       middlewares: [],
     },
   },
-  routes: [
-    // Custom route for uploading documents (if it's not handled by default Strapi file upload)
-    {
-      method: 'POST',
-      path: '/students/documents',
-      handler: 'student.uploadDocument',
-      config: {
-        policies: [], // Temporarily disabled: ['global::is-authenticated', 'global::rate-limit'],
-        middlewares: [],
-      },
-    },
-  ],
 });

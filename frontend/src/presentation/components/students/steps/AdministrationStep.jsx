@@ -39,14 +39,16 @@ const AdministrationStep = ({
 
   // Derive current administration info from selectedStudent if available (must be first)
   const currentAdmin = selectedStudent?.enrollments?.[0]?.administration;
+  console.log("Selected Student for administration - ", selectedStudent)
   const currentDivisionName = typeof currentAdmin?.division === 'object' && (currentAdmin?.division?.divisionName || currentAdmin?.division?.name)
     ? (currentAdmin.division.divisionName || currentAdmin.division.name)
     : null;
-  const currentSeat = (currentAdmin?.seat_allocations && currentAdmin.seat_allocations[0]) || null;
+  const currentSeat = (currentAdmin.seatAllocations[0]) || null;
+  console.log("Student Current Seat - ", currentSeat)
+
   const currentSeatInfo = currentSeat ? {
-    seat_number: currentSeat.seat_number,
     bus_number: currentSeat.bus?.bus_number || currentSeat.bus?.number || currentSeat.bus_number || '1',
-    stop_name: currentSeat.pickup_stop?.stop_name,
+    stop_name: currentSeat.pickupStop?.stop_name,
     pickup_stop_id: currentSeat.pickup_stop?.id,
     pickup_stop_location_id: currentSeat.pickup_stop?.location?.id || currentSeat.pickup_stop?.location,
   } : null;
@@ -235,9 +237,9 @@ const AdministrationStep = ({
                   <div>
                     <p className="text-xs text-gray-500 uppercase tracking-wide">Transport</p>
                     <p className="text-sm font-bold text-gray-900">
-                      {currentSeatInfo ? `Bus ${currentSeatInfo.bus_number} · Seat ${currentSeatInfo.seat_number}` : 'Not Allocated'}
+                      {currentSeatInfo ? `Bus ${currentSeatInfo.bus_number}` : 'Not Allocated'}
                     </p>
-                    {currentSeatInfo?.stop_name && (
+                     {currentSeatInfo?.stop_name && (
                       <p className="text-xs text-gray-600">{currentSeatInfo.stop_name}</p>
                     )}
                   </div>
@@ -281,7 +283,7 @@ const AdministrationStep = ({
                   }
 
                   // Fall back to current saved location (could be directly from pickup_stop.location or guessed)
-                  const savedLocationId = currentSeatInfo?.pickup_stop_location_id || guessedLocationId;
+                  const savedLocationId = currentSeatInfo?.pickup_stop_location_id ;
                   if (savedLocationId) {
                     return String(savedLocationId);
                   }
@@ -683,6 +685,7 @@ const AdministrationStep = ({
                   const divisionName = div.divisionName || div.name;
                   const enrolled = div.enrolled || 0;
                   const capacity = div.capacity || div.max_capacity || 30; // Default capacity if not provided
+                  const available = capacity - enrolled; // Calculate available seats
                   const utilizationPercent = div.utilizationPercent || (capacity > 0 ? Math.round((enrolled / capacity) * 100) : 0);
 
                   const utilizationColor = utilizationPercent < 50 ? 'green' :
@@ -763,13 +766,13 @@ const AdministrationStep = ({
                             </h6>
                             {isSelectedNewDivision ? (
                               <div>
-                                <p className="text-sm text-gray-500 line-through">{div.enrolled} of {div.capacity} students</p>
+                                <p className="text-sm text-gray-500 line-through">{enrolled} of {capacity} students</p>
                                 <p className="text-sm font-medium text-indigo-700">
-                                  📈 After placement: {provisionalEnrolled} of {div.capacity} students
+                                  📈 After placement: {provisionalEnrolled} of {capacity} students
                                 </p>
                               </div>
                             ) : (
-                              <p className="text-sm text-gray-600">{provisionalEnrolled} of {div.capacity} students</p>
+                              <p className="text-sm text-gray-600">{enrolled} of {capacity} students</p>
                             )}
                           </div>
                         </div>
@@ -833,7 +836,7 @@ const AdministrationStep = ({
                       <div className="flex justify-between items-center text-xs">
                         {(isSelectedNewDivision || (isCurrentDivision && selectedDivisionId && String(selectedDivisionId) !== String(div.id))) ? (
                           <div className="flex flex-col">
-                            <span className="text-gray-400 line-through">{div.available} seats available</span>
+                            <span className="text-gray-400 line-through">{available} seats available</span>
                             <span className={`font-medium ${provisionalAvailable <= 0 ? 'text-red-600' : 'text-indigo-600'}`}>
                               📊 After: {provisionalAvailable} seats available
                             </span>

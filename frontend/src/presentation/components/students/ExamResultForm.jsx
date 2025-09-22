@@ -28,15 +28,57 @@ const ExamResultForm = ({ studentId, academicYears, classes, initialExamResult, 
   // Effect to reset the form when initialExamResult changes (e.g., when editing a different result)
   React.useEffect(() => {
     if (initialExamResult) {
-      reset({
+      console.log('ExamResultForm: Initial exam result received:', initialExamResult);
+
+      // Extract subject and marks from subject_scores array if it exists
+      let subject = '';
+      let total_obtained = '';
+      let total_maximum = '';
+      let overall_grade = '';
+      let pass_fail = false;
+
+      // Check if subject_scores or subjectScores exists and has data
+      const subjectScores = initialExamResult.subject_scores || initialExamResult.subjectScores;
+
+      if (subjectScores && subjectScores.length > 0) {
+        const firstScore = subjectScores[0];
+        console.log('ExamResultForm: Extracting from subject_scores/subjectScores:', firstScore);
+        // Handle both snake_case and camelCase field names
+        subject = firstScore.subject || '';
+        total_obtained = firstScore.marks_obtained || firstScore.marksObtained || '';
+        total_maximum = firstScore.total_marks || firstScore.totalMarks || '';
+        overall_grade = firstScore.grade || '';
+        pass_fail = firstScore.pass_status === 'pass' || firstScore.passStatus === 'pass';
+      } else {
+        // Fallback to old field structure or camelCase from model
+        console.log('ExamResultForm: Using fallback for old field structure or camelCase');
+        subject = initialExamResult.subject || '';
+        total_obtained = initialExamResult.total_obtained || initialExamResult.totalObtained ||
+                       initialExamResult.marks_obtained || '';
+        total_maximum = initialExamResult.total_maximum || initialExamResult.totalMaximum ||
+                       initialExamResult.total_marks || '';
+        overall_grade = initialExamResult.overall_grade || initialExamResult.overallGrade ||
+                       initialExamResult.grade || '';
+        pass_fail = initialExamResult.pass_fail || initialExamResult.passStatus === 'pass' || false;
+      }
+
+      const resetData = {
         ...initialExamResult,
-        academic_year: String(initialExamResult.academic_year?.id || initialExamResult.academic_year || ''),
+        academic_year: String(initialExamResult.academic_year?.id || initialExamResult.academicYear?.id ||
+                             initialExamResult.academic_year || initialExamResult.academicYear || ''),
         class: String(initialExamResult.class?.id || initialExamResult.class || ''),
-        // Map old field names to new ones if present
-        total_obtained: initialExamResult.total_obtained || initialExamResult.marks_obtained || '',
-        total_maximum: initialExamResult.total_maximum || initialExamResult.total_marks || '',
-        overall_grade: initialExamResult.overall_grade || initialExamResult.grade || '',
-      });
+        exam_type: initialExamResult.exam_type || initialExamResult.examType || '',
+        exam_name: initialExamResult.exam_name || initialExamResult.examName || '',
+        exam_date: initialExamResult.exam_date || initialExamResult.examDate || '',
+        subject: subject,
+        total_obtained: total_obtained,
+        total_maximum: total_maximum,
+        overall_grade: overall_grade,
+        pass_fail: pass_fail,
+        remarks: initialExamResult.remarks || '',
+      };
+      console.log('ExamResultForm: Resetting form with data:', resetData);
+      reset(resetData);
     } else {
       reset({
         academic_year: '',

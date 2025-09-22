@@ -16,6 +16,7 @@ export class BusMapper {
       fuelLevel: strapiData.fuel_level,
       nextMaintenance: strapiData.next_maintenance,
       registrationNumber: strapiData.registration_number,
+      licensePlate: strapiData.license_plate,
       insuranceExpiry: strapiData.insurance_expiry,
       createdAt: strapiData.createdAt,
       updatedAt: strapiData.updatedAt
@@ -36,6 +37,7 @@ export class BusMapper {
       fuel_level: domainModel.fuelLevel,
       next_maintenance: domainModel.nextMaintenance,
       registration_number: domainModel.registrationNumber,
+      license_plate: domainModel.licensePlate,
       insurance_expiry: domainModel.insuranceExpiry
     };
   }

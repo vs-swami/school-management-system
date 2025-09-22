@@ -215,22 +215,5 @@ module.exports = createCoreController('api::student.student', ({ strapi }) => ({
     }
   },
 
-  // NEW: Proxy controller to handle exam results creation/update for a specific student
-  async proxyCreateOrUpdateExamResults(ctx) {
-    console.log('proxyCreateOrUpdateExamResults controller hit!'); // DEBUG
-    const { studentId } = ctx.params;
-    const { examResults } = ctx.request.body;
 
-    if (!studentId || !examResults || !Array.isArray(examResults)) {
-      return ctx.badRequest('Student ID and an array of exam results are required.');
-    }
-
-    try {
-      const results = await strapi.service('api::exam-result.exam-result').createOrUpdateBulk(studentId, examResults);
-      return ctx.send({ success: true, data: results });
-    } catch (error) {
-      strapi.log.error(`Error in proxyCreateOrUpdateExamResults: ${error.message}`);
-      return ctx.internalServerError('An error occurred during bulk exam results update.', { error: error.message });
-    }
-  },
 }));

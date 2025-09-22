@@ -64,10 +64,6 @@ const formatInitialData = (initialData, mode) => {
 
   const enrollmentData = extractEnrollmentData(enrollmentToFormat);
 
-  console.log('📋 formatInitialData - enrollmentToFormat:', enrollmentToFormat);
-  console.log('📋 formatInitialData - extractedEnrollmentData:', enrollmentData);
-  console.log('📋 formatInitialData - administration from extracted:', enrollmentData?.administration);
-
   // CRITICAL: Never allow enrolled status to revert to enquiry
   let enrollmentStatus = enrollmentData?.enrollment_status || enrollmentToFormat?.enrollment_status || '';
 
@@ -465,13 +461,16 @@ export const useStudentForm = (mode = 'create') => {
         return;
       }
 
-      // Process form data to remove administration if user is a clerk
+      // Process form data - keep administration data for all users
       let processedFormData = { ...allFormData };
-      if (isClerk && processedFormData.enrollments && processedFormData.enrollments.length > 0) {
-        processedFormData.enrollments = processedFormData.enrollments.map(enrollment => {
-          const { administration, ...enrollmentWithoutAdmin } = enrollment;
-          console.log('Clerk user detected - removing administration data from final submission');
-          return enrollmentWithoutAdmin;
+
+      // Log administration data being saved
+      if (processedFormData.enrollments && processedFormData.enrollments.length > 0) {
+        console.log('Saving enrollment with administration data:', {
+          division: processedFormData.enrollments[0].administration?.division,
+          seat_allocations: processedFormData.enrollments[0].administration?.seat_allocations,
+          user: user?.email || user?.username,
+          role: userRole
         });
       }
 

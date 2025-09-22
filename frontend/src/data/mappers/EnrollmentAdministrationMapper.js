@@ -92,7 +92,6 @@ export class EnrollmentAdministrationMapper {
       documentId: allocation.documentId,
       bus: allocation.bus,
       pickupStop: allocation.pickup_stop || allocation.pickupStop,
-      seatNumber: allocation.seat_number || allocation.seatNumber,
       allocationDate: allocation.allocation_date || allocation.allocationDate,
       validFrom: allocation.valid_from || allocation.validFrom,
       validUntil: allocation.valid_until || allocation.validUntil,

@@ -29,24 +29,80 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
         // Process exam data with auto-calculations
         const processedData = this.processExamData(studentId, examData);
 
-        // Check if exam result already exists
-        const existingResult = await this.findExistingResult(studentId, examData);
-
         let result;
-        if (existingResult) {
-          // Update existing record
-          result = await strapi.entityService.update('api::exam-result.exam-result', existingResult.id, {
-            data: processedData,
-            populate: ['subject_scores', 'academic_year', 'class', 'student']
+        // Check if ID is provided for direct update
+        if (examData.id) {
+          // Verify the ID exists and belongs to this student
+          strapi.log.info(`Attempting to update exam result with ID: ${examData.id}`);
+          const existingById = await strapi.entityService.findOne('api::exam-result.exam-result', examData.id, {
+            populate: ['student']
           });
-          result.action = 'updated';
+
+          if (existingById) {
+            // Verify it belongs to the same student (security check)
+            if (existingById.student && existingById.student.id === studentId) {
+              // Update existing record by ID
+              result = await strapi.entityService.update('api::exam-result.exam-result', examData.id, {
+                data: processedData,
+                populate: ['subject_scores', 'academic_year', 'class', 'student']
+              });
+              result.action = 'updated';
+              strapi.log.info(`Successfully updated exam result with ID ${examData.id}`);
+            } else {
+              strapi.log.warn(`Exam result ID ${examData.id} does not belong to student ${studentId}`);
+              // Try to find by other criteria
+              const existingResult = await this.findExistingResult(studentId, examData);
+              if (existingResult) {
+                result = await strapi.entityService.update('api::exam-result.exam-result', existingResult.id, {
+                  data: processedData,
+                  populate: ['subject_scores', 'academic_year', 'class', 'student']
+                });
+                result.action = 'updated';
+              } else {
+                result = await strapi.entityService.create('api::exam-result.exam-result', {
+                  data: processedData,
+                  populate: ['subject_scores', 'academic_year', 'class', 'student']
+                });
+                result.action = 'created';
+              }
+            }
+          } else {
+            strapi.log.warn(`Exam result with ID ${examData.id} not found`);
+            // Try to find by other criteria
+            const existingResult = await this.findExistingResult(studentId, examData);
+            if (existingResult) {
+              result = await strapi.entityService.update('api::exam-result.exam-result', existingResult.id, {
+                data: processedData,
+                populate: ['subject_scores', 'academic_year', 'class', 'student']
+              });
+              result.action = 'updated';
+            } else {
+              result = await strapi.entityService.create('api::exam-result.exam-result', {
+                data: processedData,
+                populate: ['subject_scores', 'academic_year', 'class', 'student']
+              });
+              result.action = 'created';
+            }
+          }
         } else {
-          // Create new record
-          result = await strapi.entityService.create('api::exam-result.exam-result', {
-            data: processedData,
-            populate: ['subject_scores', 'academic_year', 'class', 'student']
-          });
-          result.action = 'created';
+          // Check if exam result already exists based on other criteria
+          const existingResult = await this.findExistingResult(studentId, examData);
+
+          if (existingResult) {
+            // Update existing record
+            result = await strapi.entityService.update('api::exam-result.exam-result', existingResult.id, {
+              data: processedData,
+              populate: ['subject_scores', 'academic_year', 'class', 'student']
+            });
+            result.action = 'updated';
+          } else {
+            // Create new record
+            result = await strapi.entityService.create('api::exam-result.exam-result', {
+              data: processedData,
+              populate: ['subject_scores', 'academic_year', 'class', 'student']
+            });
+            result.action = 'created';
+          }
         }
 
         results.push(result);
@@ -200,14 +256,8 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
       exam_type: examData.exam_type
     };
 
-    // For new structure, match by exam_name or exam_date if provided
-    if (examData.exam_name) {
-      filters.exam_name = examData.exam_name;
-    } else if (examData.exam_date) {
-      filters.exam_date = examData.exam_date;
-    }
-
-    // Add optional filters if provided
+    // Add academic_year and class as required matching criteria if provided
+    // These are important for uniquely identifying an exam result
     if (examData.academic_year) {
       filters.academic_year = examData.academic_year;
     }
@@ -215,12 +265,32 @@ module.exports = createCoreService('api::exam-result.exam-result', ({ strapi }) 
       filters.class = examData.class;
     }
 
+    // Match by exam_name if provided (primary identifier)
+    if (examData.exam_name) {
+      filters.exam_name = examData.exam_name;
+    }
+
+    // Also match by exam_date if provided (secondary identifier)
+    if (examData.exam_date) {
+      filters.exam_date = examData.exam_date;
+    }
+
+    // Log the filters for debugging
+    strapi.log.info(`Finding existing exam result with filters: ${JSON.stringify(filters)}`);
+
     const existingResults = await strapi.entityService.findMany('api::exam-result.exam-result', {
       filters,
-      limit: 1
+      limit: 1,
+      populate: ['academic_year', 'class', 'student']
     });
 
-    return existingResults && existingResults.length > 0 ? existingResults[0] : null;
+    if (existingResults && existingResults.length > 0) {
+      strapi.log.info(`Found existing exam result with ID: ${existingResults[0].id}`);
+      return existingResults[0];
+    }
+
+    strapi.log.info('No existing exam result found');
+    return null;
   },
 
   /**

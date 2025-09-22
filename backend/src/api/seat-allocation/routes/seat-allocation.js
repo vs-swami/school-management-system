@@ -41,16 +41,6 @@ module.exports = {
       handler: 'seat-allocation.findByStudent',
     },
     {
-      method: 'POST',
-      path: '/seat-allocations/bulk-allocate',
-      handler: 'seat-allocation.bulkAllocate',
-    },
-    {
-      method: 'PUT',
-      path: '/seat-allocations/:id/transfer',
-      handler: 'seat-allocation.transferSeat',
-    },
-    {
       method: 'PUT',
       path: '/seat-allocations/:id/deactivate',
       handler: 'seat-allocation.deactivate',

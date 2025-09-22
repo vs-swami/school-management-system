@@ -5,7 +5,19 @@ export const StudentRepository = {
   async findAll(filters = {}) {
     try {
       const params = {
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results'],
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ],
         ...filters
       };
 
@@ -22,7 +34,19 @@ export const StudentRepository = {
   async findById(id) {
     try {
       const params = {
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get(`/students/${id}`, { params });
@@ -47,7 +71,22 @@ export const StudentRepository = {
             $eq: grNo
           }
         },
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'enrollments.administration.seat_allocations.pickup_stop',
+          'enrollments.administration.seat_allocations.pickup_stop.location',
+          'enrollments.administration.seat_allocations.bus',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get('/students', { params });
@@ -183,7 +222,22 @@ export const StudentRepository = {
             }
           }
         },
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'enrollments.administration.seat_allocations.pickup_stop',
+          'enrollments.administration.seat_allocations.pickup_stop.location',
+          'enrollments.administration.seat_allocations.bus',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get('/students', { params });
@@ -206,7 +260,22 @@ export const StudentRepository = {
             }
           }
         },
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'enrollments.administration.seat_allocations.pickup_stop',
+          'enrollments.administration.seat_allocations.pickup_stop.location',
+          'enrollments.administration.seat_allocations.bus',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get('/students', { params });
@@ -225,7 +294,22 @@ export const StudentRepository = {
             enrollment_status: { $eq: status }
           }
         },
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'enrollments.administration.seat_allocations.pickup_stop',
+          'enrollments.administration.seat_allocations.pickup_stop.location',
+          'enrollments.administration.seat_allocations.bus',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get('/students', { params });
@@ -247,7 +331,22 @@ export const StudentRepository = {
             { last_name: { $containsi: query } }
           ]
         },
-        populate: ['enrollments', 'enrollments.class', 'enrollments.academic_year', 'enrollments.administration', 'enrollments.administration.division', 'guardians', 'documents', 'exam_results']
+        populate: [
+          'enrollments',
+          'enrollments.class',
+          'enrollments.academic_year',
+          'enrollments.administration',
+          'enrollments.administration.division',
+          'enrollments.administration.seat_allocations',
+          'enrollments.administration.seat_allocations.pickup_stop',
+          'enrollments.administration.seat_allocations.pickup_stop.location',
+          'enrollments.administration.seat_allocations.bus',
+          'guardians',
+          'guardians.addresses',
+          'guardians.contact_numbers',
+          'documents',
+          'exam_results'
+        ]
       };
 
       const response = await apiClient.get('/students', { params });

@@ -37,47 +37,4 @@ module.exports = createCoreService('api::bus.bus', ({ strapi }) => ({
     }
   },
 
-  // Get seat map for a bus
-  async getSeatMap(busId) {
-    try {
-      const bus = await strapi.entityService.findOne('api::bus.bus', busId, {
-        populate: {
-          seat_allocations: {
-            filters: { is_active: true },
-            populate: {
-              student: {
-                fields: ['first_name', 'last_name', 'gr_full_name']
-              }
-            }
-          }
-        }
-      });
-
-      if (!bus) {
-        return null;
-      }
-
-      const seatMap = [];
-      
-      for (let i = 1; i <= bus.total_seats; i++) {
-        const allocation = bus.seat_allocations.find(alloc => alloc.seat_number === i);
-        
-        seatMap.push({
-          seat_number: i,
-          is_occupied: !!allocation,
-          student: allocation ? allocation.student : null,
-          allocation_id: allocation ? allocation.id : null
-        });
-      }
-
-      return {
-        bus_id: bus.id,
-        bus_number: bus.bus_number,
-        total_seats: bus.total_seats,
-        seat_map: seatMap
-      };
-    } catch (error) {
-      throw new Error(`Error generating seat map: ${error.message}`);
-    }
-  }
 }));

@@ -27,13 +27,12 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
       const existingAllocation = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
         filters: {
           bus: data.bus,
-          seat_number: data.seat_number,
           is_active: true
         }
       });
 
       if (existingAllocation.length > 0) {
-        return ctx.badRequest(`Seat ${data.seat_number} is already allocated on this bus`);
+        return ctx.badRequest(`Already allocated on this bus`);
       }
 
       // Check if student already has an allocation
@@ -52,10 +51,6 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
       const bus = await strapi.entityService.findOne('api::bus.bus', data.bus);
       if (!bus) {
         return ctx.badRequest('Bus not found');
-      }
-
-      if (data.seat_number > bus.total_seats) {
-        return ctx.badRequest(`Seat number cannot exceed bus capacity of ${bus.total_seats}`);
       }
 
       ctx.request.body.data = {
@@ -91,7 +86,6 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
           student: true,
           pickup_stop: true
         },
-        sort: { seat_number: 'asc' }
       });
 
       return allocations;
@@ -121,114 +115,6 @@ module.exports = createCoreController('api::seat-allocation.seat-allocation', ({
     } catch (error) {
       console.error('Error finding allocations by student:', error);
       return ctx.internalServerError('Error fetching student allocations');
-    }
-  },
-
-  // Bulk allocate seats
-  async bulkAllocate(ctx) {
-    const { allocations } = ctx.request.body;
-    
-    if (!Array.isArray(allocations)) {
-      return ctx.badRequest('Allocations must be an array');
-    }
-
-    try {
-      const results = [];
-      const errors = [];
-
-      for (const allocation of allocations) {
-        try {
-          // Validate each allocation
-          const existingAllocation = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
-            filters: {
-              bus: allocation.bus,
-              seat_number: allocation.seat_number,
-              is_active: true
-            }
-          });
-
-          if (existingAllocation.length > 0) {
-            errors.push(`Seat ${allocation.seat_number} already allocated`);
-            continue;
-          }
-
-          const created = await strapi.entityService.create('api::seat-allocation.seat-allocation', {
-            data: {
-              ...allocation,
-              allocation_date: allocation.allocation_date || new Date(),
-              valid_from: allocation.valid_from || new Date()
-            },
-            populate: {
-              bus: true,
-              student: true,
-              pickup_stop: true
-            }
-          });
-
-          results.push(created);
-        } catch (error) {
-          errors.push(`Error allocating seat ${allocation.seat_number}: ${error.message}`);
-        }
-      }
-
-      return {
-        success: results.length,
-        errors: errors.length,
-        results,
-        errorMessages: errors
-      };
-    } catch (error) {
-      console.error('Error in bulk allocation:', error);
-      return ctx.internalServerError('Error processing bulk allocation');
-    }
-  },
-
-  // Transfer seat allocation
-  async transferSeat(ctx) {
-    const { id } = ctx.params;
-    const { newStudentId, newSeatNumber } = ctx.request.body;
-    
-    try {
-      const allocation = await strapi.entityService.findOne('api::seat-allocation.seat-allocation', id, {
-        populate: { bus: true }
-      });
-
-      if (!allocation) {
-        return ctx.notFound('Allocation not found');
-      }
-
-      // Check if new seat is available (if seat number is changing)
-      if (newSeatNumber && newSeatNumber !== allocation.seat_number) {
-        const existingAllocation = await strapi.entityService.findMany('api::seat-allocation.seat-allocation', {
-          filters: {
-            bus: allocation.bus.id,
-            seat_number: newSeatNumber,
-            is_active: true,
-            id: { $ne: id }
-          }
-        });
-
-        if (existingAllocation.length > 0) {
-          return ctx.badRequest(`Seat ${newSeatNumber} is already allocated`);
-        }
-      }
-
-      const updated = await strapi.entityService.update('api::seat-allocation.seat-allocation', id, {
-        data: {
-          student: newStudentId || allocation.student,
-          seat_number: newSeatNumber || allocation.seat_number
-        },
-        populate: {
-          bus: true,
-          student: true,
-          pickup_stop: true
-        }
-      });
-
-      return updated;
-    } catch (error) {
-      console.error('Error transferring seat:', error);
-      return ctx.internalServerError('Error transferring seat allocation');
     }
   },
 

@@ -224,10 +224,46 @@ export default create((set, get) => ({
   approveNextStage: async (studentId) => {
     set({ loading: true, error: null });
     try {
+      const { selectedStudent } = get();
+
+      // First, approve via exam results service
       const result = await examResultService.approveStudentForNextStage(studentId);
+      console.log("ExamResultService: Approve next stage result:", result);
+
       if (result.success) {
-        // Optionally update the selected student or refetch it to reflect changes
-        get().fetchStudentById(studentId); 
+        // Then update the enrollment status to 'Enrolled'
+        if (selectedStudent && selectedStudent.enrollments && selectedStudent.enrollments.length > 0) {
+          const enrollmentToUpdate = {
+            ...selectedStudent.enrollments[0],
+            enrollment_status: 'Enrolled',
+            enrollmentStatus: 'Enrolled' // Include both field names for compatibility
+          };
+
+          // Create the update data structure for the student
+          const updateData = {
+            enrollments: [enrollmentToUpdate]
+          };
+
+          // Update student enrollment status
+          await studentService.updateStudent(selectedStudent.id, updateData);
+
+          // Update local state
+          set((state) => ({
+            selectedStudent: {
+              ...state.selectedStudent,
+              enrollments: [
+                {
+                  ...state.selectedStudent.enrollments[0],
+                  enrollment_status: 'Enrolled',
+                  enrollmentStatus: 'Enrolled'
+                }
+              ]
+            }
+          }));
+        }
+
+        // Refresh the student data to get the latest state
+        get().fetchStudentById(studentId);
         set({ loading: false });
         return { success: true, data: result.data };
       } else {
@@ -345,29 +381,44 @@ export default create((set, get) => ({
   rejectStudent: async (studentId) => {
     set({ loading: true, error: null });
     try {
-      const { rejectStudent, selectedStudent, setLoading } = get();
+      const { selectedStudent, setLoading } = get();
 
       if (!selectedStudent || !selectedStudent.enrollments || selectedStudent.enrollments.length === 0) {
         throw new Error('Student enrollment data not found.');
       }
-      const enrollmentToUpdate = { ...selectedStudent.enrollments[0], enrollment_status: 'Rejected' };
+
+      // Update the enrollment status to 'Rejected'
+      const enrollmentToUpdate = {
+        ...selectedStudent.enrollments[0],
+        enrollment_status: 'Rejected',
+        enrollmentStatus: 'Rejected' // Include both field names for compatibility
+      };
+
+      // Create the update data structure for the student
+      const updateData = {
+        enrollments: [enrollmentToUpdate]
+      };
 
       setLoading(true);
-      const result = await rejectStudent(selectedStudent.id, enrollmentToUpdate);
+      const result = await studentService.updateStudent(selectedStudent.id, updateData);
       setLoading(false);
 
       if (result.success) {
-        set((state) => ({ 
-          selectedStudent: { 
-            ...state.selectedStudent, 
+        set((state) => ({
+          selectedStudent: {
+            ...state.selectedStudent,
             enrollments: [
-              { 
+              {
                 ...state.selectedStudent.enrollments[0],
-                enrollment_status: 'Rejected' // Update the status in the store
+                enrollment_status: 'Rejected', // Update the status in the store
+                enrollmentStatus: 'Rejected'
               }
             ]
           }
         }));
+
+        // Refresh the student data to get the latest state
+        get().fetchStudentById(selectedStudent.id);
       }
 
       return result;

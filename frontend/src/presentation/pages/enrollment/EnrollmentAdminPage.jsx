@@ -84,6 +84,18 @@ export const EnrollmentAdminPage = () => {
     }
   };
 
+  const handleSaveProgress = async () => {
+    try {
+      await updateEnrollmentAdministration(enrollment.administration.id, adminData);
+      console.log('Progress saved successfully!');
+      // Show success message to user
+      alert('Progress saved successfully!');
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      alert('Error saving progress. Please try again.');
+    }
+  };
+
   if (loading) return <div className="text-center py-4 text-blue-600">Loading enrollment details...</div>;
   if (error) return <div className="text-center py-4 text-red-600">Error: {error.message}</div>;
   if (!enrollment) return <div className="text-center py-4">Enrollment not found.</div>;
@@ -262,10 +274,17 @@ export const EnrollmentAdminPage = () => {
                 </button>
               )}
               <button
+                type="button"
+                onClick={handleSaveProgress}
+                className="flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-300 ease-in-out shadow-md text-sm sm:text-base"
+              >
+                Save Progress
+              </button>
+              <button
                 type="submit"
                 className="flex items-center px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-300 ease-in-out shadow-md text-sm sm:text-base"
               >
-                {currentAdminStep < 3 ? (<>Next <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" /></>) : 'Save Administration Details'}
+                {currentAdminStep < 3 ? (<>Next <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" /></>) : 'Save & Finish'}
               </button>
             </div>
           </form>

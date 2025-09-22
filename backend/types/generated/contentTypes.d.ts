@@ -1166,14 +1166,6 @@ export interface ApiSeatAllocationSeatAllocation
       'manyToOne',
       'api::enrollment-administration.enrollment-administration'
     >;
-    seat_number: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 1;
-        },
-        number
-      >;
     pickup_stop: Schema.Attribute.Relation<
       'manyToOne',
       'api::bus-stop.bus-stop'

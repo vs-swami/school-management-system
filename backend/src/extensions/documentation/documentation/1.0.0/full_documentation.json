@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-09-22T05:12:04.690Z"
+    "x-generation-date": "2025-09-22T15:05:48.983Z"
   },
   "x-strapi-config": {
     "path": "/documentation",
@@ -7354,179 +7354,6 @@
         "operationId": "get/seat-allocations/by-student/{studentId}"
       }
     },
-    "/seat-allocations/bulk-allocate": {
-      "post": {
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SeatAllocationResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Seat-allocation"
-        ],
-        "parameters": [],
-        "operationId": "post/seat-allocations/bulk-allocate",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SeatAllocationRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/seat-allocations/{id}/transfer": {
-      "put": {
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SeatAllocationResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "Seat-allocation"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "",
-            "deprecated": false,
-            "required": true,
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "operationId": "put/seat-allocations/{id}/transfer",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SeatAllocationRequest"
-              }
-            }
-          }
-        }
-      }
-    },
     "/seat-allocations/{id}/deactivate": {
       "put": {
         "responses": {
@@ -11449,9 +11276,6 @@
                                                     }
                                                   }
                                                 }
-                                              },
-                                              "seat_number": {
-                                                "type": "integer"
                                               },
                                               "pickup_stop": {
                                                 "type": "object",
@@ -15583,9 +15407,6 @@
                               }
                             }
                           },
-                          "seat_number": {
-                            "type": "integer"
-                          },
                           "pickup_stop": {
                             "type": "object",
                             "properties": {
@@ -17941,9 +17762,6 @@
                                                       }
                                                     }
                                                   },
-                                                  "seat_number": {
-                                                    "type": "integer"
-                                                  },
                                                   "pickup_stop": {
                                                     "type": "object",
                                                     "properties": {
@@ -19760,9 +19578,6 @@
                                                               }
                                                             }
                                                           }
-                                                        },
-                                                        "seat_number": {
-                                                          "type": "integer"
                                                         },
                                                         "pickup_stop": {
                                                           "type": "object",
@@ -22591,9 +22406,6 @@
                                                               }
                                                             }
                                                           }
-                                                        },
-                                                        "seat_number": {
-                                                          "type": "integer"
                                                         },
                                                         "pickup_stop": {
                                                           "type": "object",
@@ -26070,9 +25882,6 @@
                                             }
                                           }
                                         },
-                                        "seat_number": {
-                                          "type": "integer"
-                                        },
                                         "pickup_stop": {
                                           "type": "object",
                                           "properties": {
@@ -28971,9 +28780,6 @@
                                             }
                                           }
                                         },
-                                        "seat_number": {
-                                          "type": "integer"
-                                        },
                                         "pickup_stop": {
                                           "type": "object",
                                           "properties": {
@@ -31425,9 +31231,6 @@
                                                               }
                                                             }
                                                           }
-                                                        },
-                                                        "seat_number": {
-                                                          "type": "integer"
                                                         },
                                                         "pickup_stop": {
                                                           "type": "object",
@@ -35874,9 +35677,6 @@
                                             }
                                           }
                                         },
-                                        "seat_number": {
-                                          "type": "integer"
-                                        },
                                         "pickup_stop": {
                                           "type": "object",
                                           "properties": {
@@ -39082,9 +38882,6 @@
                                                           }
                                                         }
                                                       },
-                                                      "seat_number": {
-                                                        "type": "integer"
-                                                      },
                                                       "pickup_stop": {
                                                         "type": "object",
                                                         "properties": {
@@ -40024,7 +39821,6 @@
         "properties": {
           "data": {
             "required": [
-              "seat_number",
               "allocation_date",
               "valid_from"
             ],
@@ -40051,9 +39847,6 @@
                   }
                 ],
                 "example": "string or id"
-              },
-              "seat_number": {
-                "type": "integer"
               },
               "pickup_stop": {
                 "oneOf": [
@@ -40155,7 +39948,6 @@
       "SeatAllocation": {
         "type": "object",
         "required": [
-          "seat_number",
           "allocation_date",
           "valid_from"
         ],
@@ -42040,9 +41832,6 @@
                                                       }
                                                     }
                                                   },
-                                                  "seat_number": {
-                                                    "type": "integer"
-                                                  },
                                                   "pickup_stop": {
                                                     "type": "object",
                                                     "properties": {
@@ -42801,9 +42590,6 @@
                 "type": "string"
               }
             }
-          },
-          "seat_number": {
-            "type": "integer"
           },
           "pickup_stop": {
             "type": "object",
@@ -44573,9 +44359,6 @@
                                                     }
                                                   }
                                                 }
-                                              },
-                                              "seat_number": {
-                                                "type": "integer"
                                               },
                                               "pickup_stop": {
                                                 "type": "object",
@@ -47923,9 +47706,6 @@
                                               }
                                             }
                                           }
-                                        },
-                                        "seat_number": {
-                                          "type": "integer"
                                         },
                                         "pickup_stop": {
                                           "type": "object",
