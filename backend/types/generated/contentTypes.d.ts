@@ -801,6 +801,10 @@ export interface ApiEnrollmentEnrollment extends Struct.CollectionTypeSchema {
       ['Transport', 'Hostel', 'Self', 'Tuition Only']
     > &
       Schema.Attribute.Required;
+    payment_preference: Schema.Attribute.Enumeration<['full', 'installments']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'installments'>;
+    bus_stop: Schema.Attribute.Relation<'manyToOne', 'api::bus-stop.bus-stop'>;
     createdAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     publishedAt: Schema.Attribute.DateTime;
@@ -893,6 +897,161 @@ export interface ApiExamResultExamResult extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::exam-result.exam-result'
+    >;
+  };
+}
+
+export interface ApiExpenseExpense extends Struct.CollectionTypeSchema {
+  collectionName: 'expenses';
+  info: {
+    singularName: 'expense';
+    pluralName: 'expenses';
+    displayName: 'Expense';
+    description: 'School operational expenses';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    expense_number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    category: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::expense-category.expense-category'
+    > &
+      Schema.Attribute.Required;
+    vendor: Schema.Attribute.Relation<'manyToOne', 'api::vendor.vendor'>;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    invoice_number: Schema.Attribute.String;
+    invoice_date: Schema.Attribute.Date;
+    due_date: Schema.Attribute.Date;
+    status: Schema.Attribute.Enumeration<
+      ['draft', 'pending_approval', 'approved', 'paid', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'draft'>;
+    expense_payments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::expense-payment.expense-payment'
+    >;
+    approved_by: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
+    created_by_user: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::expense.expense'
+    >;
+  };
+}
+
+export interface ApiExpenseCategoryExpenseCategory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'expense_categories';
+  info: {
+    singularName: 'expense-category';
+    pluralName: 'expense-categories';
+    displayName: 'Expense Category';
+    description: 'Categories for school operational expenses';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    description: Schema.Attribute.Text;
+    parent_category: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::expense-category.expense-category'
+    >;
+    budget_allocated: Schema.Attribute.Decimal;
+    fiscal_year: Schema.Attribute.String & Schema.Attribute.Required;
+    expense_type: Schema.Attribute.Enumeration<
+      [
+        'infrastructure',
+        'maintenance',
+        'salaries',
+        'utilities',
+        'supplies',
+        'transport',
+        'events',
+        'academic',
+        'administrative',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    expenses: Schema.Attribute.Relation<'oneToMany', 'api::expense.expense'>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::expense-category.expense-category'
+    >;
+  };
+}
+
+export interface ApiExpensePaymentExpensePayment
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'expense_payments';
+  info: {
+    singularName: 'expense-payment';
+    pluralName: 'expense-payments';
+    displayName: 'Expense Payment';
+    description: 'Payments made against school expenses';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    expense: Schema.Attribute.Relation<'manyToOne', 'api::expense.expense'> &
+      Schema.Attribute.Required;
+    transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::transaction.transaction'
+    > &
+      Schema.Attribute.Required;
+    amount_paid: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    payment_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    payment_method: Schema.Attribute.Enumeration<
+      ['cash', 'cheque', 'bank_transfer', 'upi', 'credit_card', 'debit_card']
+    > &
+      Schema.Attribute.Required;
+    reference_number: Schema.Attribute.String;
+    approved_by: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::expense-payment.expense-payment'
     >;
   };
 }
@@ -1090,6 +1249,106 @@ export interface ApiHouseHouse extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiIncomeIncome extends Struct.CollectionTypeSchema {
+  collectionName: 'incomes';
+  info: {
+    singularName: 'income';
+    pluralName: 'incomes';
+    displayName: 'Income';
+    description: 'All non-fee income sources (donations, grants, rentals, etc.)';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    income_number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    category: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::income-category.income-category'
+    > &
+      Schema.Attribute.Required;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    source_name: Schema.Attribute.String & Schema.Attribute.Required;
+    source_type: Schema.Attribute.Enumeration<
+      ['individual', 'organization', 'government', 'trust', 'corporate']
+    > &
+      Schema.Attribute.Required;
+    received_date: Schema.Attribute.Date & Schema.Attribute.Required;
+    transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::transaction.transaction'
+    >;
+    receipt_issued: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    receipt_number: Schema.Attribute.String;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::income.income'>;
+  };
+}
+
+export interface ApiIncomeCategoryIncomeCategory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'income_categories';
+  info: {
+    singularName: 'income-category';
+    pluralName: 'income-categories';
+    displayName: 'Income Category';
+    description: 'Categories for non-fee income sources';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    code: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    income_type: Schema.Attribute.Enumeration<
+      [
+        'donation',
+        'grant',
+        'rental',
+        'event',
+        'sale',
+        'interest',
+        'sponsorship',
+        'fundraising',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required;
+    description: Schema.Attribute.Text;
+    is_tax_deductible: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    is_active: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::income-category.income-category'
+    >;
+  };
+}
+
 export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
   collectionName: 'locations';
   info: {
@@ -1119,6 +1378,114 @@ export interface ApiLocationLocation extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::location.location'
+    >;
+  };
+}
+
+export interface ApiPaymentItemPaymentItem extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_items';
+  info: {
+    singularName: 'payment-item';
+    pluralName: 'payment-items';
+    displayName: 'Payment Item';
+    description: 'Individual payment line items in a schedule';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    payment_schedule: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::payment-schedule.payment-schedule'
+    > &
+      Schema.Attribute.Required;
+    fee_definition: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::fee-definition.fee-definition'
+    > &
+      Schema.Attribute.Required;
+    description: Schema.Attribute.String & Schema.Attribute.Required;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    discount_amount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    net_amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    due_date: Schema.Attribute.Date & Schema.Attribute.Required;
+    installment_number: Schema.Attribute.Integer;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'partially_paid', 'paid', 'overdue', 'waived', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    paid_amount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    transactions: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::transaction.transaction'
+    >;
+    late_fee_applied: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    waiver_reason: Schema.Attribute.Text;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-item.payment-item'
+    >;
+  };
+}
+
+export interface ApiPaymentSchedulePaymentSchedule
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_schedules';
+  info: {
+    singularName: 'payment-schedule';
+    pluralName: 'payment-schedules';
+    displayName: 'Payment Schedule';
+    description: 'Master payment schedule for each enrollment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    schedule_number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    enrollment: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::enrollment.enrollment'
+    > &
+      Schema.Attribute.Required;
+    total_amount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    paid_amount: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    status: Schema.Attribute.Enumeration<
+      ['draft', 'active', 'suspended', 'completed', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'draft'>;
+    payment_items: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-item.payment-item'
+    >;
+    generated_at: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    activated_at: Schema.Attribute.DateTime;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-schedule.payment-schedule'
     >;
   };
 }
@@ -1309,6 +1676,249 @@ export interface ApiStudentDocumentStudentDocument
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::student-document.student-document'
+    >;
+  };
+}
+
+export interface ApiStudentWalletStudentWallet
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'student_wallets';
+  info: {
+    singularName: 'student-wallet';
+    pluralName: 'student-wallets';
+    displayName: 'Student Wallet';
+    description: "Digital wallet for student's miscellaneous school expenses";
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    student: Schema.Attribute.Relation<'oneToOne', 'api::student.student'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    wallet_id: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    current_balance: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<0>;
+    total_deposits: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    total_withdrawals: Schema.Attribute.Decimal & Schema.Attribute.DefaultTo<0>;
+    status: Schema.Attribute.Enumeration<['active', 'frozen', 'closed']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'active'>;
+    daily_spending_limit: Schema.Attribute.Decimal;
+    low_balance_threshold: Schema.Attribute.Decimal &
+      Schema.Attribute.DefaultTo<100>;
+    wallet_transactions: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::wallet-transaction.wallet-transaction'
+    >;
+    last_activity: Schema.Attribute.DateTime;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::student-wallet.student-wallet'
+    >;
+  };
+}
+
+export interface ApiTransactionTransaction extends Struct.CollectionTypeSchema {
+  collectionName: 'transactions';
+  info: {
+    singularName: 'transaction';
+    pluralName: 'transactions';
+    displayName: 'Transaction';
+    description: 'Unified transaction table for all payments and expenses';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    transaction_number: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    transaction_type: Schema.Attribute.Enumeration<
+      ['income', 'expense', 'transfer', 'refund']
+    > &
+      Schema.Attribute.Required;
+    transaction_category: Schema.Attribute.Enumeration<
+      [
+        'student_fee',
+        'transport_fee',
+        'lab_fee',
+        'exam_fee',
+        'wallet_topup',
+        'wallet_deduction',
+        'maintenance',
+        'salary',
+        'utilities',
+        'supplies',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'INR'>;
+    payment_method: Schema.Attribute.Enumeration<
+      [
+        'cash',
+        'cheque',
+        'bank_transfer',
+        'upi',
+        'credit_card',
+        'debit_card',
+        'wallet',
+        'online',
+      ]
+    > &
+      Schema.Attribute.Required;
+    transaction_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    reference_number: Schema.Attribute.String;
+    bank_reference: Schema.Attribute.String;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'completed', 'failed', 'cancelled', 'refunded']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    payment_items: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::payment-item.payment-item'
+    >;
+    expense_payment: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::expense-payment.expense-payment'
+    >;
+    wallet_transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::wallet-transaction.wallet-transaction'
+    >;
+    payer_name: Schema.Attribute.String;
+    payer_contact: Schema.Attribute.String;
+    receipt_number: Schema.Attribute.String;
+    processed_by: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
+    notes: Schema.Attribute.Text;
+    metadata: Schema.Attribute.JSON;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::transaction.transaction'
+    >;
+  };
+}
+
+export interface ApiVendorVendor extends Struct.CollectionTypeSchema {
+  collectionName: 'vendors';
+  info: {
+    singularName: 'vendor';
+    pluralName: 'vendors';
+    displayName: 'Vendor';
+    description: 'Suppliers and service providers for the school';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    name: Schema.Attribute.String & Schema.Attribute.Required;
+    vendor_type: Schema.Attribute.Enumeration<
+      ['supplier', 'contractor', 'service_provider', 'other']
+    > &
+      Schema.Attribute.Required;
+    contact_person: Schema.Attribute.String;
+    phone: Schema.Attribute.String;
+    email: Schema.Attribute.Email;
+    status: Schema.Attribute.Enumeration<['active', 'inactive']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'active'>;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::vendor.vendor'>;
+  };
+}
+
+export interface ApiWalletTransactionWalletTransaction
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'wallet_transactions';
+  info: {
+    singularName: 'wallet-transaction';
+    pluralName: 'wallet-transactions';
+    displayName: 'Wallet Transaction';
+    description: 'Individual wallet operations (topup, spending)';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    wallet: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::student-wallet.student-wallet'
+    > &
+      Schema.Attribute.Required;
+    transaction_type: Schema.Attribute.Enumeration<
+      ['deposit', 'withdrawal', 'purchase', 'refund']
+    > &
+      Schema.Attribute.Required;
+    amount: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    balance_before: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    balance_after: Schema.Attribute.Decimal & Schema.Attribute.Required;
+    description: Schema.Attribute.String & Schema.Attribute.Required;
+    category: Schema.Attribute.Enumeration<
+      [
+        'canteen',
+        'stationery',
+        'uniform',
+        'books',
+        'field_trip',
+        'event',
+        'sports',
+        'library',
+        'topup',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required;
+    transaction: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::transaction.transaction'
+    >;
+    item_details: Schema.Attribute.JSON;
+    transaction_date: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    performed_by: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
+    notes: Schema.Attribute.Text;
+    createdAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    publishedAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::wallet-transaction.wallet-transaction'
     >;
   };
 }
@@ -1698,16 +2308,27 @@ declare module '@strapi/strapi' {
       'api::enrollment.enrollment': ApiEnrollmentEnrollment;
       'api::enrollment-administration.enrollment-administration': ApiEnrollmentAdministrationEnrollmentAdministration;
       'api::exam-result.exam-result': ApiExamResultExamResult;
+      'api::expense.expense': ApiExpenseExpense;
+      'api::expense-category.expense-category': ApiExpenseCategoryExpenseCategory;
+      'api::expense-payment.expense-payment': ApiExpensePaymentExpensePayment;
       'api::fee-assignment.fee-assignment': ApiFeeAssignmentFeeAssignment;
       'api::fee-definition.fee-definition': ApiFeeDefinitionFeeDefinition;
       'api::fee-type.fee-type': ApiFeeTypeFeeType;
       'api::guardian.guardian': ApiGuardianGuardian;
       'api::house.house': ApiHouseHouse;
+      'api::income.income': ApiIncomeIncome;
+      'api::income-category.income-category': ApiIncomeCategoryIncomeCategory;
       'api::location.location': ApiLocationLocation;
+      'api::payment-item.payment-item': ApiPaymentItemPaymentItem;
+      'api::payment-schedule.payment-schedule': ApiPaymentSchedulePaymentSchedule;
       'api::place.place': ApiPlacePlace;
       'api::seat-allocation.seat-allocation': ApiSeatAllocationSeatAllocation;
       'api::student.student': ApiStudentStudent;
       'api::student-document.student-document': ApiStudentDocumentStudentDocument;
+      'api::student-wallet.student-wallet': ApiStudentWalletStudentWallet;
+      'api::transaction.transaction': ApiTransactionTransaction;
+      'api::vendor.vendor': ApiVendorVendor;
+      'api::wallet-transaction.wallet-transaction': ApiWalletTransactionWalletTransaction;
       'admin::permission': AdminPermission;
       'admin::user': AdminUser;
       'admin::role': AdminRole;

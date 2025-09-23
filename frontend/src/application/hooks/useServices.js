@@ -73,3 +73,18 @@ export const useBusService = () => {
   const services = useServices();
   return services.bus;
 };
+
+export const usePaymentScheduleService = () => {
+  const services = useServices();
+  return services.paymentSchedule;
+};
+
+export const useTransactionService = () => {
+  const services = useServices();
+  return services.transaction;
+};
+
+export const useStudentWalletService = () => {
+  const services = useServices();
+  return services.studentWallet;
+};

@@ -87,7 +87,7 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     const student = await strapi.entityService.findOne('api::student.student', id, {
       populate: finalPopulateOne,
     });
-    console.log('Student Service Debug: findOneWithRelations result:', JSON.stringify(student, null, 2));
+    //console.log('Student Service Debug: findOneWithRelations result:', JSON.stringify(student, null, 2));
     return student;
   },
 
@@ -245,8 +245,8 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
   },
 
   async updateStudent(studentId, data) {
-    console.log('🔍 updateStudent called with studentId:', studentId);
-    console.log('📦 Full data received:', JSON.stringify(data, null, 2));
+    //console.log('🔍 updateStudent called with studentId:', studentId);
+    //console.log('📦 Full data received:', JSON.stringify(data, null, 2));
 
     // Separate student data from guardian data
     const studentData = { ...data
@@ -257,12 +257,43 @@ module.exports = createCoreService('api::student.student', ({ strapi }) => ({
     const enrollmentsData = studentData.enrollments ? [...studentData.enrollments] : [];
     delete studentData.enrollments;
 
-    console.log('📝 Enrollments data extracted:', JSON.stringify(enrollmentsData, null, 2));
+    //console.log('📝 Enrollments data extracted:', JSON.stringify(enrollmentsData, null, 2));
+
+    // Process relation fields to ensure they're in the correct format
+    // Relations should be either an ID (number) or null
+    const relationFields = ['place', 'caste', 'house', 'village'];
+    for (const field of relationFields) {
+      if (studentData[field] !== undefined) {
+        // If it's an object with an id property, extract the id
+        if (typeof studentData[field] === 'object' && studentData[field] !== null) {
+          studentData[field] = studentData[field].id || null;
+        }
+        // If it's an empty string or invalid value, set to null
+        else if (studentData[field] === '' || studentData[field] === 0) {
+          studentData[field] = null;
+        }
+        // Ensure numeric IDs are valid
+        else if (typeof studentData[field] === 'number' && studentData[field] < 1) {
+          studentData[field] = null;
+        }
+      }
+    }
+
+    //console.log('📝 Processed student data for update:', JSON.stringify(studentData, null, 2));
 
     // 1. Update student
-    const updatedStudent = await strapi.entityService.update('api::student.student', studentId, {
-      data: studentData,
-    });
+    let updatedStudent;
+    try {
+      updatedStudent = await strapi.entityService.update('api::student.student', studentId, {
+        data: studentData,
+      });
+    } catch (updateError) {
+      console.error('Student Controller - Update: Error during update', updateError);
+      if (updateError.details && updateError.details.errors) {
+        console.error('Validation errors detail:', JSON.stringify(updateError.details.errors, null, 2));
+      }
+      throw updateError;
+    }
 
     // 2. Update or create guardians
     for (const guardianData of guardiansData) {

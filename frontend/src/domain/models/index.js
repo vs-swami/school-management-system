@@ -9,3 +9,8 @@ export { FeeDefinition } from './FeeDefinition';
 export { BusRoute } from './BusRoute';
 export { ExamResult } from './ExamResult';
 export { Location } from './Location';
+export { PaymentSchedule } from './PaymentSchedule';
+export { PaymentItem } from './PaymentItem';
+export { Transaction } from './Transaction';
+export { StudentWallet } from './StudentWallet';
+export { WalletTransaction } from './WalletTransaction';

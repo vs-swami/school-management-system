@@ -32,6 +32,7 @@ const formatInitialData = (initialData, mode) => {
         gr_no: '',
         date_enrolled: '',
         admission_type: '',
+        payment_preference: 'installments', // Default to installments
         enrollment_status: STUDENT_CONFIG.ENROLLMENT_STATUS.ENQUIRY, // Only for new students
       }],
       student_photo: null,
@@ -80,6 +81,7 @@ const formatInitialData = (initialData, mode) => {
     date_enrolled: enrollmentData?.date_enrolled ?
       new Date(enrollmentData.date_enrolled).toISOString().split('T')[0] : '',
     admission_type: enrollmentData?.admission_type || '',
+    payment_preference: enrollmentData?.payment_preference || enrollmentToFormat?.payment_preference || 'installments',
     enrollment_status: enrollmentStatus,
     lc_received: enrollmentData?.lc_received || false,
     administration: enrollmentData?.administration ? {

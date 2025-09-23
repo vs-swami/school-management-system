@@ -72,6 +72,18 @@
         "Tuition Only"
       ],
       "required": true
+    },
+    "payment_preference": {
+      "type": "enumeration",
+      "enum": ["full", "installments"],
+      "default": "installments",
+      "required": true
+    },
+    "bus_stop": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::bus-stop.bus-stop",
+      "description": "Selected bus stop for transport students"
     }
   }
 }

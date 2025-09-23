@@ -1,0 +1,67 @@
+{
+  "kind": "collectionType",
+  "collectionName": "expense_categories",
+  "info": {
+    "singularName": "expense-category",
+    "pluralName": "expense-categories",
+    "displayName": "Expense Category",
+    "description": "Categories for school operational expenses"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "code": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "parent_category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::expense-category.expense-category"
+    },
+    "budget_allocated": {
+      "type": "decimal",
+      "description": "Annual budget allocation for this category"
+    },
+    "fiscal_year": {
+      "type": "string",
+      "required": true
+    },
+    "expense_type": {
+      "type": "enumeration",
+      "enum": [
+        "infrastructure",
+        "maintenance",
+        "salaries",
+        "utilities",
+        "supplies",
+        "transport",
+        "events",
+        "academic",
+        "administrative",
+        "other"
+      ],
+      "required": true
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "expenses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::expense.expense",
+      "mappedBy": "category"
+    }
+  }
+}

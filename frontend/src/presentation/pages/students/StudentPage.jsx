@@ -16,6 +16,7 @@ import StudentInfoStep from '../../components/students/steps/StudentInfoStep';
 import DocumentsStep from '../../components/students/steps/DocumentsStep';
 import ExamResultsStep from '../../components/students/steps/ExamResultsStep';
 import AdministrationStep from '../../components/students/steps/AdministrationStep';
+import PaymentSummaryStep from '../../components/students/steps/PaymentSummaryStep';
 import SummaryStep from '../../components/students/steps/SummaryStep';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
 
@@ -70,6 +71,7 @@ const StudentPage = ({ mode = 'create' }) => {
     watch,
     getValues,
     setValue,
+    clearErrors,
     currentStep,
     setCurrentStep,
     academicYears,
@@ -160,9 +162,14 @@ const StudentPage = ({ mode = 'create' }) => {
       }
     }
 
-    // Step 4: Summary - Always completed if reached (it's just a review step)
+    // Step 4: Payment - Always completed if reached
     if (currentStep >= 4) {
       completed.push(4);
+    }
+
+    // Step 5: Summary - Always completed if reached (it's just a review step)
+    if (currentStep >= 5) {
+      completed.push(5);
     }
 
     return completed;
@@ -392,13 +399,13 @@ const StudentPage = ({ mode = 'create' }) => {
           />
         );
       case STEPS.ADMINISTRATION:
-        // Only principals can access this step
-        if (!isPrincipal) {
+        // Clerks cannot access this step
+        if (isClerk) {
           return (
             <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
-              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Principal Access Required</h4>
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h4>
               <p className="text-sm text-yellow-700">
-                The Administration step requires principal-level access to assign divisions and configure transport allocation.
+                The Administration step requires admin-level access to assign divisions and configure transport allocation.
               </p>
             </div>
           );
@@ -419,19 +426,59 @@ const StudentPage = ({ mode = 'create' }) => {
             errors={errors}
             watch={watch}
             setValue={setValue}
+            clearErrors={clearErrors}
             onEnrollStudent={handleEnrollStudent}
             onUpdateToWaiting={handleUpdateToWaiting}
             loading={loading}
           />
         );
-      case STEPS.SUMMARY:
-        // Only principals can access this step
-        if (!isPrincipal) {
+      case STEPS.PAYMENT:
+        // Clerks cannot access this step
+        if (isClerk) {
           return (
             <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
-              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Principal Access Required</h4>
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h4>
               <p className="text-sm text-yellow-700">
-                The Summary step requires principal-level access to finalize the enrollment process.
+                The Payment step requires admin-level access to configure the payment schedule.
+              </p>
+            </div>
+          );
+        }
+        // Get the enrollment ID from selectedStudent (for existing students) or form data (for new students)
+        const currentEnrollmentId = selectedStudent?.enrollments?.[0]?.id ||
+                                   selectedStudent?.enrollments?.[0]?.documentId ||
+                                   watch('enrollments.0.id') ||
+                                   watch('enrollments.0.documentId');
+
+        if (!currentEnrollmentId) {
+          return (
+            <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Enrollment Required</h4>
+              <p className="text-sm text-yellow-700">
+                Please complete the enrollment process in the Administration step before configuring payment schedule.
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <PaymentSummaryStep
+            enrollmentId={currentEnrollmentId}
+            selectedStudent={selectedStudent}
+            onScheduleCreated={(schedule) => {
+              console.log('Payment schedule created:', schedule);
+              // You can add any additional handling here
+            }}
+          />
+        );
+      case STEPS.SUMMARY:
+        // Clerks cannot access this step
+        if (isClerk) {
+          return (
+            <div className="p-8 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+              <h4 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h4>
+              <p className="text-sm text-yellow-700">
+                The Summary step requires admin-level access to finalize the enrollment process.
               </p>
             </div>
           );
@@ -472,7 +519,8 @@ const StudentPage = ({ mode = 'create' }) => {
     }
 
     if (currentStep < TOTAL_STEPS - 1) {
-      if (currentStep === STEPS.ADMINISTRATION) return 'Review Summary';
+      if (currentStep === STEPS.ADMINISTRATION) return 'Continue to Payment';
+      if (currentStep === STEPS.PAYMENT) return 'Review Summary';
       return 'Next';
     }
 

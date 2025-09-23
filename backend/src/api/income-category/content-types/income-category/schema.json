@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "income_categories",
+  "info": {
+    "singularName": "income-category",
+    "pluralName": "income-categories",
+    "displayName": "Income Category",
+    "description": "Categories for non-fee income sources"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "code": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "income_type": {
+      "type": "enumeration",
+      "enum": [
+        "donation",
+        "grant",
+        "rental",
+        "event",
+        "sale",
+        "interest",
+        "sponsorship",
+        "fundraising",
+        "other"
+      ],
+      "required": true
+    },
+    "description": {
+      "type": "text"
+    },
+    "is_tax_deductible": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

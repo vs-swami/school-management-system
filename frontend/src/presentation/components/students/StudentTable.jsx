@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../common/Button';
-import { Eye, Edit, Trash2, ChevronUp, ChevronDown, Users, Search } from 'lucide-react';
+import { Eye, Edit, Trash2, ChevronUp, ChevronDown, Users, Search, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const StudentTable = ({ students = [], loading = false, onEdit, onDelete, onView }) => {
+  const navigate = useNavigate();
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [selectedStudents, setSelectedStudents] = useState([]);
@@ -322,6 +324,13 @@ export const StudentTable = ({ students = [], loading = false, onEdit, onDelete,
                       title="View Student"
                     >
                       <Eye className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/students/${student.id}/finance`)}
+                      className="p-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-600 rounded-lg transition-all duration-200 hover:scale-110"
+                      title="View Finance"
+                    >
+                      <DollarSign className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onEdit && onEdit(student)}

@@ -29,6 +29,7 @@ export class EnrollmentMapper {
       enrollmentStatus: data.enrollment_status,
       admissionType: data.admission_type,
       lcReceived: data.lc_received,
+      paymentPreference: data.payment_preference,
       // Timestamps
       createdAt: data.createdAt || data.created_at,
       updatedAt: data.updatedAt || data.updated_at
@@ -47,6 +48,7 @@ export class EnrollmentMapper {
       enrollment_status: domainModel.enrollmentStatus || domainModel.enrollment_status,
       admission_type: domainModel.admissionType || domainModel.admission_type,
       lc_received: domainModel.lcReceived || domainModel.lc_received,
+      payment_preference: domainModel.paymentPreference || domainModel.payment_preference,
       administration: domainModel.administration?.id || domainModel.administration
     };
   }

@@ -147,6 +147,7 @@ export const extractEnrollmentData = (enrollments) => {
         ''
       ),
       admission_type: enrollments.admissionType || enrollments.admission_type || '',
+      payment_preference: enrollments.paymentPreference || enrollments.payment_preference || 'installments',
       administration: extractAdministrationData(enrollments.administration),
       createdAt: enrollments.createdAt,
       updatedAt: enrollments.updatedAt,

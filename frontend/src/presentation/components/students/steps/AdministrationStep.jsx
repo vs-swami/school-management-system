@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route, Clock, Shield, Eye } from 'lucide-react';
+import { BookOpen, Gauge, Users, Sparkles, Activity, Tag, MapPin, Bus, CheckCircle, AlertTriangle, Info, ChevronRight, Route, Clock, Shield, Eye, CreditCard, DollarSign, Calendar } from 'lucide-react';
 import Alert from '../Alert';
 import FormField from '../FormField';
 import BusAllocationDebug from '../BusAllocationDebug';
@@ -22,6 +22,7 @@ const AdministrationStep = ({
   selectedStudent,
   watch,
   setValue,
+  clearErrors,
   loading = false
 }) => {
   // Get user role from auth store
@@ -43,7 +44,7 @@ const AdministrationStep = ({
   const currentDivisionName = typeof currentAdmin?.division === 'object' && (currentAdmin?.division?.divisionName || currentAdmin?.division?.name)
     ? (currentAdmin.division.divisionName || currentAdmin.division.name)
     : null;
-  const currentSeat = (currentAdmin.seatAllocations[0]) || null;
+  const currentSeat = (currentAdmin?.seatAllocations[0]) || null;
   console.log("Student Current Seat - ", currentSeat)
 
   const currentSeatInfo = currentSeat ? {
@@ -928,6 +929,133 @@ const AdministrationStep = ({
               }
             })()}
           </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Preference Section */}
+      {!isStudentRejected && (
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-50 to-green-50 px-6 py-4 border-b border-gray-200">
+            <h4 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <CreditCard className="h-6 w-6 text-emerald-600" />
+              Payment Preference
+            </h4>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-600 mb-4">
+              Select how you would like to pay the fees for this enrollment. This preference will be used to generate the payment schedule.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Full Payment Option */}
+              <label
+                className={`relative ${isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={() => {
+                  if (!isReadOnly && setValue) {
+                    setValue('enrollments.0.payment_preference', 'full', { shouldValidate: true, shouldDirty: true });
+                    if (clearErrors) clearErrors('enrollments.0.payment_preference');
+                  }
+                }}
+              >
+                <input
+                  type="radio"
+                  {...register('enrollments.0.payment_preference', { required: 'Please select a payment preference' })}
+                  value="full"
+                  className="sr-only peer"
+                  disabled={isReadOnly}
+                />
+                <div className={`p-6 border-2 rounded-lg transition-all duration-300 ${
+                  isReadOnly
+                    ? 'bg-gray-50 border-gray-200 opacity-60'
+                    : 'border-gray-300 hover:border-emerald-400 hover:shadow-lg peer-checked:border-emerald-500 peer-checked:bg-gradient-to-br peer-checked:from-emerald-50 peer-checked:to-green-50 peer-checked:shadow-xl'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full transition-colors ${
+                        isReadOnly ? 'bg-gray-100' : 'bg-emerald-100 peer-checked:bg-emerald-200'
+                      }`}>
+                        <DollarSign className={`h-6 w-6 ${isReadOnly ? 'text-gray-400' : 'text-emerald-600'}`} />
+                      </div>
+                      <span className="text-lg font-semibold text-gray-800">Full Payment</span>
+                    </div>
+                    <div className="opacity-0 peer-checked:opacity-100 transition-opacity">
+                      <CheckCircle className="h-6 w-6 text-emerald-600" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">Pay the entire fee amount at once</p>
+                  <div className="space-y-1">
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ One-time payment</p>
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ No additional charges</p>
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ Immediate payment clearance</p>
+                  </div>
+                </div>
+              </label>
+
+              {/* Installments Payment Option */}
+              <label
+                className={`relative ${isReadOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                onClick={() => {
+                  if (!isReadOnly && setValue) {
+                    setValue('enrollments.0.payment_preference', 'installments', { shouldValidate: true, shouldDirty: true });
+                    if (clearErrors) clearErrors('enrollments.0.payment_preference');
+                  }
+                }}
+              >
+                <input
+                  type="radio"
+                  {...register('enrollments.0.payment_preference', { required: 'Please select a payment preference' })}
+                  value="installments"
+                  className="sr-only peer"
+                  disabled={isReadOnly}
+                />
+                <div className={`p-6 border-2 rounded-lg transition-all duration-300 ${
+                  isReadOnly
+                    ? 'bg-gray-50 border-gray-200 opacity-60'
+                    : 'border-gray-300 hover:border-emerald-400 hover:shadow-lg peer-checked:border-emerald-500 peer-checked:bg-gradient-to-br peer-checked:from-emerald-50 peer-checked:to-green-50 peer-checked:shadow-xl'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full transition-colors ${
+                        isReadOnly ? 'bg-gray-100' : 'bg-emerald-100 peer-checked:bg-emerald-200'
+                      }`}>
+                        <Calendar className={`h-6 w-6 ${isReadOnly ? 'text-gray-400' : 'text-emerald-600'}`} />
+                      </div>
+                      <span className="text-lg font-semibold text-gray-800">Installments</span>
+                    </div>
+                    <div className="opacity-0 peer-checked:opacity-100 transition-opacity">
+                      <CheckCircle className="h-6 w-6 text-emerald-600" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">Pay fees in multiple installments</p>
+                  <div className="space-y-1">
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ Flexible payment schedule</p>
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ Based on fee structure</p>
+                    <p className={`text-xs font-medium ${isReadOnly ? 'text-gray-400' : 'text-gray-500 peer-checked:text-emerald-600'}`}>✓ Spread across academic year</p>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Selected Payment Info */}
+            {watch && watch('enrollments.0.payment_preference') && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <p className="text-sm text-emerald-800">
+                  <Info className="inline h-4 w-4 mr-1" />
+                  Payment preference selected: <strong>
+                    {watch('enrollments.0.payment_preference') === 'full'
+                      ? 'Full Payment - Pay entire amount at once'
+                      : 'Installments - Pay according to fee structure'}
+                  </strong>
+                </p>
+              </div>
+            )}
+
+            {errors?.enrollments?.[0]?.payment_preference && (
+              <p className="text-red-500 text-sm mt-2">
+                {errors.enrollments[0].payment_preference.message}
+              </p>
+            )}
           </div>
         </div>
       )}

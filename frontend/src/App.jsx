@@ -18,6 +18,17 @@ import FeeManagement from './presentation/pages/fees/FeeManagement';
 import ClassDivisionDashboard from './presentation/pages/classes/ClassDivisionDashboard';
 import BusManagementDashboard from './presentation/pages/transport/BusManagementDashboard';
 
+// Finance Management Pages
+import FinanceDashboard from './presentation/pages/Finance/Dashboard/FinanceDashboard';
+import FeeCollection from './presentation/pages/Finance/FeeCollection/FeeCollection';
+import WalletManagement from './presentation/pages/Finance/Wallets/WalletManagement';
+import PendingPayments from './presentation/pages/Finance/PendingPayments';
+import PaymentSchedules from './presentation/pages/Finance/Schedules/PaymentSchedules';
+import ScheduleDetails from './presentation/pages/Finance/Schedules/ScheduleDetails';
+import Transactions from './presentation/pages/Finance/Transactions/Transactions';
+import StudentFinanceDetails from './presentation/pages/students/StudentFinanceDetails';
+import StudentView from './presentation/pages/students/StudentView';
+
 // Error Boundary and Configuration
 import ErrorBoundary from './presentation/components/common/ErrorBoundary';
 import { initializeEnvironment } from './shared/utils/envValidation';
@@ -82,7 +93,9 @@ function App() {
                             <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="/students" element={<StudentList />} />
                             <Route path="/students/new" element={<StudentPage mode="create" />} />
+                            <Route path="/students/view/:id" element={<StudentView />} />
                             <Route path="/students/edit/:id" element={<StudentPage mode="edit" />} />
+                            <Route path="/students/:studentId/finance" element={<StudentFinanceDetails />} />
                             <Route path="/enrollments" element={<EnrollmentList />} />
                             <Route path="/enrollments/:id/admin" element={<EnrollmentAdminPage />} />
 
@@ -95,6 +108,16 @@ function App() {
                             {/* Fee Management Routes */}
                             <Route path="/fees" element={<FeeManagement />} />
                             <Route path="/fees/manage" element={<FeeManagement />} />
+
+                            {/* Finance Management Routes */}
+                            <Route path="/finance" element={<FinanceDashboard />} />
+                            <Route path="/finance/dashboard" element={<FinanceDashboard />} />
+                            <Route path="/finance/fee-collection" element={<FeeCollection />} />
+                            <Route path="/finance/wallets" element={<WalletManagement />} />
+                            <Route path="/finance/pending-payments" element={<PendingPayments />} />
+                            <Route path="/finance/schedules" element={<PaymentSchedules />} />
+                            <Route path="/finance/schedules/:scheduleId" element={<ScheduleDetails />} />
+                            <Route path="/finance/transactions" element={<Transactions />} />
                           </Routes>
                         </ErrorBoundary>
                       </MainLayout>

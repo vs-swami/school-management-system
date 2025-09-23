@@ -1,0 +1,81 @@
+{
+  "kind": "collectionType",
+  "collectionName": "wallet_transactions",
+  "info": {
+    "singularName": "wallet-transaction",
+    "pluralName": "wallet-transactions",
+    "displayName": "Wallet Transaction",
+    "description": "Individual wallet operations (topup, spending)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "wallet": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::student-wallet.student-wallet",
+      "inversedBy": "wallet_transactions",
+      "required": true
+    },
+    "transaction_type": {
+      "type": "enumeration",
+      "enum": ["deposit", "withdrawal", "purchase", "refund"],
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "balance_before": {
+      "type": "decimal",
+      "required": true
+    },
+    "balance_after": {
+      "type": "decimal",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "required": true
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "canteen",
+        "stationery",
+        "uniform",
+        "books",
+        "field_trip",
+        "event",
+        "sports",
+        "library",
+        "topup",
+        "other"
+      ],
+      "required": true
+    },
+    "transaction": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::transaction.transaction",
+      "inversedBy": "wallet_transaction"
+    },
+    "item_details": {
+      "type": "json",
+      "description": "Details of items purchased"
+    },
+    "transaction_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "performed_by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "admin::user"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

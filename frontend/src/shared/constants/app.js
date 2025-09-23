@@ -45,9 +45,10 @@ export const STUDENT_CONFIG = {
     DOCUMENTS: 1,
     EXAM_RESULTS: 2,
     ADMINISTRATION: 3,
-    SUMMARY: 4
+    PAYMENT: 4,
+    SUMMARY: 5
   },
-  STEP_NAMES: ['Student Info', 'Documents', 'Exam Results', 'Administration', 'Summary'],
+  STEP_NAMES: ['Student Info', 'Documents', 'Exam Results', 'Administration', 'Payment', 'Summary'],
   ENROLLMENT_STATUS: {
     ENQUIRY: 'Enquiry',
     ADMITTED: 'Admitted',
