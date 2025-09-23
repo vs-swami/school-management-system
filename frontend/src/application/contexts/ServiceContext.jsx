@@ -14,6 +14,9 @@ import { LocationService } from '../services/LocationService';
 import { FeeTypeService } from '../services/FeeTypeService';
 import { AcademicYearService } from '../services/AcademicYearService';
 import { BusService } from '../services/BusService';
+import { PaymentScheduleService } from '../services/PaymentScheduleService';
+import { TransactionService } from '../services/TransactionService';
+import { StudentWalletService } from '../services/StudentWalletService';
 
 // Create context
 export const ServiceContext = createContext(null);
@@ -35,6 +38,9 @@ export const ServiceProvider = ({ children, config = {} }) => {
       feeType: new FeeTypeService(),
       academicYear: new AcademicYearService(),
       bus: new BusService(),
+      paymentSchedule: new PaymentScheduleService(),
+      transaction: new TransactionService(),
+      studentWallet: new StudentWalletService(),
       // Add more services as they are created/updated
     };
 
@@ -128,6 +134,21 @@ export const useAcademicYearService = () => {
 export const useBusService = () => {
   const services = useServices();
   return services.bus;
+};
+
+export const usePaymentScheduleService = () => {
+  const services = useServices();
+  return services.paymentSchedule;
+};
+
+export const useTransactionService = () => {
+  const services = useServices();
+  return services.transaction;
+};
+
+export const useStudentWalletService = () => {
+  const services = useServices();
+  return services.studentWallet;
 };
 
 // Export a higher-order component for class components if needed

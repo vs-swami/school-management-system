@@ -1,0 +1,67 @@
+{
+  "kind": "collectionType",
+  "collectionName": "student_wallets",
+  "info": {
+    "singularName": "student-wallet",
+    "pluralName": "student-wallets",
+    "displayName": "Student Wallet",
+    "description": "Digital wallet for student's miscellaneous school expenses"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "student": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::student.student",
+      "required": true,
+      "unique": true
+    },
+    "wallet_id": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "current_balance": {
+      "type": "decimal",
+      "default": 0,
+      "required": true
+    },
+    "total_deposits": {
+      "type": "decimal",
+      "default": 0
+    },
+    "total_withdrawals": {
+      "type": "decimal",
+      "default": 0
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "frozen", "closed"],
+      "default": "active",
+      "required": true
+    },
+    "daily_spending_limit": {
+      "type": "decimal",
+      "description": "Maximum amount that can be spent per day"
+    },
+    "low_balance_threshold": {
+      "type": "decimal",
+      "default": 100,
+      "description": "Alert threshold for low balance"
+    },
+    "wallet_transactions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::wallet-transaction.wallet-transaction",
+      "mappedBy": "wallet"
+    },
+    "last_activity": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

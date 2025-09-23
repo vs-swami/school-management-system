@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "expenses",
+  "info": {
+    "singularName": "expense",
+    "pluralName": "expenses",
+    "displayName": "Expense",
+    "description": "School operational expenses"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "expense_number": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::expense-category.expense-category",
+      "inversedBy": "expenses",
+      "required": true
+    },
+    "vendor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::vendor.vendor"
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "invoice_number": {
+      "type": "string"
+    },
+    "invoice_date": {
+      "type": "date"
+    },
+    "due_date": {
+      "type": "date"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "pending_approval", "approved", "paid", "cancelled"],
+      "default": "draft",
+      "required": true
+    },
+    "expense_payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::expense-payment.expense-payment",
+      "mappedBy": "expense"
+    },
+    "approved_by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "admin::user"
+    },
+    "created_by_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "admin::user"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

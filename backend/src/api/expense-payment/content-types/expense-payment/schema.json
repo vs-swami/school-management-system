@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "expense_payments",
+  "info": {
+    "singularName": "expense-payment",
+    "pluralName": "expense-payments",
+    "displayName": "Expense Payment",
+    "description": "Payments made against school expenses"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "expense": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::expense.expense",
+      "inversedBy": "expense_payments",
+      "required": true
+    },
+    "transaction": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::transaction.transaction",
+      "inversedBy": "expense_payment",
+      "required": true
+    },
+    "amount_paid": {
+      "type": "decimal",
+      "required": true
+    },
+    "payment_date": {
+      "type": "datetime",
+      "required": true
+    },
+    "payment_method": {
+      "type": "enumeration",
+      "enum": [
+        "cash",
+        "cheque",
+        "bank_transfer",
+        "upi",
+        "credit_card",
+        "debit_card"
+      ],
+      "required": true
+    },
+    "reference_number": {
+      "type": "string"
+    },
+    "approved_by": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "admin::user"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

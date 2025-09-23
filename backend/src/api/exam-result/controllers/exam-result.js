@@ -155,7 +155,7 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
         }
       });
 
-      console.log('Approve Student: Fetched student:', JSON.stringify(student, null, 2));
+      //console.log('Approve Student: Fetched student:', JSON.stringify(student, null, 2));
 
       if (!student) {
         return ctx.notFound('Student not found.');
@@ -163,7 +163,7 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
 
       // Find the current/active enrollment
       const enrollments = Array.isArray(student.enrollments) ? student.enrollments : (student.enrollments ? [student.enrollments] : []);
-      console.log('Approve Student: Total enrollments found:', enrollments.length);
+      //console.log('Approve Student: Total enrollments found:', enrollments.length);
 
       // Look for active enrollment with various status options
       const currentEnrollment = enrollments.find(enrollment =>
@@ -175,7 +175,7 @@ module.exports = createCoreController('api::exam-result.exam-result', ({ strapi 
         )
       ) || enrollments?.[0]; // fallback to first enrollment
 
-      console.log('Approve Student: Current Enrollment:', JSON.stringify(currentEnrollment, null, 2));
+      //console.log('Approve Student: Current Enrollment:', JSON.stringify(currentEnrollment, null, 2));
 
       if (!currentEnrollment) {
         return ctx.badRequest('Student has no enrollment records.');

@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "incomes",
+  "info": {
+    "singularName": "income",
+    "pluralName": "incomes",
+    "displayName": "Income",
+    "description": "All non-fee income sources (donations, grants, rentals, etc.)"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "income_number": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::income-category.income-category",
+      "required": true
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "source_name": {
+      "type": "string",
+      "required": true,
+      "description": "Name of organization/person providing income"
+    },
+    "source_type": {
+      "type": "enumeration",
+      "enum": [
+        "individual",
+        "organization",
+        "government",
+        "trust",
+        "corporate"
+      ],
+      "required": true
+    },
+    "received_date": {
+      "type": "date",
+      "required": true
+    },
+    "transaction": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::transaction.transaction"
+    },
+    "receipt_issued": {
+      "type": "boolean",
+      "default": false
+    },
+    "receipt_number": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

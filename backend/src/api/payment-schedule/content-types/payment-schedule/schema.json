@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_schedules",
+  "info": {
+    "singularName": "payment-schedule",
+    "pluralName": "payment-schedules",
+    "displayName": "Payment Schedule",
+    "description": "Master payment schedule for each enrollment"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "schedule_number": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "enrollment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::enrollment.enrollment",
+      "required": true
+    },
+    "total_amount": {
+      "type": "decimal",
+      "required": true,
+      "default": 0
+    },
+    "paid_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "active", "suspended", "completed", "cancelled"],
+      "default": "draft",
+      "required": true
+    },
+    "payment_items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment-item.payment-item",
+      "mappedBy": "payment_schedule"
+    },
+    "generated_at": {
+      "type": "datetime",
+      "required": true
+    },
+    "activated_at": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}

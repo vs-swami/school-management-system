@@ -1,0 +1,77 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_items",
+  "info": {
+    "singularName": "payment-item",
+    "pluralName": "payment-items",
+    "displayName": "Payment Item",
+    "description": "Individual payment line items in a schedule"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "payment_schedule": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::payment-schedule.payment-schedule",
+      "inversedBy": "payment_items",
+      "required": true
+    },
+    "fee_definition": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fee-definition.fee-definition",
+      "required": true
+    },
+    "description": {
+      "type": "string",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "discount_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "net_amount": {
+      "type": "decimal",
+      "required": true
+    },
+    "due_date": {
+      "type": "date",
+      "required": true
+    },
+    "installment_number": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "partially_paid", "paid", "overdue", "waived", "cancelled"],
+      "default": "pending",
+      "required": true
+    },
+    "paid_amount": {
+      "type": "decimal",
+      "default": 0
+    },
+    "transactions": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::transaction.transaction",
+      "inversedBy": "payment_items"
+    },
+    "late_fee_applied": {
+      "type": "decimal",
+      "default": 0
+    },
+    "waiver_reason": {
+      "type": "text"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}
